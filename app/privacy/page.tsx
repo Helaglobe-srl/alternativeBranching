@@ -14,21 +14,34 @@ interface Scene {
 }
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
+// ── Text parser ─────────────────────────────────────────────────────────────
+// Supports **bold**, bullet lines starting with •, and empty lines as spacers.
+// The • character is stripped from the line — the CSS dot handles the visual.
+
 function parseText(text: string) {
   return text.split('\n').map((line, i) => {
+    if (line.startsWith('•')) {
+      // Strip the bullet char and any leading space after it
+      const content = line.replace(/^•\s*/, '')
+      const parts = content.split(/\*\*(.*?)\*\*/g).map((p, j) =>
+        j % 2 === 1 ? <strong key={j} style={{ color: '#1a4a5c', fontWeight: 700 }}>{p}</strong> : p
+      )
+      return (
+        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, margin: '3px 0' }}>
+          <span style={{ flexShrink: 0, width: 5, height: 5, borderRadius: '50%', background: '#0e88a5', marginTop: 7, display: 'block' }} />
+          <span style={{ lineHeight: 1.6 }}>{parts}</span>
+        </div>
+      )
+    }
+    if (!line.trim()) return <div key={i} style={{ height: 5 }} />
     const parts = line.split(/\*\*(.*?)\*\*/g).map((p, j) =>
       j % 2 === 1 ? <strong key={j} style={{ color: '#1a4a5c', fontWeight: 700 }}>{p}</strong> : p
     )
-    if (line.startsWith('•')) return (
-      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, margin: '3px 0' }}>
-        <span style={{ flexShrink: 0, width: 4, height: 4, borderRadius: '50%', background: '#0e88a5', marginTop: 8, display: 'block' }} />
-        <span style={{ lineHeight: 1.6 }}>{parts}</span>
-      </div>
-    )
-    if (!line.trim()) return <div key={i} style={{ height: 5 }} />
     return <p key={i} style={{ margin: 0, lineHeight: 1.6 }}>{parts}</p>
   })
 }
+
+// ── Config ──────────────────────────────────────────────────────────────────
 
 const CFG = {
   decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Scelta clinica' },
@@ -48,6 +61,8 @@ const BADGE_COLORS = {
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 
+// ── Subcomponents ────────────────────────────────────────────────────────────
+
 function StatBox() {
   return (
     <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(14,136,165,0.12)' }}>
@@ -65,16 +80,16 @@ function StatBox() {
   )
 }
 
+// ── Main ─────────────────────────────────────────────────────────────────────
+
 export default function BranchingGame() {
   const [data, setData]             = useState<ScenarioData | null>(null)
   const [currentId, setCurrentId]   = useState('intro')
   const [history, setHistory]       = useState<string[]>([])
   const [phase, setPhase]           = useState<'visible' | 'exit' | 'enter'>('visible')
   const [imgError, setImgError]     = useState(false)
-  const [isDesktop, setIsDesktop]   = useState(false)
-  // For crossfade: keep previous image visible while new one loads
-  const [prevImage, setPrevImage]   = useState<string | null | undefined>(null)
   const [imgVisible, setImgVisible] = useState(true)
+  const [isDesktop, setIsDesktop]   = useState(false)
   const scrollRef                   = useRef<HTMLDivElement>(null)
 
   useEffect(() => { fetch('/scenario.json').then(r => r.json()).then(setData) }, [])
@@ -98,11 +113,8 @@ export default function BranchingGame() {
       setImgError(false)
       setPhase('enter')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
-      setTimeout(() => {
-        setPhase('visible')
-        setImgVisible(true)
-      }, 40)
-    }, 280)
+      setTimeout(() => { setImgVisible(true); setPhase('visible') }, 60)
+    }, 300)
   }, [phase, currentId])
 
   const goBack = useCallback(() => {
@@ -123,18 +135,15 @@ export default function BranchingGame() {
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
   const accentLine  = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
-  // ── Smooth image crossfade ─────────────────────────────────────────────
-  // Image fades out slowly, new image fades in with ease
   const imgWrapStyle: React.CSSProperties = {
     position: 'absolute', inset: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     opacity: imgVisible ? 1 : 0,
     transition: imgVisible
-      ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1)'  // fade in — smooth ease
-      : 'opacity 280ms ease-out',                        // fade out — quick
+      ? 'opacity 500ms cubic-bezier(0.4,0,0.2,1)'
+      : 'opacity 250ms ease-out',
   }
 
-  // ── Panel text animation ───────────────────────────────────────────────
   const panelAnim: React.CSSProperties = {
     height: '100%', display: 'flex', flexDirection: 'column', padding: '22px 26px 20px',
     opacity:   phase === 'exit' ? 0 : 1,
@@ -143,11 +152,11 @@ export default function BranchingGame() {
              : 'translateX(0)',
     transition: phase === 'exit'
       ? 'opacity 280ms ease-out, transform 280ms ease-out'
-      : 'opacity 380ms ease, transform 400ms cubic-bezier(0.22, 1, 0.36, 1)',
+      : 'opacity 400ms ease, transform 420ms cubic-bezier(0.22,1,0.36,1)',
   }
 
-  // ── Image content ──────────────────────────────────────────────────────
-  const imgContent = (
+  // ── Image layer ───────────────────────────────────────────────────────────
+  const imgLayer = (
     <div style={imgWrapStyle}>
       {scene.image && !imgError ? (
         <Image
@@ -172,7 +181,7 @@ export default function BranchingGame() {
     </div>
   )
 
-  // ── Image overlays ─────────────────────────────────────────────────────
+  // ── Overlays ──────────────────────────────────────────────────────────────
   const imgOverlays = (
     <>
       <div style={{ position: 'absolute', top: 12, left: 14, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', border: `1px solid ${cfg.accent}28`, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: cfg.accent, zIndex: 2 }}>
@@ -189,7 +198,7 @@ export default function BranchingGame() {
     </>
   )
 
-  // ── Choices — tag numerico 1/2/3/4 ────────────────────────────────────
+  // ── Choices ───────────────────────────────────────────────────────────────
   const choicesBtns = (
     <div style={{ display: 'flex', flexDirection: isDecision ? 'column' : 'row', flexWrap: isDecision ? 'nowrap' : 'wrap', gap: 7 }}>
       {scene.choices.map((choice, i) => {
@@ -197,11 +206,12 @@ export default function BranchingGame() {
           <button key={i} onClick={() => go(choice.next)}
             style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: '1.5px solid #c4e0e9', background: 'white', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', width: '100%' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.accent; e.currentTarget.style.background = cfg.light; e.currentTarget.style.transform = 'translateX(2px)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#c4e0e9';  e.currentTarget.style.background = 'white'; e.currentTarget.style.transform = 'translateX(0)' }}>
-            {/* Numero invece di lettera */}
-            <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: 'white', background: TAG_BG[i % TAG_BG.length] }}>
-              {i + 1}
-            </span>
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#c4e0e9'; e.currentTarget.style.background = 'white'; e.currentTarget.style.transform = 'translateX(0)' }}>
+            {choice.tag && (
+              <span style={{ flexShrink: 0, width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: 'white', background: TAG_BG[i % TAG_BG.length] }}>
+                {choice.tag}
+              </span>
+            )}
             <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#1e4a5c', lineHeight: 1.3 }}>{choice.text}</span>
             <span style={{ color: '#c4e0e9', fontSize: 13, flexShrink: 0 }}>→</span>
           </button>
@@ -219,6 +229,35 @@ export default function BranchingGame() {
     </div>
   )
 
+  // ── Text panel content (shared) ───────────────────────────────────────────
+  const textContent = (compact = false) => (
+    <>
+      <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
+        <div style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 5, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: compact ? 7 : 9 }}>
+          {cfg.label}
+        </div>
+        <h2 style={{ margin: 0, fontSize: compact ? 17 : 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
+        {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
+      </div>
+      <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
+      <div style={{ flex: compact ? undefined : 1, fontSize: compact ? 13.5 : 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: compact ? undefined : 'auto', minHeight: 0, marginBottom: compact ? 16 : 0 }}>
+        {parseText(scene.text)}
+        {showStats && <StatBox />}
+      </div>
+      <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
+        {isDecision && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
+        {choicesBtns}
+      </div>
+      {!compact && history.length > 0 && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(14,136,165,0.06)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, flexShrink: 0 }}>
+          <span style={{ fontSize: 8, color: '#ccc', fontFamily: 'monospace' }}>percorso:</span>
+          {history.slice(-4).map((id, idx) => <span key={idx} style={{ fontSize: 8, color: '#ccc', fontFamily: 'monospace' }}>{id} <span style={{ color: '#e0e0e0' }}>›</span> </span>)}
+          <span style={{ fontSize: 8, color: cfg.accent, fontFamily: 'monospace', fontWeight: 600 }}>{currentId}</span>
+        </div>
+      )}
+    </>
+  )
+
   return (
     <>
       <style>{`html,body{margin:0;padding:0;height:100%;overflow:hidden}*{box-sizing:border-box}`}</style>
@@ -226,30 +265,20 @@ export default function BranchingGame() {
 
         {/* ── Navbar ── */}
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
-
-          {/* LEFT: back arrow + logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={goBack}
-              disabled={history.length === 0}
+            <button onClick={goBack} disabled={history.length === 0} title="Torna indietro"
               style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: history.length > 0 ? cfg.light : 'transparent', border: `1px solid ${history.length > 0 ? cfg.accent + '33' : 'rgba(0,0,0,0.08)'}`, cursor: history.length > 0 ? 'pointer' : 'default', transition: 'all .15s', flexShrink: 0 }}
               onMouseEnter={e => { if (history.length > 0) e.currentTarget.style.background = '#c4e0e9' }}
-              onMouseLeave={e => { e.currentTarget.style.background = history.length > 0 ? cfg.light : 'transparent' }}
-              title="Torna indietro"
-            >
+              onMouseLeave={e => { e.currentTarget.style.background = history.length > 0 ? cfg.light : 'transparent' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M9 2L4 7L9 12" stroke={history.length > 0 ? cfg.accent : '#ccc'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-              {/* 1. LOGO: rinomina il file in public/images/ e cambia qui */}
               <Image src="/images/LOGO.webp" alt="Logo" width={84} height={24} style={{ objectFit: 'contain', height: 24, width: 'auto' }} />
               {isDesktop && <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0e88a5' }}>{data.title}</span>}
             </Link>
           </div>
-
-          {/* RIGHT: step counter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 11px', borderRadius: 20, background: cfg.light, border: `1px solid ${cfg.accent}22` }}>
             <span style={{ fontSize: 10.5, color: cfg.accent, fontWeight: 700, fontFamily: 'monospace' }}>{String(history.length + 1).padStart(2, '0')}</span>
             <span style={{ fontSize: 9.5, color: cfg.accent, opacity: 0.55 }}>/ step</span>
@@ -260,67 +289,28 @@ export default function BranchingGame() {
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isDesktop ? '16px 28px' : '12px 16px' }}>
 
           {isDesktop ? (
-
             <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
-
-              {/* LEFT — 65% — image contain */}
+              {/* LEFT 65% */}
               <div style={{ width: '65%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
-                {imgContent}
+                {imgLayer}
                 {imgOverlays}
               </div>
-
-              {/* RIGHT — 35% — text */}
+              {/* RIGHT 35% */}
               <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <div style={panelAnim}>
-                  <div style={{ marginBottom: 14, flexShrink: 0 }}>
-                    <div style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 5, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: 9 }}>
-                      {cfg.label}
-                    </div>
-                    <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
-                    {scene.context && <p style={{ margin: '5px 0 0', fontSize: 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
-                  </div>
-                  <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: 14, flexShrink: 0 }} />
-                  <div style={{ flex: 1, fontSize: 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: 'auto', minHeight: 0 }}>
-                    {parseText(scene.text)}
-                    {showStats && <StatBox />}
-                  </div>
-                  <div style={{ marginTop: 16, flexShrink: 0 }}>
-                    {isDecision && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
-                    {choicesBtns}
-                  </div>
-                  {history.length > 0 && (
-                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(14,136,165,0.06)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, flexShrink: 0 }}>
-                      <span style={{ fontSize: 8, color: '#ccc', fontFamily: 'monospace' }}>percorso:</span>
-                      {history.slice(-4).map((id, i) => <span key={i} style={{ fontSize: 8, color: '#ccc', fontFamily: 'monospace' }}>{id} <span style={{ color: '#e0e0e0' }}>›</span> </span>)}
-                      <span style={{ fontSize: 8, color: cfg.accent, fontFamily: 'monospace', fontWeight: 600 }}>{currentId}</span>
-                    </div>
-                  )}
-                </div>
+                <div style={panelAnim}>{textContent()}</div>
               </div>
             </div>
 
           ) : (
-
             <div style={{ width: '100%', maxWidth: 520, maxHeight: '100%', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', flexShrink: 0, background: 'linear-gradient(160deg,#1e2e2e,#243535)', overflow: 'hidden' }}>
-                {imgContent}
+                {imgLayer}
                 {imgOverlays}
               </div>
               <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', padding: '16px 18px' }}>
                 <div style={{ opacity: phase === 'exit' ? 0 : 1, transform: phase === 'exit' ? 'translateY(6px)' : 'translateY(0)', transition: 'opacity 280ms, transform 280ms' }}>
-                  <div style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: 4, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: 8 }}>
-                    {cfg.label}
-                  </div>
-                  <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800, color: '#0c2a38' }}>{scene.title}</h2>
-                  {scene.context && <p style={{ margin: '0 0 10px', fontSize: 11, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
-                  <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, margin: '10px 0 12px' }} />
-                  <div style={{ fontSize: 13.5, color: '#1e4a5c', lineHeight: 1.65, marginBottom: 16 }}>
-                    {parseText(scene.text)}
-                    {showStats && <StatBox />}
-                  </div>
-                  {isDecision && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
-                  {choicesBtns}
+                  {textContent(true)}
                 </div>
               </div>
             </div>
