@@ -14,14 +14,9 @@ interface Scene {
 }
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
-// ── Text parser ─────────────────────────────────────────────────────────────
-// Supports **bold**, bullet lines starting with •, and empty lines as spacers.
-// The • character is stripped from the line — the CSS dot handles the visual.
-
 function parseText(text: string) {
   return text.split('\n').map((line, i) => {
     if (line.startsWith('•')) {
-      // Strip the bullet char and any leading space after it
       const content = line.replace(/^•\s*/, '')
       const parts = content.split(/\*\*(.*?)\*\*/g).map((p, j) =>
         j % 2 === 1 ? <strong key={j} style={{ color: '#1a4a5c', fontWeight: 700 }}>{p}</strong> : p
@@ -41,8 +36,6 @@ function parseText(text: string) {
   })
 }
 
-// ── Config ──────────────────────────────────────────────────────────────────
-
 const CFG = {
   decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Scelta clinica' },
   endpoint: { accent: '#16803d', light: '#f0fdf4', label: 'Conclusione'    },
@@ -61,8 +54,6 @@ const BADGE_COLORS = {
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 
-// ── Subcomponents ────────────────────────────────────────────────────────────
-
 function StatBox() {
   return (
     <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(14,136,165,0.12)' }}>
@@ -80,17 +71,81 @@ function StatBox() {
   )
 }
 
+// ── Confirm popup ─────────────────────────────────────────────────────────────
+
+function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onCancel])
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(10,20,30,0.5)', backdropFilter: 'blur(6px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'white', borderRadius: 20, padding: '32px 28px 26px',
+          maxWidth: 360, width: '90%',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.22)',
+          textAlign: 'center',
+          animation: 'popIn .22s cubic-bezier(0.22,1,0.36,1)',
+        }}
+      >
+        {/* Icon */}
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: '#e8f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M3 10.5L12 3L21 10.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#0e88a5" strokeWidth="1.8" strokeLinejoin="round"/>
+            <path d="M9 21V13h6v8" stroke="#0e88a5" strokeWidth="1.8" strokeLinejoin="round"/>
+          </svg>
+        </div>
+
+        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em' }}>
+          Ricominciare dall&apos;inizio?
+        </h3>
+        <p style={{ margin: '0 0 26px', fontSize: 13.5, color: '#6b9aaa', lineHeight: 1.55 }}>
+          Il progresso attuale andrà perso e tornerai alla presentazione del caso.
+        </p>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, padding: '11px 0', borderRadius: 10, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', background: '#f0f4f6', color: '#4C7D93', border: 'none', transition: 'background .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#dde8ed' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#f0f4f6' }}
+          >
+            Annulla
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ flex: 1, padding: '11px 0', borderRadius: 10, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', background: '#0e88a5', color: 'white', border: 'none', transition: 'background .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#0c6d82' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#0e88a5' }}
+          >
+            Sì, ricomincia
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 export default function BranchingGame() {
-  const [data, setData]             = useState<ScenarioData | null>(null)
-  const [currentId, setCurrentId]   = useState('intro')
-  const [history, setHistory]       = useState<string[]>([])
-  const [phase, setPhase]           = useState<'visible' | 'exit' | 'enter'>('visible')
-  const [imgError, setImgError]     = useState(false)
-  const [imgVisible, setImgVisible] = useState(true)
-  const [isDesktop, setIsDesktop]   = useState(false)
-  const scrollRef                   = useRef<HTMLDivElement>(null)
+  const [data, setData]               = useState<ScenarioData | null>(null)
+  const [currentId, setCurrentId]     = useState('intro')
+  const [history, setHistory]         = useState<string[]>([])
+  const [phase, setPhase]             = useState<'visible' | 'exit' | 'enter'>('visible')
+  const [imgError, setImgError]       = useState(false)
+  const [imgVisible, setImgVisible]   = useState(true)
+  const [isDesktop, setIsDesktop]     = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const scrollRef                     = useRef<HTMLDivElement>(null)
 
   useEffect(() => { fetch('/scenario.json').then(r => r.json()).then(setData) }, [])
 
@@ -121,6 +176,26 @@ export default function BranchingGame() {
     if (history.length && phase === 'visible') go(history[history.length - 1], true)
   }, [history, phase, go])
 
+  // Logo click: se siamo già all'intro non serve popup
+  const handleLogoClick = useCallback(() => {
+    if (currentId === 'intro' && history.length === 0) return
+    setShowConfirm(true)
+  }, [currentId, history])
+
+  const handleConfirmRestart = useCallback(() => {
+    setShowConfirm(false)
+    setHistory([])
+    setImgError(false)
+    setPhase('exit')
+    setImgVisible(false)
+    setTimeout(() => {
+      setCurrentId('intro')
+      setPhase('enter')
+      scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+      setTimeout(() => { setImgVisible(true); setPhase('visible') }, 60)
+    }, 300)
+  }, [])
+
   if (!data || !scene) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f0eb' }}>
       <div style={{ width: 28, height: 28, border: '3px solid rgba(14,136,165,0.18)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
@@ -139,36 +214,22 @@ export default function BranchingGame() {
     position: 'absolute', inset: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     opacity: imgVisible ? 1 : 0,
-    transition: imgVisible
-      ? 'opacity 500ms cubic-bezier(0.4,0,0.2,1)'
-      : 'opacity 250ms ease-out',
+    transition: imgVisible ? 'opacity 500ms cubic-bezier(0.4,0,0.2,1)' : 'opacity 250ms ease-out',
   }
 
   const panelAnim: React.CSSProperties = {
     height: '100%', display: 'flex', flexDirection: 'column', padding: '22px 26px 20px',
     opacity:   phase === 'exit' ? 0 : 1,
-    transform: phase === 'exit'  ? 'translateX(10px)'
-             : phase === 'enter' ? 'translateX(-6px)'
-             : 'translateX(0)',
+    transform: phase === 'exit'  ? 'translateX(10px)' : phase === 'enter' ? 'translateX(-6px)' : 'translateX(0)',
     transition: phase === 'exit'
       ? 'opacity 280ms ease-out, transform 280ms ease-out'
       : 'opacity 400ms ease, transform 420ms cubic-bezier(0.22,1,0.36,1)',
   }
 
-  // ── Image layer ───────────────────────────────────────────────────────────
   const imgLayer = (
     <div style={imgWrapStyle}>
       {scene.image && !imgError ? (
-        <Image
-          src={scene.image}
-          alt={scene.imageAlt ?? scene.title}
-          fill
-          sizes={isDesktop ? '65vw' : '100vw'}
-          quality={95}
-          priority
-          style={{ objectFit: 'contain', objectPosition: 'center' }}
-          onError={() => setImgError(true)}
-        />
+        <Image src={scene.image} alt={scene.imageAlt ?? scene.title} fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority style={{ objectFit: 'contain', objectPosition: 'center' }} onError={() => setImgError(true)} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <svg width="52" height="52" viewBox="0 0 64 64" fill="none" style={{ opacity: 0.22 }}>
@@ -181,7 +242,6 @@ export default function BranchingGame() {
     </div>
   )
 
-  // ── Overlays ──────────────────────────────────────────────────────────────
   const imgOverlays = (
     <>
       <div style={{ position: 'absolute', top: 12, left: 14, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', border: `1px solid ${cfg.accent}28`, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: cfg.accent, zIndex: 2 }}>
@@ -198,7 +258,6 @@ export default function BranchingGame() {
     </>
   )
 
-  // ── Choices ───────────────────────────────────────────────────────────────
   const choicesBtns = (
     <div style={{ display: 'flex', flexDirection: isDecision ? 'column' : 'row', flexWrap: isDecision ? 'nowrap' : 'wrap', gap: 7 }}>
       {scene.choices.map((choice, i) => {
@@ -229,7 +288,6 @@ export default function BranchingGame() {
     </div>
   )
 
-  // ── Text panel content (shared) ───────────────────────────────────────────
   const textContent = (compact = false) => (
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
@@ -240,7 +298,7 @@ export default function BranchingGame() {
         {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
       </div>
       <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
-      <div style={{ flex: compact ? undefined : 1, fontSize: compact ? 13.5 : 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: compact ? undefined : 'auto', minHeight: 0, marginBottom: compact ? 16 : 0 }}>
+      <div style={{ flex: compact ? undefined : 1, fontSize: 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: compact ? undefined : 'auto', minHeight: 0, marginBottom: compact ? 16 : 0 }}>
         {parseText(scene.text)}
         {showStats && <StatBox />}
       </div>
@@ -260,12 +318,28 @@ export default function BranchingGame() {
 
   return (
     <>
-      <style>{`html,body{margin:0;padding:0;height:100%;overflow:hidden}*{box-sizing:border-box}`}</style>
+      <style>{`
+        html,body{margin:0;padding:0;height:100%;overflow:hidden}
+        *{box-sizing:border-box}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes popIn{from{opacity:0;transform:scale(0.92) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+      `}</style>
+
+      {/* ── Confirm popup ── */}
+      {showConfirm && (
+        <ConfirmPopup
+          onConfirm={handleConfirmRestart}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#eae5de', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden' }}>
 
         {/* ── Navbar ── */}
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+
+            {/* Back arrow */}
             <button onClick={goBack} disabled={history.length === 0} title="Torna indietro"
               style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: history.length > 0 ? cfg.light : 'transparent', border: `1px solid ${history.length > 0 ? cfg.accent + '33' : 'rgba(0,0,0,0.08)'}`, cursor: history.length > 0 ? 'pointer' : 'default', transition: 'all .15s', flexShrink: 0 }}
               onMouseEnter={e => { if (history.length > 0) e.currentTarget.style.background = '#c4e0e9' }}
@@ -274,11 +348,21 @@ export default function BranchingGame() {
                 <path d="M9 2L4 7L9 12" stroke={history.length > 0 ? cfg.accent : '#ccc'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+
+            {/* Logo — apre popup se non siamo all'intro */}
+            <button
+              onClick={handleLogoClick}
+              title="Torna all'inizio"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, opacity: 1, transition: 'opacity .15s' }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+            >
               <Image src="/images/LOGO.webp" alt="Logo" width={84} height={24} style={{ objectFit: 'contain', height: 24, width: 'auto' }} />
               {isDesktop && <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0e88a5' }}>{data.title}</span>}
-            </Link>
+            </button>
           </div>
+
+          {/* Step counter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 11px', borderRadius: 20, background: cfg.light, border: `1px solid ${cfg.accent}22` }}>
             <span style={{ fontSize: 10.5, color: cfg.accent, fontWeight: 700, fontFamily: 'monospace' }}>{String(history.length + 1).padStart(2, '0')}</span>
             <span style={{ fontSize: 9.5, color: cfg.accent, opacity: 0.55 }}>/ step</span>
@@ -290,18 +374,15 @@ export default function BranchingGame() {
 
           {isDesktop ? (
             <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
-              {/* LEFT 65% */}
               <div style={{ width: '65%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
                 {imgLayer}
                 {imgOverlays}
               </div>
-              {/* RIGHT 35% */}
               <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <div style={panelAnim}>{textContent()}</div>
               </div>
             </div>
-
           ) : (
             <div style={{ width: '100%', maxWidth: 520, maxHeight: '100%', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', flexShrink: 0, background: 'linear-gradient(160deg,#1e2e2e,#243535)', overflow: 'hidden' }}>
