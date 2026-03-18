@@ -1,0 +1,419 @@
+{
+  "title": "UCB Red Flags — Caso Clinico",
+  "subtitle": "Miastenia Gravis · Scenario Decisionale",
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Presentazione del caso",
+      "image": "/images/scenes/presentazione.jpg",
+      "imageAlt": "Ambulatorio medico",
+      "context": "Scena in ambulatorio: paziente e specialista parlano",
+      "text": "**Antonello**, 45 anni. 2 anni fa ha presentato una storia di:\n\n• Disartria\n• Disfonia\n• Sintomatologia oculare grave\n\nAll'analisi anticorpale risulta **anti-AChR positivo**. Ha iniziato terapia con piridostigmina bromuro fino a un massimo di 50 mg e prednisone fino a un massimo di 25 mg. Sottoposto a **timectomia** per iperplasia timica 1 anno e mezzo prima. Ha iniziato azatioprina 100 mg da un anno circa.",
+      "choices": [
+        {
+          "text": "Continua →",
+          "next": "prima-visita"
+        }
+      ]
+    },
+    {
+      "id": "prima-visita",
+      "type": "info",
+      "title": "Prima visita",
+      "image": "/images/scenes/presentazione.jpg",
+      "context": "Scena in ambulatorio: paziente e specialista parlano",
+      "text": "Le scale indicano:\n\n• **MG-ADL 7**\n• **QMG 15**\n• **PASS 0**\n\nRiporta importanti limitazioni nella qualità di vita, lamentandosi di farmaci per diabete e ipertensione che non aveva. Non presenta fluttuazioni sintomatologiche rilevanti negli ultimi mesi.",
+      "choices": [
+        {
+          "text": "Valuta il caso →",
+          "next": "cosa-faccio"
+        }
+      ]
+    },
+    {
+      "id": "cosa-faccio",
+      "type": "decision",
+      "title": "Cosa faccio?",
+      "image": "/images/scenes/maestri_2.jpg",
+      "context": "Specialista che riflette",
+      "text": "Il paziente è in terapia con azatioprina 100 mg, prednisone 25 mg e piridostigmina 50 mg. I parametri clinici indicano malattia non controllata. Qual è la tua scelta terapeutica?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Aumento azatioprina a 150 mg/die (peso 85 kg)",
+          "next": "scenario-1",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Aumento prednisone a 37,5 mg/die",
+          "next": "scenario-2",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Passo ad altro immunosoppressore (micofenolato)",
+          "next": "scenario-3",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Associo terapia con farmaci innovativi",
+          "next": "scenario-4-intro",
+          "tag": "4"
+        }
+      ]
+    },
+    {
+      "id": "cosa-faccio-no3",
+      "type": "decision",
+      "title": "Cosa faccio?",
+      "image": "/images/scenes/maestri_2.jpg",
+      "context": "Specialista che riflette",
+      "text": "Il paziente è in terapia con azatioprina 100 mg, prednisone 25 mg e piridostigmina 50 mg. I parametri clinici indicano malattia non controllata. Qual è la tua scelta terapeutica?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Aumento azatioprina a 150 mg/die (peso 85 kg)",
+          "next": "scenario-1",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Aumento prednisone a 37,5 mg/die",
+          "next": "scenario-2",
+          "tag": "2"
+        },
+        {
+          "id": "c4",
+          "text": "Associo terapia con farmaci innovativi",
+          "next": "scenario-4-intro",
+          "tag": "4"
+        }
+      ]
+    },
+    {
+      "id": "scenario-1",
+      "type": "outcome",
+      "title": "Scenario 1",
+      "image": "/images/scenes/maestri_3.jpg",
+      "context": "Dopo 1 mese: paziente con orticaria",
+      "badge": "⚠️ Effetti collaterali",
+      "badgeColor": "warning",
+      "text": "Dopo **1 mese**, il paziente presenta un **lieve miglioramento clinico**, ma compaiono effetti collaterali (orticaria, reazione cutanea) che ne compromettono la tolleranza alla terapia.\n\nSi torna a rivalutare la strategia terapeutica.",
+      "choices": [
+        {
+          "text": "Rivaluta la strategia →",
+          "next": "cosa-faccio"
+        }
+      ]
+    },
+    {
+      "id": "scenario-2",
+      "type": "outcome",
+      "title": "Scenario 2",
+      "image": "/images/scenes/paziente-rifiuta.jpg",
+      "context": "Paziente con faccia allarmata",
+      "badge": "⚠️ Rifiuto del paziente",
+      "badgeColor": "warning",
+      "text": "Il paziente **rifiuta** l'incremento del prednisone e chiede esplicitamente se non ci sono ulteriori opzioni terapeutiche disponibili.\n\nSi torna a rivalutare la strategia terapeutica.",
+      "choices": [
+        {
+          "text": "Rivaluta la strategia →",
+          "next": "cosa-faccio"
+        }
+      ]
+    },
+    {
+      "id": "scenario-3",
+      "type": "decision",
+      "title": "Scenario 3",
+      "image": "/images/scenes/paziente-migliorato.jpg",
+      "context": "Dopo 6 mesi: paziente sollevato",
+      "badge": "✓ Lieve miglioramento",
+      "badgeColor": "success",
+      "text": "Dopo **6 mesi**, il paziente torna con situazione **lievemente migliorata** (MG-ADL 2).\n\nCosa faccio?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Riduco prednisone",
+          "next": "scenario-3-1",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Inserisco terapia innovativa",
+          "next": "scenario-3-2",
+          "tag": "2"
+        }
+      ]
+    },
+    {
+      "id": "scenario-3-1",
+      "type": "outcome",
+      "title": "Scenario 3.1",
+      "image": "/images/scenes/paziente-peggiorato.jpg",
+      "context": "Dopo 3 mesi: paziente ingobbito",
+      "badge": "⚠️ Peggioramento",
+      "badgeColor": "danger",
+      "text": "Dopo **3 mesi**, il paziente presenta un **nuovo peggioramento clinico** (MG-ADL 7) alla dose di prednisone di 12,5 mg.\n\nSi torna a rivalutare la strategia terapeutica (senza l'opzione micofenolato).",
+      "choices": [
+        {
+          "text": "Rivaluta la strategia →",
+          "next": "cosa-faccio-no3"
+        }
+      ]
+    },
+    {
+      "id": "scenario-3-2",
+      "type": "outcome",
+      "title": "Scenario 3.2",
+      "image": "/images/scenes/maestri_stop.png",
+      "context": "Segnale di divieto d'accesso",
+      "badge": "🚫 Non possibile",
+      "badgeColor": "danger",
+      "text": "**Inserimento terapia innovativa — Non è possibile.**\n\nLa normativa richiede **MG-ADL ≥ 6** per accedere alla terapia innovativa. Il paziente con MG-ADL 2 non soddisfa i criteri di eleggibilità in questo momento.",
+      "choices": [
+        {
+          "text": "← Torna alla scelta",
+          "next": "scenario-3"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-intro",
+      "type": "decision",
+      "title": "Scenario 4",
+      "image": "/images/scenes/paziente-interessato.jpg",
+      "context": "Paziente interessato e specialista",
+      "badge": "💡 Terapie innovative",
+      "badgeColor": "info",
+      "text": "Il paziente si mostra **interessato alle terapie innovative** e chiede approfondimenti.\n\nQuale meccanismo e schema propongo?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Inibitori del complemento (C5) endovena",
+          "next": "scenario-4-1",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Inibitori del complemento (C5) sottocutanei",
+          "next": "scenario-4-2",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Cicli di inibitore del recettore FC neonatale (anti-FcRn)",
+          "next": "scenario-4-3",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-intro-no1",
+      "type": "decision",
+      "title": "Scenario 4",
+      "image": "/images/scenes/paziente-interessato.jpg",
+      "context": "Paziente interessato e specialista",
+      "badge": "💡 Terapie innovative",
+      "badgeColor": "info",
+      "text": "Il paziente si mostra **interessato alle terapie innovative** e chiede approfondimenti.\n\nQuale meccanismo e schema propongo?",
+      "choices": [
+        {
+          "id": "c2",
+          "text": "Inibitori del complemento (C5) sottocutanei",
+          "next": "scenario-4-2",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Cicli di inibitore del recettore FC neonatale (anti-FcRn)",
+          "next": "scenario-4-2",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-1",
+      "type": "outcome",
+      "title": "Scenario 4.1",
+      "image": "/images/scenes/paziente-perplesso.jpg",
+      "context": "Paziente perplesso",
+      "badge": "⚠️ Paziente rifiuta",
+      "badgeColor": "warning",
+      "text": "Il paziente **vive lontano dal centro**, ha un lavoro estremamente dinamico e un carico familiare e sociale importante. È perplesso sul doversi recare spesso al centro infusionale.\n\nDopo averne parlato, il paziente **rifiuta** la terapia endovenosa.",
+      "choices": [
+        {
+          "text": "Rivaluta la scelta →",
+          "next": "scenario-4-intro-no1"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-2",
+      "type": "decision",
+      "title": "Scenario 4.2",
+      "image": "/images/scenes/paziente-migliorato.jpg",
+      "context": "Dopo 2 mesi: paziente migliorato",
+      "badge": "✓ Importante miglioramento",
+      "badgeColor": "success",
+      "text": "Dopo **2 mesi**, importante miglioramento: **MG-ADL 2**.\n\nCosa faccio?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Riduco azatioprina",
+          "next": "scenario-4-2-1",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Riduco prednisone",
+          "next": "scenario-4-2-2",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Sospendo inibitore del complemento",
+          "next": "scenario-4-2-3",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-2-1",
+      "type": "endpoint",
+      "title": "Scenario 4.2.1",
+      "image": "/images/scenes/paziente-bene.jpg",
+      "context": "Paziente e specialista contenti",
+      "badge": "✓ Scelta corretta",
+      "badgeColor": "success",
+      "text": "Non ha particolari effetti collaterali da azatioprina e i dati sulla riduzione dell'immunosoppressore sono scarsi.\n\n**È preferibile mantenere l'azatioprina** alla dose attuale, garantendo stabilità terapeutica senza rischi aggiuntivi.",
+      "choices": [
+        {
+          "text": "Ricomincia dall'inizio",
+          "next": "intro"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-2-2",
+      "type": "endpoint",
+      "title": "Scenario 4.2.2",
+      "image": "/images/scenes/paziente-bene.jpg",
+      "context": "Paziente e specialista contenti",
+      "badge": "✓ Scelta ottimale",
+      "badgeColor": "success",
+      "text": "In considerazione delle **comorbidità** (diabete, ipertensione) e delle preferenze del paziente, si tenta una **lenta riduzione del prednisone** che deve essere personalizzata.\n\nQuesta è la strategia più appropriata vista la tossicità del corticosteroide.",
+      "choices": [
+        {
+          "text": "Ricomincia dall'inizio",
+          "next": "intro"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-2-3",
+      "type": "endpoint",
+      "title": "Scenario 4.2.3",
+      "image": "/images/scenes/paziente-bene.jpg",
+      "context": "Paziente e specialista",
+      "badge": "🚫 Non consentito",
+      "badgeColor": "danger",
+      "text": "Allo stato attuale, la **sospensione non rispetta la scheda tecnica AIFA**.\n\nIl paziente rimane quindi in trattamento con l'inibitore del complemento secondo le indicazioni regolatorie vigenti.",
+      "choices": [
+        {
+          "text": "← Torna alla scelta",
+          "next": "scenario-4-2"
+        },
+        {
+          "text": "Ricomincia dall'inizio",
+          "next": "intro"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-3",
+      "type": "decision",
+      "title": "Scenario 4.3",
+      "image": "/images/scenes/paziente-migliorato.jpg",
+      "context": "Dopo 2 mesi: paziente migliorato",
+      "badge": "✓ Importante miglioramento",
+      "badgeColor": "success",
+      "text": "Si impostano **cicli di trattamento endovena ogni 12 settimane**.\n\nDopo 2 mesi, importante miglioramento: **MG-ADL 2**.\n\nCosa faccio?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Riduco azatioprina",
+          "next": "scenario-4-3-1",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Riduco prednisone",
+          "next": "scenario-4-3-2",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Sospendo infusioni",
+          "next": "scenario-4-3-3",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-3-1",
+      "type": "endpoint",
+      "title": "Scenario 4.3.1",
+      "image": "/images/scenes/paziente-bene.jpg",
+      "context": "Paziente e specialista contenti",
+      "badge": "✓ Scelta corretta",
+      "badgeColor": "success",
+      "text": "Non ha particolari effetti collaterali da azatioprina e i dati sulla riduzione dell'immunosoppressore sono scarsi.\n\n**È preferibile mantenere l'azatioprina** alla dose attuale.",
+      "choices": [
+        {
+          "text": "Ricomincia dall'inizio",
+          "next": "intro"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-3-2",
+      "type": "endpoint",
+      "title": "Scenario 4.3.2",
+      "image": "/images/scenes/paziente-bene.jpg",
+      "context": "Paziente e specialista contenti",
+      "badge": "✓ Scelta ottimale",
+      "badgeColor": "success",
+      "text": "In considerazione delle **comorbidità** e delle preferenze del paziente, si tenta una **lenta riduzione del prednisone** personalizzata.\n\nQuesta è la strategia più appropriata vista la tossicità del corticosteroide.",
+      "choices": [
+        {
+          "text": "Ricomincia dall'inizio",
+          "next": "intro"
+        }
+      ]
+    },
+    {
+      "id": "scenario-4-3-3",
+      "type": "endpoint",
+      "title": "Scenario 4.3.3",
+      "image": "/images/scenes/paziente-bene.jpg",
+      "context": "Paziente e specialista",
+      "badge": "🚫 Non consentito",
+      "badgeColor": "danger",
+      "text": "Allo stato attuale, la **sospensione non rispetta la scheda tecnica AIFA**.\n\nIl paziente rimane quindi in trattamento con cicli di infusione endovena secondo le indicazioni regolatorie vigenti.",
+      "choices": [
+        {
+          "text": "← Torna alla scelta",
+          "next": "scenario-4-3"
+        },
+        {
+          "text": "Ricomincia dall'inizio",
+          "next": "intro"
+        }
+      ]
+    }
+  ]
+}
