@@ -1,0 +1,24 @@
+[
+  {
+    "slug": "maestri",
+    "title": "UCB Red Flags — Maestri",
+    "subtitle": "Caso clinico decisionale",
+    "description": "Antonello, 45 anni, anti-AChR positivo. Naviga le scelte terapeutiche per la Miastenia Gravis seguendo le linee guida più recenti.",
+    "cover": "/stories/maestri/cover.png",
+    "sponsor": "UCB",
+    "tag": "Neurologia",
+    "duration": "10–15 min",
+    "scenes": 19
+  },
+  {
+    "slug": "bello",
+    "title": "UCB Red Flags — Luca Bello",
+    "subtitle": "MG con timoma · Padova",
+    "description": "Donna 46 anni, MG AChR+ con timoma. Dalla diagnosi alla timectomia fino alle terapie innovative: naviga le scelte terapeutiche in un caso complesso.",
+    "cover": "/stories/bello/cover.png",
+    "sponsor": "UCB",
+    "tag": "Neurologia",
+    "duration": "15–20 min",
+    "scenes": 26
+  }
+]
