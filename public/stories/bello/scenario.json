@@ -50,7 +50,7 @@
     },
     {
       "id": "scenario-1-1",
-      "type": "outcome",
+      "type": "decision",
       "title": "Timectomia urgente",
       "image": "/images/scenes/bello/3.png",
       "context": "Discussione con chirurgia toracica",
@@ -228,14 +228,14 @@
       "choices": [
         { "id": "c1", "text": "Avvio di zilucoplan", "next": "scenario-zilucoplan", "tag": "1" },
         { "id": "c2", "text": "Avvio di rozanolixizumab", "next": "scenario-rozano", "tag": "2" },
-        { "id": "c3", "text": "Prosecuzione della terapia in atto", "next": "scenario-prosecuzione-2", "tag": "3" }
+        { "id": "c3", "text": "Prosecuzione della terapia in atto", "next": "scenario-1-2-3", "tag": "3" }
       ]
     },
     {
       "id": "scenario-1-2-3",
       "type": "outcome",
       "title": "Plasmaferesi di mantenimento",
-      "image": "/images/scenes/bello/paziente-pf.png",
+      "image": "/images/scenes/bello/13.png",
       "context": "Follow-up · Ambulatorio",
       "badge": "⚠️ Impatto sulla vita",
       "badgeColor": "warning",
@@ -248,14 +248,14 @@
       "id": "scenario-1-2-3-controllo",
       "type": "info",
       "title": "Controllo — Gennaio 2025",
-      "image": "/images/scenes/bello/presentazione.png",
+      "image": "/images/scenes/bello/13.png",
       "context": "Gennaio 2025 · Ambulatorio",
       "_stats": [
         { "label": "QMG",    "value": "9",  "color": "warning" },
         { "label": "MG-ADL", "value": "6",  "color": "warning" },
         { "label": "MGFA",   "value": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi Dicembre 2024\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
+      "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi Dicembre 2025\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
@@ -264,7 +264,7 @@
       "id": "cosa-faccio-3c",
       "type": "decision",
       "title": "Quali modifiche proponi al piano terapeutico?",
-      "image": "/images/scenes/bello/maestri_2.png",
+      "image": "/images/scenes/bello/2.png",
       "context": "Specialista che valuta le opzioni",
       "_stats": [
         { "label": "QMG",    "value": "9",  "color": "warning" },
@@ -370,20 +370,20 @@
       "id": "scenario-prosecuzione-3",
       "type": "endpoint",
       "title": "Prosecuzione terapia in atto",
-      "image": "/images/scenes/bello/paziente-rifiuta.png",
+      "image": "/images/scenes/bello/12.png",
       "context": "Follow-up 2024",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
       "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNel corso del 2024 ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
       "choices": [
-        { "text": "Ricomincia dall'inizio", "next": "intro" }
+        { "text": "Continua →", "next": "scenario-1-3" }
       ]
     },
     {
       "id": "scenario-1-3",
       "type": "endpoint",
       "title": "Incremento prednisone a 75 mg/die",
-      "image": "/images/scenes/bello/paziente-rifiuta.png",
+      "image": "/images/scenes/bello/12.png",
       "context": "Follow-up",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",

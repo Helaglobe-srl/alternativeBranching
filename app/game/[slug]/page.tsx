@@ -7,27 +7,13 @@ import { useRouter, useParams } from 'next/navigation'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Choice { id?: string; text: string; next: string; tag?: string }
-
-interface Stat {
-  label: string
-  value: string
-  color: 'warning' | 'danger' | 'success' | 'info'
-}
-
+interface Stat { label: string; value: string; color: 'warning' | 'danger' | 'success' | 'info' }
 interface Scene {
-  id: string
-  type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
-  title: string
-  image?: string | null
-  imageAlt?: string
-  context?: string
-  badge?: string
-  badgeColor?: 'success' | 'warning' | 'danger' | 'info'
-  stats?: Stat[]          // ← configurabile dal JSON
-  text: string
-  choices: Choice[]
+  id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
+  title: string; image?: string | null; imageAlt?: string; context?: string
+  badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
+  stats?: Stat[]; text: string; choices: Choice[]
 }
-
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
 // ── Text parser ──────────────────────────────────────────────────────────────
@@ -71,7 +57,6 @@ const BADGE_COLORS = {
   info:    { bg: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' },
 }
 
-// Stat color map
 const STAT_COLORS = {
   warning: { c: '#b45309', bg: 'rgba(180,83,9,0.07)'  },
   danger:  { c: '#dc2626', bg: 'rgba(220,38,38,0.07)' },
@@ -82,7 +67,12 @@ const STAT_COLORS = {
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 
-// ── StatBox — reads from JSON ─────────────────────────────────────────────────
+// Transition timing constants
+const T_OUT = 240   // fade-out duration ms
+const T_PRE = 80    // preload pause after swap ms (image starts loading)
+const T_IN  = 460   // fade-in duration ms
+
+// ── StatBox ──────────────────────────────────────────────────────────────────
 
 function StatBox({ stats }: { stats: Stat[] }) {
   return (
@@ -132,28 +122,32 @@ function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
+// Phase drives both image AND text opacity/transform — they are always in sync.
+// fading-out → both fade out together
+// hidden     → both at opacity 0, new scene content swapped in, image starts loading
+// fading-in  → both fade in together (image may still be loading but fades in gracefully)
+// visible    → steady state
+type Phase = 'visible' | 'fading-out' | 'hidden' | 'fading-in'
+
 export default function GamePage() {
-  const router  = useRouter()
-  const params  = useParams()
-  const slug    = params?.slug as string
+  const router = useRouter()
+  const params = useParams()
+  const slug   = params?.slug as string
 
   const [data, setData]               = useState<ScenarioData | null>(null)
   const [currentId, setCurrentId]     = useState('intro')
   const [history, setHistory]         = useState<string[]>([])
-  const [phase, setPhase]             = useState<'visible' | 'exit' | 'enter'>('visible')
+  const [phase, setPhase]             = useState<Phase>('visible')
   const [imgError, setImgError]       = useState(false)
-  const [imgVisible, setImgVisible]   = useState(true)
   const [isDesktop, setIsDesktop]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [username, setUsername]       = useState('')
   const scrollRef                     = useRef<HTMLDivElement>(null)
+  const timerRef                      = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!slug) return
-    fetch(`/stories/${slug}/scenario.json`)
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() })
-      .then(setData)
-      .catch(err => console.error('scenario load error:', err))
+    fetch(`/stories/${slug}/scenario.json`).then(r => r.json()).then(setData)
   }, [slug])
 
   useEffect(() => {
@@ -164,8 +158,7 @@ export default function GamePage() {
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= BP)
-    check()
-    window.addEventListener('resize', check)
+    check(); window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
 
@@ -178,14 +171,25 @@ export default function GamePage() {
 
   const go = useCallback((nextId: string, back = false, choiceText?: string) => {
     if (phase !== 'visible') return
-    setPhase('exit'); setImgVisible(false)
-    setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+
+    // Step 1: fade out everything
+    setPhase('fading-out')
+
+    timerRef.current = setTimeout(() => {
+      // Step 2: swap content while fully transparent
       if (back) { setHistory(h => h.slice(0, -1)); setCurrentId(nextId) }
       else      { setHistory(h => [...h, currentId]); setCurrentId(nextId); trackEvent(nextId, choiceText) }
-      setImgError(false); setPhase('enter')
+      setImgError(false)
+      setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
-      setTimeout(() => { setImgVisible(true); setPhase('visible') }, 60)
-    }, 300)
+
+      // Step 3: short pause so new image starts loading, then fade in together
+      timerRef.current = setTimeout(() => {
+        setPhase('fading-in')
+        timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
+      }, T_PRE)
+    }, T_OUT)
   }, [phase, currentId, trackEvent])
 
   const goBack = useCallback(() => {
@@ -195,12 +199,19 @@ export default function GamePage() {
   const handleLogoClick = useCallback(() => setShowConfirm(true), [])
 
   const handleConfirmRestart = useCallback(() => {
-    setShowConfirm(false); setPhase('exit'); setImgVisible(false)
-    setTimeout(() => {
-      setHistory([]); setCurrentId('intro'); setImgError(false); setPhase('enter')
-      scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
-      setTimeout(() => { setImgVisible(true); setPhase('visible') }, 60)
-    }, 300)
+    setShowConfirm(false)
+    // Reset history first, then trigger go to intro
+    setHistory([])
+    setCurrentId('intro')
+    setImgError(false)
+    setPhase('fading-out')
+    timerRef.current = setTimeout(() => {
+      setPhase('hidden')
+      timerRef.current = setTimeout(() => {
+        setPhase('fading-in')
+        timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
+      }, T_PRE)
+    }, T_OUT)
   }, [])
 
   if (!data || !scene) return (
@@ -216,25 +227,46 @@ export default function GamePage() {
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
   const accentLine  = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
-  const imgWrapStyle: React.CSSProperties = {
-    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    opacity: imgVisible ? 1 : 0,
-    transition: imgVisible ? 'opacity 500ms cubic-bezier(0.4,0,0.2,1)' : 'opacity 250ms ease-out',
+  // ── Single shared opacity — image and text move together ──────────────────
+  const isOut = phase === 'fading-out' || phase === 'hidden'
+  const sharedOpacity = isOut ? 0 : 1
+  const sharedTransition = phase === 'fading-out'
+    ? `opacity ${T_OUT}ms ease-out`
+    : phase === 'fading-in'
+    ? `opacity ${T_IN}ms cubic-bezier(0.4,0,0.2,1)`
+    : 'none'
+
+  const imgStyle: React.CSSProperties = {
+    position: 'absolute', inset: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    opacity: sharedOpacity,
+    transition: sharedTransition,
   }
 
-  const panelAnim: React.CSSProperties = {
+  const textStyle: React.CSSProperties = {
     height: '100%', display: 'flex', flexDirection: 'column', padding: '22px 26px 20px',
-    opacity: phase === 'exit' ? 0 : 1,
-    transform: phase === 'exit' ? 'translateX(10px)' : phase === 'enter' ? 'translateX(-6px)' : 'translateX(0)',
-    transition: phase === 'exit'
-      ? 'opacity 280ms ease-out, transform 280ms ease-out'
-      : 'opacity 400ms ease, transform 420ms cubic-bezier(0.22,1,0.36,1)',
+    opacity: sharedOpacity,
+    transform: isOut ? 'translateX(8px)' : phase === 'fading-in' ? 'translateX(-3px)' : 'translateX(0)',
+    transition: phase === 'fading-out'
+      ? `opacity ${T_OUT}ms ease-out, transform ${T_OUT}ms ease-out`
+      : phase === 'fading-in'
+      ? `opacity ${T_IN}ms cubic-bezier(0.4,0,0.2,1), transform ${T_IN}ms cubic-bezier(0.22,1,0.36,1)`
+      : 'none',
   }
 
+  const mobileTextStyle: React.CSSProperties = {
+    opacity: sharedOpacity,
+    transition: sharedTransition,
+  }
+
+  // ── Image layer ───────────────────────────────────────────────────────────
   const imgLayer = (
-    <div style={imgWrapStyle}>
+    <div style={imgStyle}>
       {scene.image && !imgError ? (
-        <Image src={scene.image} alt={scene.imageAlt ?? scene.title} fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority style={{ objectFit: 'contain', objectPosition: 'center' }} onError={() => setImgError(true)} />
+        <Image src={scene.image} alt={scene.imageAlt ?? scene.title} fill
+          sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
+          style={{ objectFit: 'contain', objectPosition: 'center' }}
+          onError={() => setImgError(true)} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <svg width="52" height="52" viewBox="0 0 64 64" fill="none" style={{ opacity: 0.22 }}>
@@ -281,7 +313,6 @@ export default function GamePage() {
     </div>
   )
 
-  // textContent — stats ora viene dal JSON (scene.stats)
   const textContent = (compact = false) => (
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
@@ -292,7 +323,6 @@ export default function GamePage() {
       <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
       <div style={{ flex: compact ? undefined : 1, fontSize: 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: compact ? undefined : 'auto', minHeight: 0, marginBottom: compact ? 16 : 0 }}>
         {parseText(scene.text)}
-        {/* stats dal JSON — mostrate solo se presenti nella scena */}
         {scene.stats && scene.stats.length > 0 && <StatBox stats={scene.stats} />}
       </div>
       <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
@@ -352,21 +382,21 @@ export default function GamePage() {
             <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
               <div style={{ width: '65%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
-                {imgLayer}{imgOverlays}
+                {imgLayer}
+                {imgOverlays}
               </div>
               <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <div style={panelAnim}>{textContent()}</div>
+                <div style={textStyle}>{textContent()}</div>
               </div>
             </div>
           ) : (
             <div style={{ width: '100%', maxWidth: 520, maxHeight: '100%', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', flexShrink: 0, background: 'linear-gradient(160deg,#1e2e2e,#243535)', overflow: 'hidden' }}>
-                {imgLayer}{imgOverlays}
+                {imgLayer}
+                {imgOverlays}
               </div>
               <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', padding: '16px 18px' }}>
-                <div style={{ opacity: phase === 'exit' ? 0 : 1, transform: phase === 'exit' ? 'translateY(6px)' : 'translateY(0)', transition: 'opacity 280ms, transform 280ms' }}>
-                  {textContent(true)}
-                </div>
+                <div style={mobileTextStyle}>{textContent(true)}</div>
               </div>
             </div>
           )}
