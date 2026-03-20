@@ -118,7 +118,7 @@
       "id": "scenario-2",
       "type": "outcome",
       "title": "Scenario 2",
-      "image": "/images/scenes/maestri/paziente-rifiuta.jpg",
+      "image": "/images/scenes/maestri/4.jpg",
       "context": "Paziente con faccia allarmata",
       "badge": "⚠️ Rifiuto del paziente",
       "badgeColor": "warning",
@@ -297,8 +297,8 @@
       "text": "Non ha particolari effetti collaterali da azatioprina e i dati sulla riduzione dell'immunosoppressore sono scarsi.\n\n**È preferibile mantenere l'azatioprina** alla dose attuale, garantendo stabilità terapeutica senza rischi aggiuntivi.",
       "choices": [
         {
-          "text": "Ricomincia dall'inizio",
-          "next": "intro"
+          "text": "Rivaluta la terapia →",
+          "next": "scenario-4-2"
         }
       ]
     },
@@ -313,8 +313,8 @@
       "text": "In considerazione delle **comorbidità** (diabete, ipertensione) e delle preferenze del paziente, si tenta una **lenta riduzione del prednisone** che deve essere personalizzata.\n.",
       "choices": [
         {
-          "text": "Ricomincia dall'inizio",
-          "next": "intro"
+          "text": "Rivaluta la terapia →",
+          "next": "scenario-4-2"
         }
       ]
     },
