@@ -9,7 +9,7 @@
       "image": "/images/scenes/bello/1.png",
       "imageAlt": "Ambulatorio medico",
       "context_": "Aprile 2021 · Ambulatorio ospedaliero",
-      "text": "**Paziente donna di 46 anni**, proveniente da regione confinante, giunge per un secondo parere con diagnosi di **MG AChR+ associata a verosimile timoma**.\n\nEsordio estate 2020:\n• Episodi di disartria/disfonia a risoluzione spontanea\n• Ptosi palpebrale a Novembre, durante infezione da SARS-CoV-2 con polmonite interstiziale e degenza in rianimazione per 7 giorni\n• Gennaio: recidiva ptosi, disartria, rinolalia, disfagia per liquidi, stanchezza, deficit di forza al collo e spalle\n\nAnamnesi: no familiarità NM/autoimmune, no ipertensione, no diabete, ex fumatrice, obesità, 1 figlio, pregressa iperprolattinemia.",
+      "text": "**Paziente donna di 46 anni**, proveniente da regione confinante, giunge per un secondo parere con diagnosi di **MG AChR+ associata a verosimile timoma**.\n\n• Episodi di disartria/disfonia a risoluzione spontanea\n• Ptosi palpebrale a Novembre, durante infezione da SARS-CoV-2 con polmonite interstiziale e degenza in rianimazione per 7 giorni\n• Gennaio: recidiva ptosi, disartria, rinolalia, disfagia per liquidi, stanchezza, deficit di forza al collo e spalle\n\nAnamnesi: no familiarità NM/autoimmune, no ipertensione, no diabete, ex fumatrice, obesità, 1 figlio, pregressa iperprolattinemia.",
       "choices": [
         { "text": "Continua →", "next": "scenario-iniziale" }
       ]
@@ -208,7 +208,7 @@
         { "label": "MG-ADL", "value": "7",  "color": "danger"  },
         { "label": "MGFA",   "value": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nPrednisone 17,5 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi Dicembre 2024\n**Peso:** 120 kg · dispnea per sforzi moderati\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe minimizzare gli accessi ospedalieri per plasmaferesi.",
+      "text": "**Terapia attuale:**\nPrednisone 17,5 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi un mese prima \n**Peso:** 120 kg · dispnea per sforzi moderati\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe minimizzare gli accessi ospedalieri per plasmaferesi.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3b" }
       ]
@@ -255,7 +255,7 @@
         { "value": "MG-ADL", "label": "6",  "color": "warning" },
         { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi Dicembre 2025\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
+      "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi un mese prima\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
@@ -361,7 +361,7 @@
       "context_": "Follow-up 2024",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
-      "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNel corso del 2024 ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
+      "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNei mesi successiv ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "intro" }
       ]
@@ -374,7 +374,7 @@
       "context_": "Follow-up 2024",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
-      "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNel corso del 2024 ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
+      "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNei mesi successiv ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
       "choices": [
         { "text": "Continua →", "next": "scenario-1-3" }
       ]
