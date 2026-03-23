@@ -8,7 +8,7 @@
       "title": "Presentazione del caso",
       "image": "/images/scenes/bello/1.png",
       "imageAlt": "Ambulatorio medico",
-      "context": "Aprile 2021 · Ambulatorio ospedaliero",
+      "context_": "Aprile 2021 · Ambulatorio ospedaliero",
       "text": "**Paziente donna di 46 anni**, proveniente da regione confinante, giunge per un secondo parere con diagnosi di **MG AChR+ associata a verosimile timoma**.\n\nEsordio estate 2020:\n• Episodi di disartria/disfonia a risoluzione spontanea\n• Ptosi palpebrale a Novembre, durante infezione da SARS-CoV-2 con polmonite interstiziale e degenza in rianimazione per 7 giorni\n• Gennaio: recidiva ptosi, disartria, rinolalia, disfagia per liquidi, stanchezza, deficit di forza al collo e spalle\n\nAnamnesi: no familiarità NM/autoimmune, no ipertensione, no diabete, ex fumatrice, obesità, 1 figlio, pregressa iperprolattinemia.",
       "choices": [
         { "text": "Continua →", "next": "scenario-iniziale" }
@@ -19,11 +19,11 @@
       "type": "info",
       "title": "Accertamenti e terapia in atto",
       "image": "/images/scenes/bello/1.png",
-      "context": "Aprile 2021 · Ambulatorio ospedaliero",
-      "_stats": [
-        { "label": "QMG",    "value": "15", "color": "danger"  },
-        { "label": "MG-ADL", "value": "5",  "color": "warning" },
-        { "label": "MGFA",   "value": "IIIa","color": "warning" }
+      "context_": "Aprile 2021 · Ambulatorio ospedaliero",
+      "stats": [
+        { "value": "QMG",    "label": "15", "color": "danger"  },
+        { "value": "MG-ADL", "label": "5",  "color": "warning" },
+        { "value": "MGFA",   "label": "IIIa","color": "warning" }
       ],
       "text": "**Accertamenti:**\n• Spirometria: deficit restrittivo (FVC 1,95 L, 63%)\n• TAC torace: neoformazione timica 40 mm\n• PET-TC: moderato ipermetabolismo della neoformazione timica\n• RNS: negativo (non diagnostico — Mestinon non sospeso)\n• Ac anti-AChR: **5,0 nmol/L** (ELISA)\n\n**Terapia in atto:**\nPrednisone 50 mg/die (avviato a fine febbraio, già incrementato/ridotto/re-incrementato) + piridostigmina 60 mg x 3/die (percepisce beneficio).\n\nNon ha mai eseguito IgEV o plasmaferesi.\n\n**Conclusione:** MG AChR+ con timoma, interessamento generalizzato moderato, parziale compenso sotto steroide.",
       "choices": [
@@ -35,7 +35,7 @@
       "type": "decision",
       "title": "Cosa faccio?",
       "image": "/images/scenes/bello/2.png",
-      "context": "Specialista che riflette",
+      "context_": "Specialista che riflette",
       "_stats": [
         { "label": "QMG",    "value": "15", "color": "danger"  },
         { "label": "MG-ADL", "value": "5",  "color": "warning" },
@@ -53,10 +53,10 @@
       "type": "decision",
       "title": "Timectomia urgente",
       "image": "/images/scenes/bello/3.png",
-      "context": "Discussione con chirurgia toracica",
+      "context_": "Discussione con chirurgia toracica",
       "badge": "⚠️ Attenzione",
       "badgeColor": "warning",
-      "text": "Chiami la collega di Chirurgia Toracica: la paziente ha un timoma da asportare al più presto. Nonostante qualche perplessità, viene organizzato il ricovero urgente e l'intervento viene fissato **tra due giorni**.\n\nLa mattina seguente, la collega chirurga ti chiede: prima dell'intervento, non è il caso di fare un ciclo di plasmaferesi o IgEV?",
+      "text": "Chiamare la collega di Chirurgia Toracica: la paziente ha un timoma da asportare al più presto. Nonostante qualche perplessità, viene organizzato il ricovero urgente e l'intervento viene fissato **tra due giorni**.\n\nLa mattina seguente, la collega chiede chiarimenti: Non è il caso di fare un ciclo di plasmaferesi o IgEV prima dell'intervento ?",
       "choices": [
         { "id": "c1", "text": "Intervento subito, senza pretrattamento", "next": "scenario-1-1-1", "tag": "1" },
         { "id": "c2", "text": "Intervento posticipato dopo ciclo di plasmaferesi o IgEV", "next": "scenario-1-2-pf", "tag": "2" }
@@ -64,23 +64,23 @@
     },
     {
       "id": "scenario-1-1-1",
-      "type": "endpoint",
+      "type": "info",
       "title": "Intervento subito",
       "image": "/images/scenes/bello/4.png",
-      "context": "Decorso post-operatorio difficile",
+      "context_": "Decorso post-operatorio difficile",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
-      "text": "L'intervento ha **buona riuscita chirurgica**, ma vi sono difficoltà nell'estubazione: la paziente resta a lungo in Terapia Intensiva.\n\nIl responso patologico è **timoma B2, Masaoka IIa, pT1a**.\n\nDopo una lunga degenza con complicanze infettive, tracheostomia, PEG, e neuropatia/miopatia da malattia critica, la paziente viene trasferita in una struttura riabilitativa della sua regione.\n\nLa perdi al follow-up.\n\nQuesto caso deve far riflettere sulle **difficoltà di gestione della MG timomatosa** senza adeguata preparazione pre-operatoria.",
+      "text": "L'intervento ha **buona riuscita chirurgica**, ma vi sono difficoltà nell'estubazione: la paziente resta a lungo in Terapia Intensiva.\n\nIl responso patologico è **timoma B2, Masaoka IIa, pT1a**.\n\nDopo una lunga degenza con complicanze infettive, tracheostomia, PEG, e neuropatia/miopatia da malattia critica, la paziente viene trasferita in una struttura riabilitativa della sua regione.\n\nLa perdi al follow-up.\n\n",
       "choices": [
-        { "text": "Ricomincia dall'inizio", "next": "intro" }
+        { "text": "Rivaluta la strategia →", "next": "scenario-1-1" }
       ]
     },
     {
       "id": "scenario-1-2-pf",
-      "type": "outcome",
+      "type": "info",
       "title": "Ciclo di plasmaferesi, poi timectomia",
       "image": "/images/scenes/bello/5.png",
-      "context": "Servizio Trasfusionale",
+      "context_": "Servizio Trasfusionale",
       "badge": "✓ Buona scelta",
       "badgeColor": "success",
       "text": "Il collega del Servizio Trasfusionale spiega che la disponibilità di IgEV è attualmente **scarsa**: valuta gli accessi venosi (buoni) e organizza un ciclo di **plasmaferesi terapeutica**.\n\nDopo il ciclo, la paziente è molto migliorata. Viene eseguita la **timectomia videotoracoscopica robotica senza complicazioni**.\n\nDiagnosi patologica: **timoma B2, Masaoka IIa, pT1a**. Non sono necessarie ulteriori terapie oncologiche.",
@@ -90,10 +90,10 @@
     },
     {
       "id": "scenario-1-2-followup",
-      "type": "outcome",
+      "type": "info",
       "title": "Follow-up post-timectomia",
       "image": "/images/scenes/bello/6.png",
-      "context": "Controlli periodici post-operatori",
+      "context_": "Controlli periodici post-operatori",
       "badge": "⚠️ Effetti collaterali",
       "badgeColor": "warning",
       "text": "La paziente viene dimessa e nei controlli periodici mantiene **minime manifestazioni** di MG generalizzata, senza deficit bulbari.\n\nPresenta però importanti effetti collaterali corticosteroidei: **aspetto cushingoide**, incremento ponderale fino a **110 kg**.\n\nSi decide di scalare il prednisone fino a **5 mg/die**, mantenendo un buon controllo dei sintomi.",
@@ -103,10 +103,10 @@
     },
     {
       "id": "scenario-1-2-ricaduta",
-      "type": "outcome",
+      "type": "info",
       "title": "Ricaduta dopo sindrome influenzale",
       "image": "/images/scenes/bello/7.png",
-      "context": "Primavera · Ambulatorio",
+      "context_": "Primavera · Ambulatorio",
       "badge": "⚠️ Ricaduta",
       "badgeColor": "danger",
       "text": "Dopo una **sindrome influenzale**, nuova ricaduta con **sintomi bulbari**.\n\nSi riporta il prednisone a **25 mg/die** + nuovo ciclo di plasmaferesi.\n\nSi avvia terapia orale con **azatioprina** prima di tentare nuovamente un lento décalage del prednisone.",
@@ -119,13 +119,13 @@
       "type": "info",
       "title": "Controllo invernale",
       "image": "/images/scenes/bello/8.png",
-      "context": "Inverno · Ambulatorio",
-      "_stats": [
-        { "label": "QMG",    "value": "10", "color": "warning" },
-        { "label": "MG-ADL", "value": "7",  "color": "danger"  },
-        { "label": "MGFA",   "value": "IIb", "color": "warning" }
+      "context_": "Inverno · Ambulatorio",
+      "stats": [
+        { "value": "QMG",    "label": "10", "color": "warning" },
+        { "value": "MG-ADL", "label": "7",  "color": "danger"  },
+        { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nAzatioprina 100 + 50 mg, prednisone 22,5 mg/die, piridostigmina 60 mg x 3 + 90 mg RP la sera\n\n**Peso:** 115 kg · urgenza/incontinenza urinaria\n\nL'azatioprina non sembra aver portato il beneficio atteso. Il controllo della malattia rimane insufficiente.",
+      "text": "**Terapia attuale:**\nAzatioprina 100 + 50 mg, prednisone 22,5 mg/die, piridostigmina 60 mg x 3 + 90 mg RP la sera\n\n**Peso:** 115 kg\n\n **Urgenza incontinenza urinaria **\n\n L'azatioprina non sembra aver portato il beneficio atteso. Il controllo della malattia rimane insufficiente.",
       "choices": [
         { "text": "Rivaluta la strategia →", "next": "cosa-faccio-2" }
       ]
@@ -135,7 +135,7 @@
       "type": "decision",
       "title": "Cosa faccio?",
       "image": "/images/scenes/bello/9.png",
-      "context": "Specialista che riflette",
+      "context_": "Specialista che riflette",
       "_stats": [
         { "label": "QMG",    "value": "10", "color": "warning" },
         { "label": "MG-ADL", "value": "7",  "color": "danger"  },
@@ -150,18 +150,18 @@
     },
     {
       "id": "scenario-1-2-1",
-      "type": "outcome",
+      "type": "info",
       "title": "Trattamento con micofenolato",
       "image": "/images/scenes/bello/10.png",
-      "context": "Gennaio 2025 · Ambulatorio",
+      "context_": "Gennaio 2025 · Ambulatorio",
       "badge": "✓ Parziale miglioramento",
       "badgeColor": "success",
-      "_stats": [
-        { "label": "QMG",    "value": "9",  "color": "warning" },
-        { "label": "MG-ADL", "value": "6",  "color": "warning" },
-        { "label": "MGFA",   "value": "IIb", "color": "warning" }
+      "stats": [
+        { "value": "QMG",    "label": "9",  "color": "warning" },
+        { "value": "MG-ADL", "label": "6",  "color": "warning" },
+        { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
-      "text": "**Visita di controllo — Gennaio 2025:**\nMicofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro. Gli accessi in Day Hospital per plasmaferesi sono scomodi. Lamenta difficoltà nella gestione familiare e lavorativa.\n\nIl quadro è migliorato ma non ottimale. Occorre rivalutare il piano terapeutico.",
+      "text": "**Visita di controllo:**\nMicofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro.\n\n Gli accessi in Day Hospital per terapie infusive sono scomodi.\n\n Lamenta difficoltà nella gestione familiare e lavorativa,sia per i sintomia sia per necessità di accessi ospedalieri.\n\n",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3a" }
       ]
@@ -171,13 +171,13 @@
       "type": "decision",
       "title": "Quali modifiche proponi al piano terapeutico?",
       "image": "/images/scenes/bello/9.png",
-      "context": "Specialista che valuta le opzioni",
+      "context_": "Specialista che valuta le opzioni",
       "_stats": [
         { "label": "QMG",    "value": "9",  "color": "warning" },
         { "label": "MG-ADL", "value": "6",  "color": "warning" },
         { "label": "MGFA",   "value": "IIb", "color": "warning" }
       ],
-      "text": "La paziente con micofenolato ha raggiunto un parziale controllo, ma i sintomi persistono e la qualità di vita rimane compromessa. Gli accessi per plasmaferesi restano un problema.\n\nQuale terapia innovativa proponi?",
+      "text": "La paziente con micofenolato ha raggiunto un parziale controllo, ma i sintomi persistono e la qualità di vita rimane compromessa. Gli accessi ospedalieri restano un problema.\n\nQuale terapia innovativa proponi?",
       "choices": [
         { "id": "c1", "text": "Avvio di zilucoplan", "next": "scenario-zilucoplan", "tag": "1" },
         { "id": "c2", "text": "Avvio di rozanolixizumab", "next": "scenario-rozano", "tag": "2" },
@@ -186,10 +186,10 @@
     },
     {
       "id": "scenario-1-2-2",
-      "type": "outcome",
+      "type": "info",
       "title": "Trattamento con ciclosporina",
       "image": "/images/scenes/bello/8.png",
-      "context": "Follow-up · Ambulatorio",
+      "context_": "Follow-up · Ambulatorio",
       "badge": "⚠️ Effetti collaterali gravi",
       "badgeColor": "danger",
       "text": "Nei primi mesi la ciclosporina è ben tollerata e discretamente efficace, ma poi compaiono:\n• **Ipertensione arteriosa**\n• **Aumento della creatinina**\n• **Irsutismo** (molto disturbante per la paziente)\n\nLa ciclosporina viene sospesa e ricompaiono sintomi bulbari e generalizzati invalidanti, con necessità di re-incremento del prednisone e cicli di plasmaferesi.",
@@ -202,7 +202,7 @@
       "type": "info",
       "title": "Controllo — Gennaio 2025",
       "image": "/images/scenes/bello/presentazione.png",
-      "context": "Gennaio 2025 · Ambulatorio",
+      "context_": "Gennaio 2025 · Ambulatorio",
       "_stats": [
         { "label": "QMG",    "value": "10", "color": "danger"  },
         { "label": "MG-ADL", "value": "7",  "color": "danger"  },
@@ -218,7 +218,7 @@
       "type": "decision",
       "title": "Quali modifiche proponi al piano terapeutico?",
       "image": "/images/scenes/bello/2.png",
-      "context": "Specialista che valuta le opzioni",
+      "context_": "Specialista che valuta le opzioni",
       "_stats": [
         { "label": "QMG",    "value": "10", "color": "danger"  },
         { "label": "MG-ADL", "value": "7",  "color": "danger"  },
@@ -233,10 +233,10 @@
     },
     {
       "id": "scenario-1-2-3",
-      "type": "outcome",
+      "type": "info",
       "title": "Plasmaferesi di mantenimento",
       "image": "/images/scenes/bello/13.png",
-      "context": "Follow-up · Ambulatorio",
+      "context_": "Follow-up · Ambulatorio",
       "badge": "⚠️ Impatto sulla vita",
       "badgeColor": "warning",
       "text": "La paziente viene trattata con cicli periodici di plasmaferesi presso il suo ospedale territoriale, che aiutano a mantenere un buon compenso dei sintomi, ma con un **impatto importante sulla vita personale e lavorativa**.",
@@ -249,11 +249,11 @@
       "type": "info",
       "title": "Controllo — Gennaio 2025",
       "image": "/images/scenes/bello/13.png",
-      "context": "Gennaio 2025 · Ambulatorio",
-      "_stats": [
-        { "label": "QMG",    "value": "9",  "color": "warning" },
-        { "label": "MG-ADL", "value": "6",  "color": "warning" },
-        { "label": "MGFA",   "value": "IIb", "color": "warning" }
+      "context_": "Gennaio 2025 · Ambulatorio",
+      "stats": [
+        { "value": "QMG",    "label": "9",  "color": "warning" },
+        { "value": "MG-ADL", "label": "6",  "color": "warning" },
+        { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
       "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi Dicembre 2025\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
       "choices": [
@@ -265,7 +265,7 @@
       "type": "decision",
       "title": "Quali modifiche proponi al piano terapeutico?",
       "image": "/images/scenes/bello/2.png",
-      "context": "Specialista che valuta le opzioni",
+      "context_": "Specialista che valuta le opzioni",
       "_stats": [
         { "label": "QMG",    "value": "9",  "color": "warning" },
         { "label": "MG-ADL", "value": "6",  "color": "warning" },
@@ -280,10 +280,10 @@
     },
     {
       "id": "scenario-zilucoplan",
-      "type": "outcome",
+      "type": "info",
       "title": "Avvio di zilucoplan",
       "image": "/images/scenes/bello/10.png",
-      "context": "Avvio terapia innovativa",
+      "context_": "Avvio terapia innovativa",
       "badge": "💡 Inibitore C5 sottocutaneo",
       "badgeColor": "info",
       "text": "Si avvia **zilucoplan** con l'obiettivo di:\n• Ridurre i sintomi\n• Gestire la terapia a domicilio\n• Eliminare la necessità di plasmaferesi\n• Scalare al minimo o sospendere il prednisone\n\nPrima dell'avvio, si programmano presso il Distretto le **vaccinazioni per meningococco B e ACWY**.",
@@ -293,28 +293,28 @@
     },
     {
       "id": "scenario-zilucoplan-esito",
-      "type": "endpoint",
+      "type": "info",
       "title": "Esito con zilucoplan",
       "image": "/images/scenes/bello/11.png",
-      "context": "Primavera · Controllo",
+      "context_": "Primavera · Controllo",
       "badge": "✓ Ottimo controllo",
       "badgeColor": "success",
-      "_stats": [
-        { "label": "QMG",    "value": "4",  "color": "success" },
-        { "label": "MG-ADL", "value": "1",  "color": "success" },
-        { "label": "MGFA",   "value": "MM", "color": "success" }
+      "stats": [
+        { "value": "QMG",    "label": "4",  "color": "success" },
+        { "value": "MG-ADL", "label": "1",  "color": "success" },
+        { "value": "MGFA",   "label": "Minime Manifestazioni", "color": "success" }
       ],
-      "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nZilucoplan 32,4 mg/die s.c., micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n\n**MGFA:** Minime manifestazioni\n\nSi pianifica un **décalage graduale del prednisone**, con maggiore fiducia rispetto al passato di riuscire a sospenderlo e di non dover riprendere le plasmaferesi.",
+      "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nZilucoplan 32,4 mg/die s.c., micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n\nSi pianifica un **décalage graduale del prednisone**, con maggiore fiducia rispetto al passato di riuscire a sospenderlo e di non dover riprendere le plasmaferesi.",
       "choices": [
-        { "text": "Ricomincia dall'inizio", "next": "intro" }
+        { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
     },
     {
       "id": "scenario-rozano",
-      "type": "outcome",
+      "type": "info",
       "title": "Avvio di rozanolixizumab",
       "image": "/images/scenes/bello/11.png",
-      "context": "Avvio terapia innovativa",
+      "context_": "Avvio terapia innovativa",
       "badge": "💡 Anti-FcRn",
       "badgeColor": "info",
       "text": "Si avvia **rozanolixizumab** con l'obiettivo di:\n• Ridurre i sintomi\n• Gestire la terapia a domicilio\n• Scalare al minimo o sospendere il prednisone\n\nSi pianifica il primo ciclo di **6 settimane** (840 mg/settimana).",
@@ -324,41 +324,41 @@
     },
     {
       "id": "scenario-rozano-esito",
-      "type": "endpoint",
+      "type": "info",
       "title": "Esito con rozanolixizumab",
       "image": "/images/scenes/bello/11.png",
-      "context": "Primavera · Controllo post-ciclo",
+      "context_": "Primavera · Controllo post-ciclo",
       "badge": "✓ Ottimo controllo",
       "badgeColor": "success",
-      "_stats": [
-        { "label": "QMG",    "value": "4",  "color": "success" },
-        { "label": "MG-ADL", "value": "1",  "color": "success" },
-        { "label": "MGFA",   "value": "MM", "color": "success" }
+      "stats": [
+        { "value": "QMG",    "label": "4",  "color": "success" },
+        { "value": "MG-ADL", "label": "1",  "color": "success" },
+        { "value": "MGFA",   "label": "Minime Manifestazioni", "color": "success" }
       ],
       "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nRozanolixizumab 840 mg/settimana (terminato 1° ciclo di 6 settimane), micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n\n**MGFA:** Minime manifestazioni\n\nSi procede a un **décalage graduale del prednisone**, con fiducia di riuscire a sospenderlo e non dover riprendere le plasmaferesi.",
       "choices": [
-        { "text": "Ricomincia dall'inizio", "next": "intro" }
+        { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
     },
     {
       "id": "scenario-prosecuzione-1",
-      "type": "endpoint",
+      "type": "decision",
       "title": "Prosecuzione terapia in atto",
       "image": "/images/scenes/bello/12.png",
-      "context": "Follow-up 2024",
+      "context_": "Follow-up 2024",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
-      "text": "Nei mesi successivi, la paziente deve **ridurre il micofenolato** per artromialgie e ricorre a **frequenti cicli di plasmaferesi**, con incremento del prednisone e conseguente aumento di peso.\n\nNel corso del 2024 ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
+      "text": "Nei mesi successivi, la paziente deve  ancora ricorre a cicli di plasmaferesi per in quanto l'incremtno del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\n Ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
       "choices": [
-        { "text": "Ricomincia dall'inizio", "next": "intro" }
+        { "text": "Rivaluta il piano →", "next": "cosa-faccio-2" }
       ]
     },
     {
       "id": "scenario-prosecuzione-2",
-      "type": "endpoint",
+      "type": "info",
       "title": "Prosecuzione terapia in atto",
       "image": "/images/scenes/bello/12.png",
-      "context": "Follow-up 2024",
+      "context_": "Follow-up 2024",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
       "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNel corso del 2024 ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
@@ -368,10 +368,10 @@
     },
     {
       "id": "scenario-prosecuzione-3",
-      "type": "endpoint",
+      "type": "info",
       "title": "Prosecuzione terapia in atto",
       "image": "/images/scenes/bello/12.png",
-      "context": "Follow-up 2024",
+      "context_": "Follow-up 2024",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
       "text": "Nei mesi successivi, la paziente deve ancora ricorrere a **cicli di plasmaferesi** perché l'incremento del prednisone è limitato dagli effetti collaterali corticosteroidei.\n\nNel corso del 2024 ti informa di essersi rivolta ad **un altro centro** per valutare l'accesso a nuove terapie biologiche, e non programma ulteriori follow-up presso il tuo centro.",
@@ -381,15 +381,15 @@
     },
     {
       "id": "scenario-1-3",
-      "type": "endpoint",
+      "type": "info",
       "title": "Incremento prednisone a 75 mg/die",
       "image": "/images/scenes/bello/12.png",
-      "context": "Follow-up",
+      "context_": "Follow-up",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
       "text": "Incrementando il prednisone a 75 mg, la paziente ha un miglioramento fino a **minime manifestazioni miasteniche**, ma presenta:\n• Aumento di peso fino a **125 kg**\n• **Diabete da steroidi**\n\nLa paziente ti comunica di essersi recata presso un centro in un'altra regione per un ulteriore parere neurologico e chirurgico toracico, e al momento non intende programmare un follow-up presso il tuo centro.\n\nL'escalation steroidea senza timectomia e senza terapia di bridging non è la strategia ottimale in una paziente con timoma.",
       "choices": [
-        { "text": "Ricomincia dall'inizio", "next": "intro" }
+        { "text": "Ricomincia dall'inizio", "next": "cosa-faccio-1" }
       ]
     }
   ]

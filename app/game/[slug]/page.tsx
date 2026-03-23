@@ -43,25 +43,25 @@ function parseText(text: string) {
 // ── Config ───────────────────────────────────────────────────────────────────
 
 const CFG = {
-  decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Scelta clinica' },
-  endpoint: { accent: '#16803d', light: '#f0fdf4', label: 'Conclusione'    },
-  outcome:  { accent: '#b45309', light: '#fffbeb', label: 'Esito scenario' },
+  decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Decisione' },
+  endpoint: { accent: '#0e88a5', light: '#f0fdf4', label: 'Conclusione'    },
+  outcome:  { accent: '#0e88a5', light: '#fffbeb', label: 'Esito scenario' },
   intro:    { accent: '#0e88a5', light: '#e8f4f8', label: 'Caso clinico'   },
-  info:     { accent: '#0e88a5', light: '#e8f4f8', label: 'Prima visita'   },
+  info:     { accent: '#0e88a5', light: '#e8f4f8', label: ' '   },
 } as const
 
 const BADGE_COLORS = {
-  success: { bg: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' },
-  warning: { bg: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' },
-  danger:  { bg: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
-  info:    { bg: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' },
+  success: { bg: '#f0fdf4', color: '#0e88a5', border: '1px solid #bbf7d0' },
+  warning: { bg: '#fffbeb', color: '#0e88a5', border: '1px solid #fde68a' },
+  danger:  { bg: '#fef2f2', color: '#0e88a5', border: '1px solid #fecaca' },
+  info:    { bg: '#eff6ff', color: '#0e88a5', border: '1px solid #bfdbfe' },
 }
 
 const STAT_COLORS = {
-  warning: { c: '#b45309', bg: 'rgba(180,83,9,0.07)'  },
-  danger:  { c: '#dc2626', bg: 'rgba(220,38,38,0.07)' },
-  success: { c: '#16803d', bg: 'rgba(22,128,61,0.07)' },
-  info:    { c: '#1d4ed8', bg: 'rgba(29,78,216,0.07)' },
+  warning: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)'  },
+  danger:  { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
+  success: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
+  info:    { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
 }
 
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
@@ -122,11 +122,6 @@ function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
-// Phase drives both image AND text opacity/transform — they are always in sync.
-// fading-out → both fade out together
-// hidden     → both at opacity 0, new scene content swapped in, image starts loading
-// fading-in  → both fade in together (image may still be loading but fades in gracefully)
-// visible    → steady state
 type Phase = 'visible' | 'fading-out' | 'hidden' | 'fading-in'
 
 export default function GamePage() {
@@ -166,25 +161,21 @@ export default function GamePage() {
 
   const trackEvent = useCallback((sceneId: string, choice?: string) => {
     console.log('[track]', { slug, username, sceneId, choice })
-    // TODO: supabase.from('game_events').insert({ slug, username, scene_id: sceneId, choice })
   }, [slug, username])
 
   const go = useCallback((nextId: string, back = false, choiceText?: string) => {
     if (phase !== 'visible') return
     if (timerRef.current) clearTimeout(timerRef.current)
 
-    // Step 1: fade out everything
     setPhase('fading-out')
 
     timerRef.current = setTimeout(() => {
-      // Step 2: swap content while fully transparent
       if (back) { setHistory(h => h.slice(0, -1)); setCurrentId(nextId) }
       else      { setHistory(h => [...h, currentId]); setCurrentId(nextId); trackEvent(nextId, choiceText) }
       setImgError(false)
       setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
 
-      // Step 3: short pause so new image starts loading, then fade in together
       timerRef.current = setTimeout(() => {
         setPhase('fading-in')
         timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
@@ -200,7 +191,6 @@ export default function GamePage() {
 
   const handleConfirmRestart = useCallback(() => {
     setShowConfirm(false)
-    // Reset history first, then trigger go to intro
     setHistory([])
     setCurrentId('intro')
     setImgError(false)
@@ -222,12 +212,12 @@ export default function GamePage() {
   )
 
   const cfg         = CFG[scene.type] ?? CFG.info
+  const isInfo      = scene.type === 'info'
   const isDecision  = scene.type === 'decision'
   const isEndpoint  = scene.type === 'endpoint'
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
   const accentLine  = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
-  // ── Single shared opacity — image and text move together ──────────────────
   const isOut = phase === 'fading-out' || phase === 'hidden'
   const sharedOpacity = isOut ? 0 : 1
   const sharedTransition = phase === 'fading-out'
@@ -259,7 +249,6 @@ export default function GamePage() {
     transition: sharedTransition,
   }
 
-  // ── Image layer ───────────────────────────────────────────────────────────
   const imgLayer = (
     <div style={imgStyle}>
       {scene.image && !imgError ? (
@@ -281,7 +270,19 @@ export default function GamePage() {
 
   const imgOverlays = (
     <>
-      <div style={{ position: 'absolute', top: 12, left: 14, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', border: `1px solid ${cfg.accent}28`, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: cfg.accent, zIndex: 2 }}>{cfg.label}</div>
+      {/* tipo-scena badge: invisibile per le scene 'info' */}
+      <div style={{
+        position: 'absolute', top: 12, left: 14,
+        padding: '3px 10px', borderRadius: 20,
+        background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
+        border: `1px solid ${cfg.accent}28`,
+        fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em',
+        textTransform: 'uppercase', color: cfg.accent,
+        zIndex: 2,
+        opacity: isInfo ? 0 : 1,
+        pointerEvents: 'none',
+      }}>{cfg.label}</div>
+
       {scene.badge && <div style={{ position: 'absolute', top: 12, right: 14, padding: '3px 10px', borderRadius: 20, backdropFilter: 'blur(8px)', fontSize: 9.5, fontWeight: 600, background: badgeColors.bg, color: badgeColors.color, border: badgeColors.border, zIndex: 2 }}>{scene.badge}</div>}
       <div style={{ position: 'absolute', bottom: 10, left: 14, padding: '2px 8px', borderRadius: 4, background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)', fontSize: 8.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', zIndex: 2 }}>{scene.id}</div>
     </>
@@ -316,7 +317,16 @@ export default function GamePage() {
   const textContent = (compact = false) => (
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
-        <div style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 5, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: compact ? 7 : 9 }}>{cfg.label}</div>
+        {/* label tipo scena nel pannello testo: invisibile per 'info' */}
+        <div style={{
+          display: 'inline-flex', padding: '2px 9px', borderRadius: 5,
+          background: cfg.light,
+          fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+          textTransform: 'uppercase', color: cfg.accent,
+          marginBottom: compact ? 7 : 9,
+          opacity: isInfo ? 0 : 1,
+          pointerEvents: 'none',
+        }}>{cfg.label}</div>
         <h2 style={{ margin: 0, fontSize: compact ? 17 : 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
         {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
       </div>
