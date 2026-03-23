@@ -134,11 +134,14 @@ export default function GamePage() {
   const [history, setHistory]         = useState<string[]>([])
   const [phase, setPhase]             = useState<Phase>('visible')
   const [imgError, setImgError]       = useState(false)
+  const [imgReady, setImgReady]       = useState(true)   // true = no wait needed
   const [isDesktop, setIsDesktop]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [username, setUsername]       = useState('')
   const scrollRef                     = useRef<HTMLDivElement>(null)
   const timerRef                      = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const imgTimeoutRef                 = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const imgRef                        = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -176,16 +179,45 @@ export default function GamePage() {
       setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
 
-      timerRef.current = setTimeout(() => {
-        setPhase('fading-in')
-        timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
-      }, T_PRE)
+      // Check if the next scene has an image — if so, wait for onLoad before fading in
+      const nextScene = data?.scenes.find(s => s.id === nextId)
+      const hasImage  = !!(nextScene?.image)
+
+      if (hasImage) {
+        // If the image element already reports complete (cached), skip waiting entirely
+        if (imgRef.current?.complete) {
+          timerRef.current = setTimeout(() => {
+            setPhase('fading-in')
+            timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
+          }, T_PRE)
+        } else {
+          // Reset imgReady — fade-in triggered by onLoad, with 800ms fallback
+          setImgReady(false)
+          if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current)
+          imgTimeoutRef.current = setTimeout(() => setImgReady(true), 800)
+        }
+      } else {
+        // No image: start fade-in after the usual short pause
+        timerRef.current = setTimeout(() => {
+          setPhase('fading-in')
+          timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
+        }, T_PRE)
+      }
     }, T_OUT)
-  }, [phase, currentId, trackEvent])
+  }, [phase, currentId, trackEvent, data])
 
   const goBack = useCallback(() => {
     if (history.length && phase === 'visible') go(history[history.length - 1], true)
   }, [history, phase, go])
+
+  // When imgReady flips to true while phase is still 'hidden', start the fade-in
+  useEffect(() => {
+    if (imgReady && phase === 'hidden') {
+      if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current)
+      setPhase('fading-in')
+      timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
+    }
+  }, [imgReady, phase])
 
   const handleLogoClick = useCallback(() => setShowConfirm(true), [])
 
@@ -252,10 +284,11 @@ export default function GamePage() {
   const imgLayer = (
     <div style={imgStyle}>
       {scene.image && !imgError ? (
-        <Image src={scene.image} alt={scene.imageAlt ?? scene.title} fill
+        <Image ref={imgRef} src={scene.image} alt={scene.imageAlt ?? scene.title} fill
           sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
           style={{ objectFit: 'contain', objectPosition: 'center' }}
-          onError={() => setImgError(true)} />
+          onLoad={() => { if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current); setImgReady(true) }}
+          onError={() => { if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current); setImgError(true); setImgReady(true) }} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <svg width="52" height="52" viewBox="0 0 64 64" fill="none" style={{ opacity: 0.22 }}>
