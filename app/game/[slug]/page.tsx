@@ -70,8 +70,9 @@ const BP = 960
 
 // Transition timing constants
 const T_OUT = 240   // fade-out duration ms
-const T_PRE = 80    // preload pause after swap ms (image starts loading)
+const T_PRE = 60    // brief pause after scene swap before checking image ms
 const T_IN  = 460   // fade-in duration ms
+const T_IMG_FALLBACK = 1200  // max wait for image load before proceeding anyway ms
 
 // ── StatBox ──────────────────────────────────────────────────────────────────
 
@@ -82,8 +83,8 @@ function StatBox({ stats }: { stats: Stat[] }) {
         const col = STAT_COLORS[s.color] ?? STAT_COLORS.info
         return (
           <div key={i} style={{ flex: 1, borderRadius: 8, padding: '8px 4px', textAlign: 'center', background: col.bg }}>
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: col.c, opacity: 0.7, marginTop: 3, letterSpacing: '0.04em' }}>{s.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: col.c, fontFamily: 'Georgia,serif', lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: col.c, opacity: 0.7, letterSpacing: '0.04em' }}>{s.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: col.c, fontFamily: 'Georgia,serif', lineHeight: 1, marginTop: 2 }}>{s.value}</div>
           </div>
         )
       })}
@@ -135,21 +136,31 @@ export default function GamePage() {
   const [history, setHistory]         = useState<string[]>([])
   const [phase, setPhase]             = useState<Phase>('visible')
   const [imgError, setImgError]       = useState(false)
-  const [imgReady, setImgReady]       = useState(true)   // true = no wait needed
   const [isDesktop, setIsDesktop]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [username, setUsername]       = useState('')
+
+  // pendingImage: the src we are waiting to load before fading in.
+  // null means "no wait needed, proceed immediately".
+  const pendingImageRef = useRef<string | null>(null)
+  const imgLoadedRef    = useRef<boolean>(false)   // did onLoad fire for pendingImage?
+
   const { startSession, trackScene, endSession } = useUcbTracking()
-  const scrollRef                     = useRef<HTMLDivElement>(null)
-  const timerRef                      = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const imgTimeoutRef                 = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const imgRef                        = useRef<HTMLImageElement>(null)
+  const scrollRef     = useRef<HTMLDivElement>(null)
+  const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const fallbackRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── helper: start fade-in ──────────────────────────────────────────────────
+  const startFadeIn = useCallback(() => {
+    if (fallbackRef.current) { clearTimeout(fallbackRef.current); fallbackRef.current = null }
+    setPhase('fading-in')
+    timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
+  }, [])
 
   useEffect(() => {
     if (!slug) return
     fetch(`/stories/${slug}/scenario.json`).then(r => r.json()).then(d => {
       setData(d)
-      // Traccia la scena iniziale (intro) appena lo scenario è caricato
       const introScene = d.scenes.find((s: { id: string; type: string }) => s.id === 'intro')
       if (introScene) trackScene({ sceneId: 'intro', sceneType: introScene.type })
     })
@@ -159,7 +170,6 @@ export default function GamePage() {
     const saved = sessionStorage.getItem('mg_username')
     if (!saved) { router.push('/'); return }
     setUsername(saved)
-    // Avvia la sessione UCB appena abbiamo username e slug
     if (slug) startSession({ username: saved, storySlug: slug })
   }, [router, slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -178,70 +188,93 @@ export default function GamePage() {
   const go = useCallback((nextId: string, back = false, choiceText?: string) => {
     if (phase !== 'visible') return
     if (timerRef.current) clearTimeout(timerRef.current)
+    if (fallbackRef.current) clearTimeout(fallbackRef.current)
 
     setPhase('fading-out')
 
     timerRef.current = setTimeout(() => {
-      if (back) { setHistory(h => h.slice(0, -1)); setCurrentId(nextId) }
-      else      {
+      // ── commit scene swap ──────────────────────────────────────────────────
+      if (back) {
+        setHistory(h => h.slice(0, -1))
+        setCurrentId(nextId)
+      } else {
         setHistory(h => [...h, currentId])
         setCurrentId(nextId)
         trackEvent(nextId, choiceText)
-        // Trova la scena di destinazione per passare il type
         const nextScene = data?.scenes.find(s => s.id === nextId)
         if (nextScene) trackScene({ sceneId: nextId, sceneType: nextScene.type, choiceText })
       }
+
       setImgError(false)
       setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
 
-      // Check if the next scene has an image — if so, wait for onLoad before fading in
-      const nextScene = data?.scenes.find(s => s.id === nextId)
-      const hasImage  = !!(nextScene?.image)
+      // ── decide whether to wait for an image ────────────────────────────────
+      const nextScene  = data?.scenes.find(s => s.id === nextId)
+      const nextImgSrc = nextScene?.image ?? null
 
-      if (hasImage) {
-        // If the image element already reports complete (cached), skip waiting entirely
-        if (imgRef.current?.complete) {
-          timerRef.current = setTimeout(() => {
-            setPhase('fading-in')
-            timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
-          }, T_PRE)
-        } else {
-          // Reset imgReady — fade-in triggered by onLoad, with 800ms fallback
-          setImgReady(false)
-          if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current)
-          imgTimeoutRef.current = setTimeout(() => setImgReady(true), 800)
-        }
-      } else {
-        // No image: start fade-in after the usual short pause
-        timerRef.current = setTimeout(() => {
-          setPhase('fading-in')
-          timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
-        }, T_PRE)
+      if (!nextImgSrc) {
+        // No image: fade in after brief pause
+        pendingImageRef.current = null
+        timerRef.current = setTimeout(startFadeIn, T_PRE)
+        return
       }
+
+      // Check if browser already has this image cached via a temporary Image element.
+      // We do NOT use imgRef.current here — it still points at the OLD scene's img.
+      const probe = new window.Image()
+      pendingImageRef.current = nextImgSrc
+      imgLoadedRef.current    = false
+
+      probe.onload = () => {
+        // Cached: proceed after a tiny paint pause
+        if (pendingImageRef.current === nextImgSrc) {
+          imgLoadedRef.current = true
+          timerRef.current = setTimeout(startFadeIn, T_PRE)
+        }
+      }
+
+      probe.onerror = () => {
+        // Load error: don't block forever
+        if (pendingImageRef.current === nextImgSrc) {
+          timerRef.current = setTimeout(startFadeIn, T_PRE)
+        }
+      }
+
+      // Set src AFTER attaching handlers
+      probe.src = nextImgSrc
+
+      // If not cached, onload won't fire synchronously — set fallback timer
+      if (!probe.complete) {
+        fallbackRef.current = setTimeout(() => {
+          if (pendingImageRef.current === nextImgSrc && !imgLoadedRef.current) {
+            startFadeIn()
+          }
+        }, T_IMG_FALLBACK)
+      }
+
     }, T_OUT)
-  }, [phase, currentId, trackEvent, data])
+  }, [phase, currentId, trackEvent, data, startFadeIn])
+
+  // Called by Next.js <Image> onLoad — fires when the image is actually painted
+  const handleImgLoad = useCallback((src: string) => {
+    if (pendingImageRef.current === src && phase === 'hidden') {
+      imgLoadedRef.current = true
+      if (fallbackRef.current) { clearTimeout(fallbackRef.current); fallbackRef.current = null }
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+      startFadeIn()
+    }
+  }, [phase, startFadeIn])
 
   const goBack = useCallback(() => {
     if (history.length && phase === 'visible') go(history[history.length - 1], true)
   }, [history, phase, go])
 
-  // When imgReady flips to true while phase is still 'hidden', start the fade-in
-  useEffect(() => {
-    if (imgReady && phase === 'hidden') {
-      if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current)
-      setPhase('fading-in')
-      timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
-    }
-  }, [imgReady, phase])
-
-  // Chiudi la sessione quando si raggiunge un endpoint
   useEffect(() => {
     if (!scene) return
     if (scene.type === 'endpoint') endSession(true)
   }, [scene?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Chiudi la sessione se l'utente lascia la pagina
   useEffect(() => {
     const handler = () => endSession(false)
     window.addEventListener('beforeunload', handler)
@@ -252,7 +285,6 @@ export default function GamePage() {
 
   const handleConfirmRestart = useCallback(() => {
     setShowConfirm(false)
-    // Chiudi la sessione corrente e aprine una nuova
     endSession(false).then(() => {
       if (slug && username) startSession({ username, storySlug: slug })
       const introScene = data?.scenes.find(s => s.id === 'intro')
@@ -261,6 +293,7 @@ export default function GamePage() {
     setHistory([])
     setCurrentId('intro')
     setImgError(false)
+    pendingImageRef.current = null
     setPhase('fading-out')
     timerRef.current = setTimeout(() => {
       setPhase('hidden')
@@ -269,7 +302,7 @@ export default function GamePage() {
         timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
       }, T_PRE)
     }, T_OUT)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data || !scene) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f0eb' }}>
@@ -319,11 +352,18 @@ export default function GamePage() {
   const imgLayer = (
     <div style={imgStyle}>
       {scene.image && !imgError ? (
-        <Image ref={imgRef} src={scene.image} alt={scene.imageAlt ?? scene.title} fill
-          sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
+        <Image
+          key={scene.image}   /* force remount on src change so onLoad always fires */
+          src={scene.image}
+          alt={scene.imageAlt ?? scene.title}
+          fill
+          sizes={isDesktop ? '65vw' : '100vw'}
+          quality={95}
+          priority
           style={{ objectFit: 'contain', objectPosition: 'center' }}
-          onLoad={() => { if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current); setImgReady(true) }}
-          onError={() => { if (imgTimeoutRef.current) clearTimeout(imgTimeoutRef.current); setImgError(true); setImgReady(true) }} />
+          onLoad={() => handleImgLoad(scene.image!)}
+          onError={() => { setImgError(true); if (pendingImageRef.current === scene.image) startFadeIn() }}
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <svg width="52" height="52" viewBox="0 0 64 64" fill="none" style={{ opacity: 0.22 }}>
@@ -338,7 +378,6 @@ export default function GamePage() {
 
   const imgOverlays = (
     <>
-      {/* tipo-scena badge: invisibile per le scene 'info' */}
       <div style={{
         position: 'absolute', top: 12, left: 14,
         padding: '3px 10px', borderRadius: 20,
@@ -385,7 +424,6 @@ export default function GamePage() {
   const textContent = (compact = false) => (
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
-        {/* label tipo scena nel pannello testo: invisibile per 'info' */}
         <div style={{
           display: 'inline-flex', padding: '2px 9px', borderRadius: 5,
           background: cfg.light,
