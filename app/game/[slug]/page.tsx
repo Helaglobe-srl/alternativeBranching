@@ -69,10 +69,10 @@ const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 
 // Transition timing constants
-const T_OUT = 240   // fade-out duration ms
-const T_PRE = 60    // brief pause after scene swap before checking image ms
-const T_IN  = 460   // fade-in duration ms
-const T_IMG_FALLBACK = 1200  // max wait for image load before proceeding anyway ms
+const T_OUT = 200   // fade-out duration ms
+const T_PRE = 40    // brief pause after scene swap (no image) ms
+const T_IN  = 340   // fade-in duration ms
+const T_IMG_FALLBACK = 2500  // max wait for image before fading in anyway ms
 
 // ── StatBox ──────────────────────────────────────────────────────────────────
 
@@ -214,44 +214,24 @@ export default function GamePage() {
       const nextImgSrc = nextScene?.image ?? null
 
       if (!nextImgSrc) {
-        // No image: fade in after brief pause
+        // No image: fade in immediately after brief paint pause
         pendingImageRef.current = null
         timerRef.current = setTimeout(startFadeIn, T_PRE)
         return
       }
 
-      // Check if browser already has this image cached via a temporary Image element.
-      // We do NOT use imgRef.current here — it still points at the OLD scene's img.
-      const probe = new window.Image()
+      // Wait for Next.js <Image> onLoad — fires after the optimised
+      // /_next/image URL is decoded and painted. key={scene.image} on the
+      // <Image> guarantees onLoad fires on every src change, even when cached.
+      // Fallback timer prevents blocking forever on slow connections.
       pendingImageRef.current = nextImgSrc
       imgLoadedRef.current    = false
 
-      probe.onload = () => {
-        // Cached: proceed after a tiny paint pause
-        if (pendingImageRef.current === nextImgSrc) {
-          imgLoadedRef.current = true
-          timerRef.current = setTimeout(startFadeIn, T_PRE)
+      fallbackRef.current = setTimeout(() => {
+        if (pendingImageRef.current === nextImgSrc && !imgLoadedRef.current) {
+          startFadeIn()
         }
-      }
-
-      probe.onerror = () => {
-        // Load error: don't block forever
-        if (pendingImageRef.current === nextImgSrc) {
-          timerRef.current = setTimeout(startFadeIn, T_PRE)
-        }
-      }
-
-      // Set src AFTER attaching handlers
-      probe.src = nextImgSrc
-
-      // If not cached, onload won't fire synchronously — set fallback timer
-      if (!probe.complete) {
-        fallbackRef.current = setTimeout(() => {
-          if (pendingImageRef.current === nextImgSrc && !imgLoadedRef.current) {
-            startFadeIn()
-          }
-        }, T_IMG_FALLBACK)
-      }
+      }, T_IMG_FALLBACK)
 
     }, T_OUT)
   }, [phase, currentId, trackEvent, data, startFadeIn])
@@ -519,6 +499,5 @@ export default function GamePage() {
         </div>
       </div>
     </>
-    
   )
 }
