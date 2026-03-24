@@ -10,7 +10,6 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.some(p => pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
-    pathname.startsWith('/stories') ||
     pathname === '/favicon.ico' ||
     pathname === '/robots.txt'
   ) {
@@ -19,9 +18,9 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next({ request })
   const supabase = createClient(request, response)
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (!user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
