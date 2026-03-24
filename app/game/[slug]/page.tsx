@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter, useParams } from 'next/navigation'
+import { useUcbTracking } from '@/hooks/useUcbTracking'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -77,12 +78,12 @@ const T_IN  = 460   // fade-in duration ms
 function StatBox({ stats }: { stats: Stat[] }) {
   return (
     <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(14,136,165,0.12)' }}>
-      {stats.map(s => {
+      {stats.map((s, i) => {
         const col = STAT_COLORS[s.color] ?? STAT_COLORS.info
         return (
-          <div key={s.label} style={{ flex: 1, borderRadius: 8, padding: '8px 4px', textAlign: 'center', background: col.bg }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: col.c, fontFamily: 'Georgia,serif', lineHeight: 1 }}>{s.value}</div>
+          <div key={i} style={{ flex: 1, borderRadius: 8, padding: '8px 4px', textAlign: 'center', background: col.bg }}>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: col.c, opacity: 0.7, marginTop: 3, letterSpacing: '0.04em' }}>{s.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: col.c, fontFamily: 'Georgia,serif', lineHeight: 1 }}>{s.value}</div>
           </div>
         )
       })}
@@ -138,6 +139,7 @@ export default function GamePage() {
   const [isDesktop, setIsDesktop]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [username, setUsername]       = useState('')
+  const { startSession, trackScene, endSession } = useUcbTracking()
   const scrollRef                     = useRef<HTMLDivElement>(null)
   const timerRef                      = useRef<ReturnType<typeof setTimeout> | null>(null)
   const imgTimeoutRef                 = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -145,14 +147,21 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!slug) return
-    fetch(`/stories/${slug}/scenario.json`).then(r => r.json()).then(setData)
-  }, [slug])
+    fetch(`/stories/${slug}/scenario.json`).then(r => r.json()).then(d => {
+      setData(d)
+      // Traccia la scena iniziale (intro) appena lo scenario è caricato
+      const introScene = d.scenes.find((s: { id: string; type: string }) => s.id === 'intro')
+      if (introScene) trackScene({ sceneId: 'intro', sceneType: introScene.type })
+    })
+  }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const saved = sessionStorage.getItem('mg_username')
     if (!saved) { router.push('/'); return }
     setUsername(saved)
-  }, [router])
+    // Avvia la sessione UCB appena abbiamo username e slug
+    if (slug) startSession({ username: saved, storySlug: slug })
+  }, [router, slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= BP)
@@ -174,7 +183,14 @@ export default function GamePage() {
 
     timerRef.current = setTimeout(() => {
       if (back) { setHistory(h => h.slice(0, -1)); setCurrentId(nextId) }
-      else      { setHistory(h => [...h, currentId]); setCurrentId(nextId); trackEvent(nextId, choiceText) }
+      else      {
+        setHistory(h => [...h, currentId])
+        setCurrentId(nextId)
+        trackEvent(nextId, choiceText)
+        // Trova la scena di destinazione per passare il type
+        const nextScene = data?.scenes.find(s => s.id === nextId)
+        if (nextScene) trackScene({ sceneId: nextId, sceneType: nextScene.type, choiceText })
+      }
       setImgError(false)
       setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
@@ -219,10 +235,29 @@ export default function GamePage() {
     }
   }, [imgReady, phase])
 
+  // Chiudi la sessione quando si raggiunge un endpoint
+  useEffect(() => {
+    if (!scene) return
+    if (scene.type === 'endpoint') endSession(true)
+  }, [scene?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Chiudi la sessione se l'utente lascia la pagina
+  useEffect(() => {
+    const handler = () => endSession(false)
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleLogoClick = useCallback(() => setShowConfirm(true), [])
 
   const handleConfirmRestart = useCallback(() => {
     setShowConfirm(false)
+    // Chiudi la sessione corrente e aprine una nuova
+    endSession(false).then(() => {
+      if (slug && username) startSession({ username, storySlug: slug })
+      const introScene = data?.scenes.find(s => s.id === 'intro')
+      if (introScene) trackScene({ sceneId: 'intro', sceneType: introScene.type })
+    })
     setHistory([])
     setCurrentId('intro')
     setImgError(false)

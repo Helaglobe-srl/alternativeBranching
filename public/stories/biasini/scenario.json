@@ -1,0 +1,349 @@
+{
+    "title": "UCB Red Flags — Caso Biasini",
+    "subtitle": "Miastenia Gravis · Esordio Bulbare",
+    "scenes": [
+        {
+            "id": "intro",
+            "type": "intro",
+            "title": "Una mail dalla figlia",
+            "image": "/images/scenes/biasini/IMG-01.jpg",
+            "imageAlt": "Interno casa Messina, la figlia scrive una mail",
+            "text": "Interno casa, Messina. La figlia di **Silvano** scrive alla dott.ssa Biasini una mail accorata:\n\n*«Gentile dottoressa, buongiorno. Mi chiamo Melania e le scrivo perché mio padre ha un disperato bisogno di aiuto.*\n\n*Il 21 agosto, ad ora di pranzo, è stato portato in pronto soccorso perché non riusciva a parlare bene: i medici hanno ipotizzato un'ischemia cerebrale e lo hanno ricoverato. Il 23 agosto hanno eseguito TC encefalo e RMN senza mdc, ma senza riscontrare ischemia: paziente dimesso.*\n\n*Nei giorni seguenti (24–26 agosto) i sintomi sono peggiorati: oltre alle difficoltà di eloquio è comparsa disfagia. Il 26 agosto non riusciva nemmeno a ingerire l'acqua, così lo stesso giorno è stato trasportato al reparto di Neurologia, dove è tuttora ricoverato.»*",
+            "choices": [
+                {
+                    "text": "Leggi la presentazione del caso →",
+                    "next": "presentazione"
+                }
+            ]
+        },
+        {
+            "id": "presentazione",
+            "type": "info",
+            "title": "Presentazione del caso clinico",
+            "image": "/images/scenes/biasini/IMG-02.jpg",
+            "imageAlt": "Specialista che legge la cartella clinica",
+            "text": "**Silvano**, 68 anni.\n\n• Familiarità per patologie autoimmuni (ipotiroidismo, celiachia)\n• Allergia al celecoxib\n• Diagnosi di neoplasia prostatica nel 2024 → terapia con Decapeptyl ogni 3 mesi\n• Dislipidemia e iperomocisteinemia\n• Terapia in corso: omeprazolo 20 mg, clopidogrel 75 mg, acido folico, ezetimibe/simvastatina 10/10 mg\n\n**Esordio clinico:**\n• Disturbo dell'eloquio con difficoltà a pronunciare determinate lettere e modificazione nasale del timbro della voce\n• Il disturbo è inizialmente isolato, fluttuante, legato alle emozioni; peggiora col parlare prolungato e scompare dopo un periodo di riposo\n• Successiva comparsa di disfagia con tosse, soffocamento temporaneo, rigurgito nasale, sensazione che il cibo rimanga in gola e perdita di peso",
+            "choices": [
+                {
+                    "text": "Decidi come procedere →",
+                    "next": "come-procedere"
+                }
+            ]
+        },
+        {
+            "id": "come-procedere",
+            "type": "decision",
+            "title": "Come procedere?",
+            "image": "/images/scenes/biasini/IMG-03.jpg",
+            "imageAlt": "Specialista che riflette",
+            "text": "Hai ricevuto la segnalazione della famiglia. Il quadro clinico suggerisce un disturbo della giunzione neuromuscolare a esordio bulbare. Come gestisci il caso?",
+            "choices": [
+                {
+                    "id": "c1",
+                    "text": "Teleconsulto specialistico con raccolta dati",
+                    "next": "scenario-1",
+                    "tag": "1"
+                },
+                {
+                    "id": "c2",
+                    "text": "Invio immediato al centro di riferimento",
+                    "next": "scenario-2",
+                    "tag": "2"
+                }
+            ]
+        },
+        {
+            "id": "scenario-1",
+            "type": "info",
+            "title": "Scenario 1 – Consulto specialistico",
+            "image": "/images/scenes/biasini/IMG-04.jpg",
+            "imageAlt": "Paziente allo schermo e specialista che lo intervista",
+            "badge": "🩺 Esame obiettivo",
+            "badgeColor": "info",
+            "text": "Il paziente risulta **vigile, orientato e collaborante**. All'esame obiettivo:\n\n• Eloquio **rinolalico**\n• Disfagia per solidi e liquidi\n• **Ptosi palpebrale bilaterale** (sinistra > destra)\n• Ipostenia muscoli orbicolari occhi e bocca bilateralmente\n• Ipomobilità velo pendulo\n• Ipostenia muscoli flessori del collo comparsa dopo affaticamento (> 60 sec)\n• Tono e trofismo nella norma\n• **Mantiene Mingazzini I, non mantiene Mingazzini II**\n• ROT fiacchi AASS, normoelicitabili e simmetrici AAII\n• RCP in flessione bilateralmente\n• Sensibilità tattile integra\n• Prove cerebellari normoeseguite",
+            "choices": [
+                {
+                    "text": "Imposta la terapia →",
+                    "next": "terapia-1"
+                }
+            ]
+        },
+        {
+            "id": "terapia-1",
+            "type": "decision",
+            "title": "Cosa faccio?",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Specialista che scrive sul ricettario",
+            "text": "In sospetto di **Miastenia Gravis** viene consigliato:\n\n• Dosaggio anticorpale\n• Studio elettrofisiologico\n• Inizio terapia con **piridostigmina**\n• Introduzione terapia **corticosteroidea**\n• Ciclo di **immunoglobuline ev** (0,4 g/kg per 5 giorni)",
+            "choices": [
+                {
+                    "text": "In sospetto di MG viene consigliato dosaggio anticorpale e studio elettrofisiologico",
+                    "next": "scenario-1-1"
+                },
+                {
+                    "text": "Inizia terapia con piridostigmina",
+                    "next": "scenario-1-2"
+                },
+                {
+                    "text": "Introduce terapia corticosteroidea + ciclo di immunoglobuline ev",
+                    "next": "scenario-1-3"
+                }
+            ]
+        },
+        {
+            "id": "scenario-1-1",
+            "type": "info",
+            "title": "Scenario 1.1 – Risultato anticorpale",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Specialista che legge gli esami",
+            "badge": "⚠️ Sieronegatività",
+            "badgeColor": "warning",
+            "text": "Gli anticorpi anti recettore dell'acetilcolina (**anti-AChR**) e **anti-MuSK**, effettuati con metodica **ELISA**, risultano **negativi**.\n\nLo studio elettrofisiologico non è eseguibile in questa sede.\n\nLa sieronegatività con metodica ELISA non esclude la diagnosi: è necessario approfondire con altra metodica e/o inviare al centro di riferimento.",
+            "choices": [
+                {
+                    "text": "Rivaluta la strategia →",
+                    "next": "terapia-1"
+                }
+            ]
+        },
+        {
+            "id": "scenario-1-2",
+            "type": "info",
+            "title": "Scenario 1.2 – Risposta alla piridostigmina",
+            "image": "/images/scenes/biasini/IMG-15.jpg",
+            "imageAlt": "Paziente che telefona alla specialista",
+            "badge": "⚠️ Scarsa risposta",
+            "badgeColor": "warning",
+            "text": "La terapia con **piridostigmina** (29 agosto – 10 settembre) ha dato **scarsa risposta clinica**.\n\nSono inoltre comparsi **effetti collaterali** come la **scialorrea**.",
+            "choices": [
+                {
+                    "text": "Rivaluta la strategia →",
+                    "next": "terapia-1"
+                }
+            ]
+        },
+        {
+            "id": "scenario-1-3",
+            "type": "info",
+            "title": "Scenario 1.3 – Risposta a corticosteroidi + IgEV",
+            "image": "/images/scenes/biasini/IMG-15.jpg",
+            "imageAlt": "Paziente e specialista non soddisfatti",
+            "badge": "⚠️ Scarsa risposta",
+            "badgeColor": "warning",
+            "text": "La terapia **corticosteroidea** associata alle **immunoglobuline ev** ha dato anch'essa **scarsa risposta clinica**.\n\nIl quadro non è migliorato in modo soddisfacente. È necessario rivalutare la strategia diagnostico-terapeutica e procedere con l'invio al centro di riferimento.",
+            "choices": [
+                {
+                    "text": "Rivaluta la strategia →",
+                    "next": "come-procedere"
+                }
+            ]
+        },
+        {
+            "id": "scenario-2",
+            "type": "info",
+            "title": "Scenario 2 – Invio al centro di riferimento",
+            "image": "/images/scenes/biasini/IMG-08.jpg",
+            "imageAlt": "Paziente in sala d'attesa del centro di riferimento",
+            "badge": "🏥 Centro di riferimento",
+            "badgeColor": "info",
+            "text": "Il paziente viene inviato presso il **centro di riferimento** per proseguire le cure.\n\n**Possibili ipotesi diagnostiche:**\n• Patologia del tronco encefalico?\n• Polineuropatia autoimmune?\n• Esordio bulbare di MG?\n• Altro?\n\nCome procedere con le indagini, considerato che gli anticorpi anti-AChR con metodica ELISA erano negativi?",
+            "choices": [
+                {
+                    "text": "Approfondisci le indagini →",
+                    "next": "indagini-centro"
+                }
+            ]
+        },
+        {
+            "id": "indagini-centro",
+            "type": "decision",
+            "title": "Come procedere con anti-AChR negativi?",
+            "image": "/images/scenes/biasini/IMG-09.jpg",
+            "imageAlt": "Specialista al centro di riferimento che riflette",
+            "text": "Il paziente è anti-AChR negativo con metodica ELISA. **È possibile escludere la MG?**\n\nScegli le indagini da approfondire:",
+            "choices": [
+                {
+                    "id": "c1",
+                    "text": "Ripetere lo studio neuroradiologico",
+                    "next": "indagini-2-1",
+                    "tag": "1"
+                },
+                {
+                    "id": "c2",
+                    "text": "Ripetere il dosaggio anticorpale con altra metodica",
+                    "next": "indagini-2-2",
+                    "tag": "2"
+                },
+                {
+                    "id": "c3",
+                    "text": "Eseguire studio neurofisiologico",
+                    "next": "indagini-2-3",
+                    "tag": "3"
+                }
+            ]
+        },
+        {
+            "id": "indagini-2-1",
+            "type": "info",
+            "title": "2.1 – Studio neuroradiologico",
+            "image": "/images/scenes/biasini/IMG-10.jpg",
+            "imageAlt": "Paziente nella RMN e specialista che guarda",
+            "badge": "📋 RMN encefalo con mdc",
+            "badgeColor": "info",
+            "text": "Il paziente viene sottoposto a **RMN encefalo con mdc** per escludere polinevriti craniche o lesioni infiltrative/vascolari del tronco encefalico.\n\n**Risultato:**\n\n• IV ventricolo in asse, regolare per morfovolumetria\n• Nessuna alterazione morfologica o di segnale a livello degli emisferi cerebellari e del tronco encefalico\n• A livello sopratentoriale: rare microareole iperintense a TR lungo nella sostanza bianca sottocorticale periventricolare, compatibili con **esiti microangiopatici**\n• Nessuna restrizione alla diffusione riferibile a lesioni vascolari recenti\n• Piccola anomalia di sviluppo vascolare venoso in sede frontale destra (drenante nel seno durale contiguo)\n• **Nessuna impregnazione patologica intraparenchimale** dopo contrasto\n\nIl quadro neuroradiologico **non giustifica** la sintomatologia bulbare.",
+            "choices": [
+                {
+                    "text": "Continua→",
+                    "next": "indagini-2-1-1"
+                }
+            ]
+        },
+        {
+            "id": "indagini-2-1-1",
+            "type": "info",
+            "title": "2.1 – Studio neuroradiologico",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Paziente nella RMN e specialista che guarda",
+            "badge": "📋 RMN encefalo con mdc",
+            "badgeColor": "info",
+            "text": "• **IV ventricolo** in asse, regolare per morfovolumetria\n• Nessuna alterazione morfologica o di segnale a livello degli **emisferi cerebellari** e del **tronco encefalico**\n• A livello sopratentoriale: rade microareole iperintense a TR lungo nella sostanza bianca sottocorticale periventricolare — compatibili con **esiti microangiopatici**\n• Nessuna restrizione alla diffusione riferibile a **lesioni vascolari recenti**\n• III ventricolo, ventricoli laterali e spazi subaracnoidei **nella norma** · strutture mediane in asse\n• Piccola **anomalia di sviluppo vascolare venoso** in sede frontale destra (microvasi confluenti su dotto collettore con potenziamento post-contrastografico, drenante nel seno durale contiguo)\n• **Nessuna impregnazione patologica** intraparenchimale dopo contrasto",
+            "choices": [
+                {
+                    "text": "← Torna alle indagini",
+                    "next": "indagini-centro"
+                }
+            ]
+        },
+        {
+            "id": "indagini-2-2",
+            "type": "info",
+            "title": "2.2 – Dosaggio anticorpale con metodica RIA",
+            "image": "/images/scenes/biasini/IMG-11.jpg",
+            "imageAlt": "Infermiera che esegue prelievo e specialista alla scrivania",
+            "badge": "✓ Positività con RIA",
+            "badgeColor": "success",
+            "text": "Viene ripetuto il dosaggio anticorpale con **metodica RIA** (Radio Immuno Assay), più sensibile della metodica ELISA.\n\n**Risultato:**\n• **Anti-AChR (ARAB): 1,30 nmol/l**\n\n Riferimento: negativo < 0,20 nmol/l · dubbio 0,20–0,50 nmol/l · **positivo > 0,50 nmol/l**\n\nIl paziente risulta **sieropositivo** per anticorpi anti-recettore dell'acetilcolina con metodica RIA, nonostante la negatività all'ELISA.",
+            "choices": [
+                {
+                    "text": "← Torna alle indagini",
+                    "next": "indagini-centro"
+                }
+            ]
+        },
+        {
+            "id": "indagini-2-3",
+            "type": "info",
+            "title": "2.3 – Studio elettrofisiologico",
+            "image": "/images/scenes/biasini/IMG-12.jpg",
+            "imageAlt": "Operatore che posiziona elettrodi sul paziente",
+            "badge": "📋 SFEMG + SNR",
+            "badgeColor": "info",
+            "text": "Viene eseguito uno studio elettrofisiologico completo:\n\n**EMG** — Muscoli esplorati: bicipite brachiale dx, I interosseo dorsale dx, vasto laterale dx, tibiale anteriore, genioglosso sin.\n\n**Elettroneurografia** \n\n**SFEMG** (elettromiografia di singola fibra, estensore proprio indice dx)\n\n**SNR** (stimolazione nervosa ripetitiva, nervo accessorio spinale con registrazione del CMAP del muscolo trapezio):\n\n",
+            "choices": [
+                {
+                    "text": "Continua→",
+                    "next": "indagini-2-3-b"
+                }
+            ]
+        },
+        {
+            "id": "indagini-2-3-b",
+            "type": "info",
+            "title": "2.3 – Studio elettrofisiologico",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Operatore che posiziona elettrodi sul paziente",
+            "badge": "📋 SFEMG + SNR",
+            "badgeColor": "info",
+            "text": "**EMG — Attività a riposo:** Assente.\n**Attività volontaria:** PUM polifasici, ampiezza e durata normali, tracciato da sforzo proporzionale alla forza esplicata su tutti i muscoli esaminati.\n\n**SFEMG** (elettromiografia di singola fibra):\n• **80%** di registrazioni con jitter **abnormemente aumentato**\n• Qualche registrazione con **blocchi della trasmissione neuromuscolare**\n• Valore medio del jitter: **96,2 μs**\n\n**SNR** (stimolazione nervosa ripetitiva):\n• **Decremento dell'ampiezza** del CMAP dopo stimolazioni ripetute a bassa frequenza\n\n**Conclusioni:** indicativo di alterazione della **giunzione neuromuscolare di tipo post-sinaptico**.",
+            "stats": [
+                {
+                    "label": "SPE DS — VCM (m/s)",
+                    "value": "47",
+                    "color": "info"
+                },
+                {
+                    "label": "SPE DS — MAP (mV)",
+                    "value": "5",
+                    "color": "info"
+                },
+                {
+                    "label": "SPE DS — LD (ms)",
+                    "value": "3,8",
+                    "color": "info"
+                },
+                {
+                    "label": "Surale DS — VCS (m/s)",
+                    "value": "47",
+                    "color": "info"
+                },
+                {
+                    "label": "Surale DS — SAP (μV)",
+                    "value": "8",
+                    "color": "info"
+                }
+            ],
+            "choices": [
+                {
+                    "text": "Continua→",
+                    "next": "diagnosi"
+                }
+            ]
+        },
+        {
+            "id": "diagnosi",
+            "type": "decision",
+            "title": "Diagnosi e trattamento",
+            "image": "/images/scenes/biasini/IMG-03.jpg",
+            "imageAlt": "Paziente e specialista che parlano in ambulatorio",
+            "badge": "✓ Diagnosi confermata",
+            "badgeColor": "success",
+            "text": "**Diagnosi:** Miastenia gravis generalizzata sieropositiva per anticorpi anti-recettore dell'acetilcolina.\n\n**Classe MGFA: IIIb** (interessamento predominante dei muscoli bulbari)\n\nProssimi passi:\n• Completamento degli esami diagnostici\n• Impostazione del trattamento farmacologico",
+            "choices": [
+                {
+                    "id": "c1",
+                    "text": "Completa gli esami diagnostici",
+                    "next": "esami-completamento",
+                    "tag": "1"
+                },
+                {
+                    "id": "c2",
+                    "text": "Imposta direttamente la terapia",
+                    "next": "trattamento",
+                    "tag": "2"
+                }
+            ]
+        },
+        {
+            "id": "esami-completamento",
+            "type": "info",
+            "title": "Completamento esami diagnostici",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Specialista che legge i risultati",
+            "badge": "📋 TC/RM torace + spirometria",
+            "badgeColor": "info",
+            "text": "• **Piridostigmina** (terapia sintomatica) → sospesa per **scialorrea**\n\n• **Corticosteroidi** — deltacortene 0,75 mg/kg/die\n\n• **Azatioprina** (immunosoppressore, dosaggio incrementale da 50 mg/die) → sospesa per **disturbi gastrointestinali ed epatotossicità**\n\n• **Micofenolato mofetile 2 g/die** per os",
+            "choices": [
+                {
+                    "text": "Imposta la terapia →",
+                    "next": "diagnosi"
+                }
+            ]
+        },
+        {
+            "id": "trattamento",
+            "type": "endpoint",
+            "title": "Impostazione del trattamento farmacologico",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Specialista che scrive la terapia",
+            "badge": "✓ Terapia impostata",
+            "badgeColor": "success",
+            "text": "• **Piridostigmina** (terapia sintomatica) → sospesa per **scialorrea**\n\n• **Corticosteroidi** — deltacortene 0,75 mg/kg/die\n\n• **Azatioprina** (immunosoppressore, dosaggio incrementale da 50 mg/die) → sospesa per **disturbi gastrointestinali ed epatotossicità**\n\n• **Micofenolato mofetile 2 g/die** per os",
+            "choices": [
+                {
+                    "text": "Ricomincia dall'inizio",
+                    "next": "intro"
+                }
+            ]
+        }
+    ]
+}
