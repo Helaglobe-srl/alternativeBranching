@@ -8,7 +8,7 @@
             "title": "Una mail dalla figlia",
             "image": "/images/scenes/biasini/IMG-01.jpg",
             "imageAlt": "Interno casa Messina, la figlia scrive una mail",
-            "text": "Interno casa, Messina. La figlia di **Silvano** scrive alla dott.ssa Biasini una mail accorata:\n\n*«Gentile dottoressa, buongiorno. Mi chiamo Melania e le scrivo perché mio padre ha un disperato bisogno di aiuto.*\n\n*Il 21 agosto, ad ora di pranzo, è stato portato in pronto soccorso perché non riusciva a parlare bene: i medici hanno ipotizzato un'ischemia cerebrale e lo hanno ricoverato. Il 23 agosto hanno eseguito TC encefalo e RMN senza mdc, ma senza riscontrare ischemia: paziente dimesso.*\n\n*Nei giorni seguenti (24–26 agosto) i sintomi sono peggiorati: oltre alle difficoltà di eloquio è comparsa disfagia. Il 26 agosto non riusciva nemmeno a ingerire l'acqua, così lo stesso giorno è stato trasportato al reparto di Neurologia, dove è tuttora ricoverato.»*",
+            "text": "La figlia di **Silvano** scrive alla dott.ssa Biasini una mail accorata:\n\n«Gentile dottoressa, buongiorno. Mi chiamo Melania e le scrivo perché mio padre ha un disperato bisogno di aiuto.\n\nIl 21 agosto, ad ora di pranzo, è stato portato in pronto soccorso perché non riusciva a parlare bene: i medici hanno ipotizzato un'ischemia cerebrale e lo hanno ricoverato. Il 23 agosto hanno eseguito TC encefalo e RMN senza mdc, ma senza riscontrare ischemia: paziente dimesso.\n\nNei giorni seguenti (24–26 agosto) i sintomi sono peggiorati: oltre alle difficoltà di eloquio è comparsa disfagia. Il 26 agosto non riusciva nemmeno a ingerire l'acqua, così lo stesso giorno è stato trasportato al reparto di Neurologia, dove è tuttora ricoverato.»",
             "choices": [
                 {
                     "text": "Leggi la presentazione del caso →",
@@ -36,7 +36,7 @@
             "title": "Come procedere?",
             "image": "/images/scenes/biasini/IMG-03.jpg",
             "imageAlt": "Specialista che riflette",
-            "text": "Hai ricevuto la segnalazione della famiglia. Il quadro clinico suggerisce un disturbo della giunzione neuromuscolare a esordio bulbare. Come gestisci il caso?",
+            "text": " ",
             "choices": [
                 {
                     "id": "c1",
@@ -61,6 +61,16 @@
             "badge": "🩺 Esame obiettivo",
             "badgeColor": "info",
             "text": "Il paziente risulta **vigile, orientato e collaborante**. All'esame obiettivo:\n\n• Eloquio **rinolalico**\n• Disfagia per solidi e liquidi\n• **Ptosi palpebrale bilaterale** (sinistra > destra)\n• Ipostenia muscoli orbicolari occhi e bocca bilateralmente\n• Ipomobilità velo pendulo\n• Ipostenia muscoli flessori del collo comparsa dopo affaticamento (> 60 sec)\n• Tono e trofismo nella norma\n• **Mantiene Mingazzini I, non mantiene Mingazzini II**\n• ROT fiacchi AASS, normoelicitabili e simmetrici AAII\n• RCP in flessione bilateralmente\n• Sensibilità tattile integra\n• Prove cerebellari normoeseguite",
+            "videos": [
+                {
+                    "title": "Signor Silvano 1",
+                    "src": "/videos/biasini/v1.MOV"
+                },
+                {
+                    "title": "Signor Silvano 2",
+                    "src": "/videos/biasini/v2.MOV"
+                }
+            ],
             "choices": [
                 {
                     "text": "Imposta la terapia →",
@@ -77,7 +87,7 @@
             "text": "In sospetto di **Miastenia Gravis** viene consigliato:\n\n• Dosaggio anticorpale\n• Studio elettrofisiologico\n• Inizio terapia con **piridostigmina**\n• Introduzione terapia **corticosteroidea**\n• Ciclo di **immunoglobuline ev** (0,4 g/kg per 5 giorni)",
             "choices": [
                 {
-                    "text": "In sospetto di MG viene consigliato dosaggio anticorpale e studio elettrofisiologico",
+                    "text": "Dosaggio anticorpale e studio elettrofisiologico",
                     "next": "scenario-1-1"
                 },
                 {
@@ -98,7 +108,7 @@
             "imageAlt": "Specialista che legge gli esami",
             "badge": "⚠️ Sieronegatività",
             "badgeColor": "warning",
-            "text": "Gli anticorpi anti recettore dell'acetilcolina (**anti-AChR**) e **anti-MuSK**, effettuati con metodica **ELISA**, risultano **negativi**.\n\nLo studio elettrofisiologico non è eseguibile in questa sede.\n\nLa sieronegatività con metodica ELISA non esclude la diagnosi: è necessario approfondire con altra metodica e/o inviare al centro di riferimento.",
+            "text": "Gli anticorpi anti recettore dell'acetilcolina (**anti-AChR**) e **anti-MuSK**, effettuati con metodica **ELISA**, risultano **negativi**.\n\nLo studio elettrofisiologico non è eseguibile in questa sede.\n\n",
             "choices": [
                 {
                     "text": "Rivaluta la strategia →",
@@ -190,11 +200,11 @@
             "imageAlt": "Paziente nella RMN e specialista che guarda",
             "badge": "📋 RMN encefalo con mdc",
             "badgeColor": "info",
-            "text": "Il paziente viene sottoposto a **RMN encefalo con mdc** per escludere polinevriti craniche o lesioni infiltrative/vascolari del tronco encefalico.\n\n**Risultato:**\n\n• IV ventricolo in asse, regolare per morfovolumetria\n• Nessuna alterazione morfologica o di segnale a livello degli emisferi cerebellari e del tronco encefalico\n• A livello sopratentoriale: rare microareole iperintense a TR lungo nella sostanza bianca sottocorticale periventricolare, compatibili con **esiti microangiopatici**\n• Nessuna restrizione alla diffusione riferibile a lesioni vascolari recenti\n• Piccola anomalia di sviluppo vascolare venoso in sede frontale destra (drenante nel seno durale contiguo)\n• **Nessuna impregnazione patologica intraparenchimale** dopo contrasto\n\nIl quadro neuroradiologico **non giustifica** la sintomatologia bulbare.",
+            "text": "Il paziente viene sottoposto a **RMN encefalo con mdc** per escludere polinevriti craniche o lesioni infiltrative/vascolari del tronco encefalico.\n\n**Risultato:**\n\n• IV ventricolo in asse, regolare per morfovolumetria\n• Nessuna alterazione morfologica o di segnale a livello degli emisferi cerebellari e del tronco encefalico\n• A livello sopratentoriale: rare microareole iperintense a TR lungo nella sostanza bianca sottocorticale periventricolare, compatibili con **esiti microangiopatici**\n• Nessuna restrizione alla diffusione riferibile a lesioni vascolari recenti\n•Nella norma III ventricolo, ventricoli laterali e spazisubaracnoidei\n• Piccola anomalia di sviluppo vascolare venoso in sede frontale destra (drenante nel seno durale contiguo)\n• **Nessuna impregnazione patologica intraparenchimale** dopo contrasto\n\n",
             "choices": [
                 {
-                    "text": "Continua→",
-                    "next": "indagini-2-1-1"
+                    "text": "← Torna alle indagini",
+                    "next": "indagini-centro"
                 }
             ]
         },
@@ -218,11 +228,11 @@
             "id": "indagini-2-2",
             "type": "info",
             "title": "2.2 – Dosaggio anticorpale con metodica RIA",
-            "image": "/images/scenes/biasini/IMG-11.jpg",
+            "image": "/images/scenes/biasini/IMG-12.jpg",
             "imageAlt": "Infermiera che esegue prelievo e specialista alla scrivania",
             "badge": "✓ Positività con RIA",
             "badgeColor": "success",
-            "text": "Viene ripetuto il dosaggio anticorpale con **metodica RIA** (Radio Immuno Assay), più sensibile della metodica ELISA.\n\n**Risultato:**\n• **Anti-AChR (ARAB): 1,30 nmol/l**\n\n Riferimento: negativo < 0,20 nmol/l · dubbio 0,20–0,50 nmol/l · **positivo > 0,50 nmol/l**\n\nIl paziente risulta **sieropositivo** per anticorpi anti-recettore dell'acetilcolina con metodica RIA, nonostante la negatività all'ELISA.",
+            "text": "Viene ripetuto il dosaggio anticorpale con **metodica RIA** (Radio Immuno Assay), più sensibile della metodica ELISA.\n\n**Risultato:**\n• **Anti-AChR (ARAB): 1,30 nmol/l**\n\n Riferimento: negativo < 0,20 nmol/l · dubbio 0,20–0,50 nmol/l · **positivo > 0,50 nmol/l**\n\n",
             "choices": [
                 {
                     "text": "← Torna alle indagini",
@@ -234,7 +244,7 @@
             "id": "indagini-2-3",
             "type": "info",
             "title": "2.3 – Studio elettrofisiologico",
-            "image": "/images/scenes/biasini/IMG-12.jpg",
+            "image": "/images/scenes/biasini/IMG-13.jpg",
             "imageAlt": "Operatore che posiziona elettrodi sul paziente",
             "badge": "📋 SFEMG + SNR",
             "badgeColor": "info",
@@ -255,7 +265,7 @@
             "badge": "📋 SFEMG + SNR",
             "badgeColor": "info",
             "text": "**EMG — Attività a riposo:** Assente.\n**Attività volontaria:** PUM polifasici, ampiezza e durata normali, tracciato da sforzo proporzionale alla forza esplicata su tutti i muscoli esaminati.\n\n**SFEMG** (elettromiografia di singola fibra):\n• **80%** di registrazioni con jitter **abnormemente aumentato**\n• Qualche registrazione con **blocchi della trasmissione neuromuscolare**\n• Valore medio del jitter: **96,2 μs**\n\n**SNR** (stimolazione nervosa ripetitiva):\n• **Decremento dell'ampiezza** del CMAP dopo stimolazioni ripetute a bassa frequenza\n\n**Conclusioni:** indicativo di alterazione della **giunzione neuromuscolare di tipo post-sinaptico**.",
-            "stats": [
+            "_stats": [
                 {
                     "label": "SPE DS — VCM (m/s)",
                     "value": "47",
@@ -282,6 +292,40 @@
                     "color": "info"
                 }
             ],
+            "table": {
+                "headers": [
+                    "Nervo",
+                    "Tratto",
+                    "VCS",
+                    "SAP (mcV)",
+                    "LD (ms)",
+                    "VCM",
+                    "MAP (mV)",
+                    "LD (ms)"
+                ],
+                "rows": [
+                    [
+                        "SPE DS",
+                        "Cavo-caviglia",
+                        "",
+                        "",
+                        "",
+                        "47",
+                        "5",
+                        "3.8"
+                    ],
+                    [
+                        "Surale DS",
+                        "Polp-Mall. Esterno",
+                        "47",
+                        "8",
+                        "",
+                        "",
+                        "",
+                        ""
+                    ]
+                ]
+            },
             "choices": [
                 {
                     "text": "Continua→",
@@ -302,7 +346,7 @@
                 {
                     "id": "c1",
                     "text": "Completa gli esami diagnostici",
-                    "next": "esami-completamento",
+                    "next": "tc o rm",
                     "tag": "1"
                 },
                 {
@@ -310,6 +354,40 @@
                     "text": "Imposta direttamente la terapia",
                     "next": "trattamento",
                     "tag": "2"
+                }
+            ]
+        },
+        {
+            "id": "tc o rm",
+            "type": "decision",
+            "title": "Completamento esami diagnostici",
+            "image": "/images/scenes/biasini/IMG-05.jpg",
+            "imageAlt": "Specialista che legge i risultati",
+            "badge": "📋 TC/RM torace + spirometria",
+            "badgeColor": "info",
+            "text": "Eseguire le seguenti procedure dignostiche\n\n • RM o TC del torace con mezzo di contrasto \n\n • Valutazione funzionalità respiratoria ",
+            "choices": [
+                {
+                    "id": "c1",
+                    "text": "Continua→",
+                    "next": "esami-completamento1",
+                    "tag": "1"
+                }
+            ]
+        },
+        {
+            "id": "esami-completamento1",
+            "type": "info",
+            "title": "Completamento esami diagnostici",
+            "image": "/images/scenes/biasini/IMG-06.jpg",
+            "imageAlt": "Specialista che legge i risultati",
+            "badge": "📋 Esami TC/RM torace + spirometria",
+            "badgeColor": "info",
+            "text": "•TC o RM Torace con MdC - Eseguito accertamento diagnostico con esito negativo per alterazioni tomografiche a carico della loggia timica.\n\n • Valutazione della funzionalità respiratoria - Sottoposto a studio emogasanalito, spirometria e misurazione della capacità vitale forzata (FVC) per monitorare il coinvolgimento dei muscoli respiratori, risultato nella norma. ",
+            "choices": [
+                {
+                    "text": "Imposta la terapia →",
+                    "next": "diagnosi"
                 }
             ]
         },
@@ -340,7 +418,7 @@
             "text": "• **Piridostigmina** (terapia sintomatica) → sospesa per **scialorrea**\n\n• **Corticosteroidi** — deltacortene 0,75 mg/kg/die\n\n• **Azatioprina** (immunosoppressore, dosaggio incrementale da 50 mg/die) → sospesa per **disturbi gastrointestinali ed epatotossicità**\n\n• **Micofenolato mofetile 2 g/die** per os",
             "choices": [
                 {
-                    "text": "Ricomincia dall'inizio",
+                    "text": "Fine",
                     "next": "intro"
                 }
             ]

@@ -8,12 +8,14 @@ import { useUcbTracking } from '@/hooks/useUcbTracking'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Choice { id?: string; text: string; next: string; tag?: string }
-interface Stat { label: string; value: string; color: 'warning' | 'danger' | 'success' | 'info' }
+interface Stat   { label: string; value: string; color: 'warning' | 'danger' | 'success' | 'info' }
+interface Video  { title: string; src: string }
+interface Table  { headers: string[]; rows: string[][]; footer?: string }
 interface Scene {
   id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
   title: string; image?: string | null; imageAlt?: string; context?: string
   badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
-  stats?: Stat[]; text: string; choices: Choice[]
+  stats?: Stat[]; videos?: Video[]; table?: Table; text: string; choices: Choice[]
 }
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
@@ -45,10 +47,10 @@ function parseText(text: string) {
 
 const CFG = {
   decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Decisione' },
-  endpoint: { accent: '#0e88a5', light: '#f0fdf4', label: 'Conclusione'    },
+  endpoint: { accent: '#0e88a5', light: '#f0fdf4', label: 'Conclusione' },
   outcome:  { accent: '#0e88a5', light: '#fffbeb', label: 'Esito scenario' },
-  intro:    { accent: '#0e88a5', light: '#e8f4f8', label: 'Caso clinico'   },
-  info:     { accent: '#0e88a5', light: '#e8f4f8', label: ' '   },
+  intro:    { accent: '#0e88a5', light: '#e8f4f8', label: 'Caso clinico' },
+  info:     { accent: '#0e88a5', light: '#e8f4f8', label: ' ' },
 } as const
 
 const BADGE_COLORS = {
@@ -59,7 +61,7 @@ const BADGE_COLORS = {
 }
 
 const STAT_COLORS = {
-  warning: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)'  },
+  warning: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
   danger:  { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
   success: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
   info:    { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
@@ -68,11 +70,10 @@ const STAT_COLORS = {
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 
-// Transition timing constants
-const T_OUT = 200   // fade-out duration ms
-const T_PRE = 40    // brief pause after scene swap (no image) ms
-const T_IN  = 340   // fade-in duration ms
-const T_IMG_FALLBACK = 2500  // max wait for image before fading in anyway ms
+const T_OUT = 200
+const T_PRE = 40
+const T_IN  = 340
+const T_IMG_FALLBACK = 2500
 
 // ── StatBox ──────────────────────────────────────────────────────────────────
 
@@ -88,6 +89,140 @@ function StatBox({ stats }: { stats: Stat[] }) {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+
+// ── TableBox ──────────────────────────────────────────────────────────────────
+
+function TableBox({ table }: { table: Table }) {
+  return (
+    <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(14,136,165,0.12)', minWidth: 0, overflow: 'hidden' }}>
+      <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid rgba(14,136,165,0.15)', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, tableLayout: 'auto' }}>
+          <thead>
+            <tr style={{ background: 'rgba(14,136,165,0.07)' }}>
+              {table.headers.map((h, i) => (
+                <th key={i} style={{
+                  padding: '6px 10px', textAlign: i < 2 ? 'left' : 'center',
+                  fontWeight: 700, color: '#0e88a5', fontSize: 10,
+                  letterSpacing: '0.05em', textTransform: 'uppercase',
+                  borderBottom: '1px solid rgba(14,136,165,0.15)',
+                  whiteSpace: 'nowrap',
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((row, ri) => (
+              <tr key={ri} style={{ background: ri % 2 === 0 ? 'white' : 'rgba(14,136,165,0.02)' }}>
+                {row.map((cell, ci) => (
+                  <td key={ci} style={{
+                    padding: '7px 10px',
+                    textAlign: ci < 2 ? 'left' : 'center',
+                    color: cell ? '#1e4a5c' : '#ccc',
+                    fontWeight: ci === 0 ? 600 : 400,
+                    fontFamily: ci >= 2 ? 'Georgia,serif' : 'inherit',
+                    fontSize: ci >= 2 ? 13 : 11.5,
+                    borderBottom: ri < table.rows.length - 1 ? '1px solid rgba(14,136,165,0.07)' : 'none',
+                    whiteSpace: 'nowrap',
+                  }}>{cell || '—'}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {table.footer && (
+        <div style={{ marginTop: 8, fontSize: 11.5, color: '#4C7D93', fontStyle: 'italic', paddingLeft: 2 }}>
+          {table.footer}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── VideoBox — buttons that open the modal ────────────────────────────────────
+
+function VideoBox({ videos, onOpen }: { videos: Video[]; onOpen: (v: Video) => void }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(14,136,165,0.12)' }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 2 }}>Video allegati</div>
+      {videos.map((v, i) => (
+        <button key={i} onClick={() => onOpen(v)}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #c4e0e9', background: 'white', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', width: '100%' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#0e88a5'; e.currentTarget.style.background = '#e8f4f8' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#c4e0e9'; e.currentTarget.style.background = 'white' }}>
+          {/* Play icon */}
+          <span style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 8, background: '#0e88a5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
+              <path d="M1 1.5L10 6.5L1 11.5V1.5Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round"/>
+            </svg>
+          </span>
+          <span style={{ flex: 1, fontSize: 12.5, fontWeight: 500, color: '#1e4a5c', lineHeight: 1.3 }}>{v.title}</span>
+          <span style={{ fontSize: 11, color: '#9cb8c4', flexShrink: 0 }}>▶</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Video Modal ───────────────────────────────────────────────────────────────
+
+function VideoModal({ video, onClose }: { video: Video; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [onClose])
+
+  // Pause and reset when closing
+  const handleClose = () => {
+    videoRef.current?.pause()
+    onClose()
+  }
+
+  return (
+    <div
+      onClick={handleClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background: '#0c1a1a', borderRadius: 20, overflow: 'hidden', maxWidth: 860, width: '100%', boxShadow: '0 40px 100px rgba(0,0,0,0.6)', animation: 'popIn .22s cubic-bezier(0.22,1,0.36,1)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#0e88a5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
+                <path d="M1 1.5L10 6.5L1 11.5V1.5Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: 'white' }}>{video.title}</span>
+          </div>
+          <button onClick={handleClose}
+            style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', transition: 'all .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Video player */}
+        <video
+          ref={videoRef}
+          src={video.src}
+          controls
+          autoPlay
+          playsInline
+          style={{ width: '100%', display: 'block', maxHeight: '70vh', background: '#000', outline: 'none' }}
+        />
+      </div>
     </div>
   )
 }
@@ -139,18 +274,16 @@ export default function GamePage() {
   const [isDesktop, setIsDesktop]     = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [username, setUsername]       = useState('')
+  const [activeVideo, setActiveVideo] = useState<Video | null>(null)
 
-  // pendingImage: the src we are waiting to load before fading in.
-  // null means "no wait needed, proceed immediately".
   const pendingImageRef = useRef<string | null>(null)
-  const imgLoadedRef    = useRef<boolean>(false)   // did onLoad fire for pendingImage?
+  const imgLoadedRef    = useRef<boolean>(false)
 
   const { startSession, trackScene, endSession } = useUcbTracking()
-  const scrollRef     = useRef<HTMLDivElement>(null)
-  const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const fallbackRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const scrollRef   = useRef<HTMLDivElement>(null)
+  const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── helper: start fade-in ──────────────────────────────────────────────────
   const startFadeIn = useCallback(() => {
     if (fallbackRef.current) { clearTimeout(fallbackRef.current); fallbackRef.current = null }
     setPhase('fading-in')
@@ -193,7 +326,6 @@ export default function GamePage() {
     setPhase('fading-out')
 
     timerRef.current = setTimeout(() => {
-      // ── commit scene swap ──────────────────────────────────────────────────
       if (back) {
         setHistory(h => h.slice(0, -1))
         setCurrentId(nextId)
@@ -209,39 +341,30 @@ export default function GamePage() {
       setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
 
-      // ── decide whether to wait for an image ────────────────────────────────
       const nextScene  = data?.scenes.find(s => s.id === nextId)
       const nextImgSrc = nextScene?.image ?? null
 
       if (!nextImgSrc) {
-        // No image: fade in immediately after brief paint pause
         pendingImageRef.current = null
         timerRef.current = setTimeout(startFadeIn, T_PRE)
         return
       }
 
-      // Wait for Next.js <Image> onLoad — fires after the optimised
-      // /_next/image URL is decoded and painted. key={scene.image} on the
-      // <Image> guarantees onLoad fires on every src change, even when cached.
-      // Fallback timer prevents blocking forever on slow connections.
       pendingImageRef.current = nextImgSrc
       imgLoadedRef.current    = false
 
       fallbackRef.current = setTimeout(() => {
-        if (pendingImageRef.current === nextImgSrc && !imgLoadedRef.current) {
-          startFadeIn()
-        }
+        if (pendingImageRef.current === nextImgSrc && !imgLoadedRef.current) startFadeIn()
       }, T_IMG_FALLBACK)
 
     }, T_OUT)
   }, [phase, currentId, trackEvent, data, startFadeIn])
 
-  // Called by Next.js <Image> onLoad — fires when the image is actually painted
   const handleImgLoad = useCallback((src: string) => {
     if (pendingImageRef.current === src && phase === 'hidden') {
       imgLoadedRef.current = true
       if (fallbackRef.current) { clearTimeout(fallbackRef.current); fallbackRef.current = null }
-      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
+      if (timerRef.current)    { clearTimeout(timerRef.current);    timerRef.current    = null }
       startFadeIn()
     }
   }, [phase, startFadeIn])
@@ -299,7 +422,7 @@ export default function GamePage() {
   const accentLine  = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
   const isOut = phase === 'fading-out' || phase === 'hidden'
-  const sharedOpacity = isOut ? 0 : 1
+  const sharedOpacity   = isOut ? 0 : 1
   const sharedTransition = phase === 'fading-out'
     ? `opacity ${T_OUT}ms ease-out`
     : phase === 'fading-in'
@@ -309,8 +432,7 @@ export default function GamePage() {
   const imgStyle: React.CSSProperties = {
     position: 'absolute', inset: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    opacity: sharedOpacity,
-    transition: sharedTransition,
+    opacity: sharedOpacity, transition: sharedTransition,
   }
 
   const textStyle: React.CSSProperties = {
@@ -325,21 +447,17 @@ export default function GamePage() {
   }
 
   const mobileTextStyle: React.CSSProperties = {
-    opacity: sharedOpacity,
-    transition: sharedTransition,
+    opacity: sharedOpacity, transition: sharedTransition,
   }
 
   const imgLayer = (
     <div style={imgStyle}>
       {scene.image && !imgError ? (
         <Image
-          key={scene.image}   /* force remount on src change so onLoad always fires */
+          key={scene.image}
           src={scene.image}
           alt={scene.imageAlt ?? scene.title}
-          fill
-          sizes={isDesktop ? '65vw' : '100vw'}
-          quality={95}
-          priority
+          fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
           style={{ objectFit: 'contain', objectPosition: 'center' }}
           onLoad={() => handleImgLoad(scene.image!)}
           onError={() => { setImgError(true); if (pendingImageRef.current === scene.image) startFadeIn() }}
@@ -359,17 +477,13 @@ export default function GamePage() {
   const imgOverlays = (
     <>
       <div style={{
-        position: 'absolute', top: 12, left: 14,
-        padding: '3px 10px', borderRadius: 20,
+        position: 'absolute', top: 12, left: 14, padding: '3px 10px', borderRadius: 20,
         background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
         border: `1px solid ${cfg.accent}28`,
         fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em',
         textTransform: 'uppercase', color: cfg.accent,
-        zIndex: 2,
-        opacity: isInfo ? 0 : 1,
-        pointerEvents: 'none',
+        zIndex: 2, opacity: isInfo ? 0 : 1, pointerEvents: 'none',
       }}>{cfg.label}</div>
-
       {scene.badge && <div style={{ position: 'absolute', top: 12, right: 14, padding: '3px 10px', borderRadius: 20, backdropFilter: 'blur(8px)', fontSize: 9.5, fontWeight: 600, background: badgeColors.bg, color: badgeColors.color, border: badgeColors.border, zIndex: 2 }}>{scene.badge}</div>}
       <div style={{ position: 'absolute', bottom: 10, left: 14, padding: '2px 8px', borderRadius: 4, background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)', fontSize: 8.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', zIndex: 2 }}>{scene.id}</div>
     </>
@@ -406,12 +520,9 @@ export default function GamePage() {
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
         <div style={{
           display: 'inline-flex', padding: '2px 9px', borderRadius: 5,
-          background: cfg.light,
-          fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+          background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
           textTransform: 'uppercase', color: cfg.accent,
-          marginBottom: compact ? 7 : 9,
-          opacity: isInfo ? 0 : 1,
-          pointerEvents: 'none',
+          marginBottom: compact ? 7 : 9, opacity: isInfo ? 0 : 1, pointerEvents: 'none',
         }}>{cfg.label}</div>
         <h2 style={{ margin: 0, fontSize: compact ? 17 : 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
         {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
@@ -419,7 +530,9 @@ export default function GamePage() {
       <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
       <div style={{ flex: compact ? undefined : 1, fontSize: 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: compact ? undefined : 'auto', minHeight: 0, marginBottom: compact ? 16 : 0 }}>
         {parseText(scene.text)}
-        {scene.stats && scene.stats.length > 0 && <StatBox stats={scene.stats} />}
+        {scene.stats  && scene.stats.length  > 0 && <StatBox  stats={scene.stats} />}
+        {scene.table  && <TableBox table={scene.table} />}
+        {scene.videos && scene.videos.length > 0 && <VideoBox videos={scene.videos} onOpen={setActiveVideo} />}
       </div>
       <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
         {isDecision && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
@@ -445,6 +558,7 @@ export default function GamePage() {
       `}</style>
 
       {showConfirm && <ConfirmPopup onConfirm={handleConfirmRestart} onCancel={() => setShowConfirm(false)} />}
+      {activeVideo  && <VideoModal  video={activeVideo}             onClose={() => setActiveVideo(null)} />}
 
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#eae5de', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden' }}>
 
