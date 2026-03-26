@@ -61,7 +61,7 @@
             "badge": "🩺 Esame obiettivo",
             "badgeColor": "info",
             "text": "Il paziente risulta **vigile, orientato e collaborante**. All'esame obiettivo:\n\n• Eloquio **rinolalico**\n• Disfagia per solidi e liquidi\n• **Ptosi palpebrale bilaterale** (sinistra > destra)\n• Ipostenia muscoli orbicolari occhi e bocca bilateralmente\n• Ipomobilità velo pendulo\n• Ipostenia muscoli flessori del collo comparsa dopo affaticamento (> 60 sec)\n• Tono e trofismo nella norma\n• **Mantiene Mingazzini I, non mantiene Mingazzini II**\n• ROT fiacchi AASS, normoelicitabili e simmetrici AAII\n• RCP in flessione bilateralmente\n• Sensibilità tattile integra\n• Prove cerebellari normoeseguite",
-            "videos": [
+            "_videos": [
                 {
                     "title": "Signor Silvano 1",
                     "src": "/videos/biasini/v1.MOV"
