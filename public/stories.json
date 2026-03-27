@@ -31,5 +31,16 @@
   "tag": "Neurologia",
   "duration": "10–15 min",
   "scenes": 15
+},
+{
+  "slug": "vanoli",
+  "title": "UCB Red Flags — Fiammetta Vanoli",
+  "subtitle": "MG sieronegativa · Diplopia e Ptosi",
+  "description": "Giulia, 59 anni, diplopia binoculare e ptosi fissa OS con anamnesi tiroidea. Anticorpi negativi: come arrivare alla diagnosi e gestire la terapia?",
+  "cover": "/stories/vanoli/vanoli_cover.svg",
+  "sponsor": "UCB",
+  "tag": "Neurologia",
+  "duration": "10–15 min",
+  "scenes": 14
 }
 ]

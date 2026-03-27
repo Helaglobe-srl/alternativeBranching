@@ -1,0 +1,293 @@
+{
+  "title": "UCB Red Flags — Caso Vanoli",
+  "subtitle": "Miastenia Gravis · Diplopia e Ptosi",
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Presentazione del caso",
+      "image": "/images/scenes/vanoli/IMG-01.jpg",
+      "imageAlt": "Paziente in PS che si copre l'occhio sinistro",
+      "text": "**Giulia**, 59 anni. Si sveglia e nota la comparsa di:\n\n• **Diplopia binoculare** verso l'alto e in lateralità verso sinistra\n• **Ptosi** dell'occhio sinistro\n• Dolore retrorbitario (risolto spontaneamente dopo qualche giorno)\n\nSi reca al Pronto Soccorso: viene eseguita **TC + angioTC intracranica** — nulla di rilevante. Dimessa con indicazione a visita neurologica.\n\n**Anamnesi:**\n• Bendaggio gastrico per obesità\n• Pregressa malattia di Basedow con ipertiroidismo → trattato con radioiodio → evoluzione in **ipotiroidismo** (terapia con tiroxina); residua esoftalmo OD\n• Noduli polmonari multipli (forte fumatrice)\n• Terapia: eutirox 75 mcg × 6 gg, 50 mcg domenica",
+      "choices": [
+        { "text": "Prima visita neurologica →", "next": "prima-visita" }
+      ]
+    },
+    {
+      "id": "prima-visita",
+      "type": "info",
+      "title": "Prima visita neurologica",
+      "image": "/images/scenes/vanoli/IMG-02.jpg",
+      "imageAlt": "Paziente e specialista in ambulatorio di neurologia",
+      "badge": "🩺 Esame obiettivo",
+      "badgeColor": "info",
+      "text": "La paziente riferisce diplopia costante, presente tutti i giorni, che non cambia durante la giornata. La ptosi sinistra migliora coprendo l'occhio destro.\n\n**Esame neurologico obiettivo:**\n• Movimenti oculari nella norma, ma **diplopia** verso sinistra e verso l'alto\n• Guardando verso l'alto: OD devia verso l'esterno\n• **Ptosi fissa OS** fino al bordo superiore della pupilla — non peggiora con affaticamento\n• Tono e massa muscolare normali\n• La paziente riesce a mantenere le posizioni neurologiche di prova delle braccia e delle gambe per 2 minuti senza cedimenti.\n• Sensibilità normale · Prove di coordinazione normali\n• Romberg negativo · Deambulazione nella norma",
+      "choices": [
+        { "text": "Decidi come procedere →", "next": "cosa-faccio" }
+      ]
+    },
+    {
+      "id": "cosa-faccio",
+      "type": "decision",
+      "title": "Cosa faccio?",
+      "image": "/images/scenes/vanoli/IMG-03.jpg",
+      "imageAlt": "Specialista che riflette",
+      "text": "Quadro clinico con diplopia binoculare, ptosi fissa OS e anamnesi di patologia tiroidea. Qual è la tua scelta?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Richiedo anticorpi anti-AChR e anti-MuSK",
+          "next": "anticorpi",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Richiedo consulenza oculistica",
+          "next": "oculistica",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Richiedo funzionalità tiroidea",
+          "next": "tiroide",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "anticorpi",
+      "type": "decision",
+      "title": "1 – Anticorpi anti-AChR e anti-MuSK",
+      "image": "/images/scenes/vanoli/IMG-04.jpg",
+      "imageAlt": "Specialista che legge gli esami",
+      "badge": "⚠️ Negativi",
+      "badgeColor": "warning",
+      "text": "Gli anticorpi **anti-AChR** e **anti-MuSK** risultano **negativi**.\n\n",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Elettromiografia Standard ed elettromiografia singola fibra (SFEMG)",
+          "next": "emg",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Cell Based Assay",
+          "next": "cba",
+          "tag": "2"
+        }
+      ]
+    },
+    {
+      "id": "emg",
+      "type": "decision",
+      "title": "1.1 – EMG standard e SFEMG",
+      "image": "/images/scenes/vanoli/IMG-04.jpg",
+      "imageAlt": "Specialista che legge i risultati",
+      "badge": "⚠️ Negativi",
+      "badgeColor": "warning",
+      "text": "I risultati sono **negativi**.\n\nNonostante la negatività, Cosa faccio?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Visita oculistica",
+          "next": "oculistica",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Ice Pack Test",
+          "next": "ice-pack",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "TC torace",
+          "next": "tc-torace",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "ice-pack",
+      "type": "info",
+      "title": "1.1.2 – Ice Pack Test",
+      "image": "/images/scenes/vanoli/IMG-05.jpg",
+      "imageAlt": "Specialista che visita la paziente",
+      "badge": "✓ Positivo",
+      "badgeColor": "success",
+      "text": "L'**Ice Pack Test** risulta **positivo**.\n\nLa positività supporta la diagnosi di **MG sieronegativa**.\n\nSi imposta terapia con **piridostigmina**. Si pianifica esame oculistico e RM orbite.\n\nLa paziente tuttavia **non risponde alla piridostigmina** e la diplopia peggiora.",
+      "choices": [
+        { "text": "Gestisci il peggioramento →", "next": "peggioramento" }
+      ]
+    },
+    {
+      "id": "peggioramento",
+      "type": "decision",
+      "title": "La situazione non migliora — cosa faccio?",
+      "image": "/images/scenes/vanoli/IMG-03.jpg",
+      "imageAlt": "Specialista che riflette",
+      "badge": "⚠️ Mancata risposta",
+      "badgeColor": "danger",
+      "text": "La paziente non risponde alla piridostigmina e la diplopia peggiora. Qual è la prossima mossa?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Aumento corticosteroide a 1 mg/kg",
+          "next": "steroide-alto",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Aggiungo corticosteroide 25 mg/die + immunosoppressore",
+          "next": "steroide-basso",
+          "tag": "2"
+        }
+      ]
+    },
+    {
+      "id": "steroide-basso",
+      "type": "info",
+      "title": "Corticosteroide 25 mg/die + immunosoppressore",
+      "image": "/images/scenes/vanoli/IMG-08.jpg",
+      "imageAlt": "Specialista che prescrive la terapia",
+      "badge": "📋 Terapia impostata",
+      "badgeColor": "info",
+      "text": "Si aggiunge **corticosteroide 25 mg/die** e si inserisce un **immunosoppressore non steroideo**.\n\nLa situazione non migliora in modo soddisfacente. Occorre rivalutare.",
+      "choices": [
+        { "text": "Rivaluta →", "next": "peggioramento" }
+      ]
+    },
+    {
+      "id": "steroide-alto",
+      "type": "endpoint",
+      "title": "Corticosteroide 1 mg/kg + immunosoppressore",
+      "image": "/images/scenes/vanoli/IMG-09.jpg",
+      "imageAlt": "Specialista con idea illuminante",
+      "badge": "✓ Scelta corretta",
+      "badgeColor": "success",
+      "text": "Si aumenta il corticosteroide a **1 mg/kg/die** e si inserisce un **immunosoppressore non steroideo**.\n\nNel frattempo la **RM orbitale con mdc** mostra:\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\n**Diagnosi differenziale: MG vs Miosite orbitaria?**\n\nLa coesistenza di patologia tiroidea, sieronegatività e coinvolgimento muscolare orbitario impone una valutazione multidisciplinare attenta.",
+      "choices": [
+        { "text": "Ricomincia dall'inizio", "next": "intro" }
+      ]
+    },
+    {
+      "id": "cba",
+      "type": "decision",
+      "title": "1.2 – Cell Based Assay",
+      "image": "/images/scenes/vanoli/IMG-04.jpg",
+      "imageAlt": "Specialista che legge i risultati",
+      "badge": "⚠️ Negativo",
+      "badgeColor": "warning",
+      "text": "Il **Cell Based Assay** risulta **negativo**.\n\nNonostante la triplice negatività anticorpale, il quadro clinico rimane sospetto per MG.",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "EMG standard + SFEMG",
+          "next": "emg",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Consulenza oculistica",
+          "next": "oculistica",
+          "tag": "2"
+        }
+      ]
+    },
+    {
+      "id": "tc-torace",
+      "type": "info",
+      "title": "1.3 – TC torace",
+      "image": "/images/scenes/vanoli/IMG-06.jpg",
+      "imageAlt": "Paziente in TC e specialista che osserva",
+      "badge": "📋 Iperplasia timica",
+      "badgeColor": "info",
+      "text": "La **TC torace** evidenzia **presenza di iperplasia timica**.\n\nIl chirurgo **non dà indicazione all'intervento** in questo momento.\n\nSi procede con valutazione oculistica e RM orbite.",
+      "choices": [
+        { "text": "Visita oculistica + RM orbite →", "next": "oculistica" }
+      ]
+    },
+    {
+      "id": "oculistica",
+      "type": "info",
+      "title": "2 – Consulenza oculistica",
+      "image": "/images/scenes/vanoli/IMG-07.jpg",
+      "imageAlt": "Paziente in visita oculistica con specialista",
+      "badge": "✓ Nella norma",
+      "badgeColor": "success",
+      "text": "La visita oculistica **esclude problemi oculistici primari**.\n\n "
+     ,"choices": [
+        { "text": "Continua ->", "next": "oculistica_domande" }
+      ]
+    
+    },
+    {
+      "id": "oculistica_domande",
+      "type": "decision",
+      "title": "2 – Consulenza oculistica",
+      "image": "/images/scenes/vanoli/IMG-07.jpg",
+      "imageAlt": "Paziente in visita oculistica con specialista",
+      "badge": "✓ Nella norma",
+      "badgeColor": "success",
+      "text": "La visita oculistica **esclude problemi oculistici primari**.\n\nIl quadro è compatibile con patologia neuromuscolare. Si procede con ulteriori accertamenti.",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "RM orbite",
+          "next": "rm-orbite",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Anticorpi anti-AChR e anti-MuSK",
+          "next": "anticorpi",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Funzionalità tiroidea",
+          "next": "tiroide",
+          "tag": "3"
+        }
+      ]
+    },
+    {
+      "id": "rm-orbite",
+      "type": "endpoint",
+      "title": "RM orbitale con mdc",
+      "image": "/images/scenes/vanoli/IMG-09.jpg",
+      "imageAlt": "Specialista con idea illuminante",
+      "badge": "⚠️ Miosite orbitaria?",
+      "badgeColor": "warning",
+      "text": "La **RM orbitale con mdc** mostra:\n\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\n**MG o Miosite orbitaria?**\n\nLa coesistenza di patologia tiroidea autoimmune, sieronegatività anticorpale e coinvolgimento selettivo dei muscoli orbitari impone una valutazione multidisciplinare. La diagnosi differenziale tra MG sieronegativa e miosite orbitaria rimane aperta.",
+      "choices": [
+        { "text": "Ricomincia dall'inizio", "next": "intro" }
+      ]
+    },
+    {
+      "id": "tiroide",
+      "type": "decision",
+      "title": "3 – Funzionalità tiroidea",
+      "image": "/images/scenes/vanoli/IMG-04.jpg",
+      "imageAlt": "Specialista che legge gli esami",
+      "badge": "✓ Nella norma",
+      "badgeColor": "success",
+      "text": "La funzionalità tiroidea risulta **nella norma**.\n\nL'ipotiroidismo è ben compensato dalla terapia sostitutiva in corso. La patologia tiroidea non spiega il quadro oculare attuale.",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "RM orbite + visita oculistica",
+          "next": "oculistica",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Anticorpi anti-AChR e anti-MuSK",
+          "next": "anticorpi",
+          "tag": "2"
+        }
+      ]
+    }
+  ]
+}
