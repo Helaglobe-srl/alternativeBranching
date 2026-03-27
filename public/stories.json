@@ -42,5 +42,16 @@
   "tag": "Neurologia",
   "duration": "10–15 min",
   "scenes": 14
+},
+{
+  "slug": "alboinierra",
+  "title": "UCB Red Flags — Alboini-Erra",
+  "subtitle": "Crisi miastenica · Recidiva timoma",
+  "description": "Maria, 64 anni, MG AChR+ con timoma B2-B3. Dopo timectomia e radioterapia, presenta una crisi miastenica refrattaria con dispnea ingravescente. Come gestire la rescue therapy e identificare la causa del peggioramento?",
+  "cover": "/stories/alboinierra/cover.png",
+  "sponsor": "UCB",
+  "tag": "Neurologia",
+  "duration": "10–15 min",
+  "scenes": 18
 }
 ]

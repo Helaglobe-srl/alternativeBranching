@@ -10,6 +10,7 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.some(p => pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
+    (pathname.startsWith('/stories') && !pathname.endsWith('.json')) ||
     pathname === '/favicon.ico' ||
     pathname === '/robots.txt'
   ) {

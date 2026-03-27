@@ -1,0 +1,314 @@
+{
+  "title": "UCB Red Flags — Caso alboinierra-Erra",
+  "subtitle": "Miastenia Gravis · Crisi Miastenica",
+  "scenes": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Presentazione del caso",
+      "image": "/images/scenes/alboinierra/IMG-01.jpg",
+      "imageAlt": "Paziente donna di 64 anni a casa",
+      "text": "**Maria**, 64 anni. Esordio di **Miastenia Gravis AChR-positiva** circa due anni prima con disturbi prevalentemente oculari, generalizzati entro un anno.\n\nAlla diagnosi una **TC torace** documentava aggregati calcifici a livello timico → la paziente è stata sottoposta a **timectomia** nel sospetto di timoma.\n\nIstologicamente: **timoma B2-B3** non infiltrante la capsula → la paziente ha effettuato un solo ciclo di radioterapia.",
+      "choices": [
+        { "text": "Vedi la terapia in corso →", "next": "terapia-in-corso" }
+      ]
+    },
+    {
+      "id": "terapia-in-corso",
+      "type": "info",
+      "title": "Terapia in corso",
+      "image": "/images/scenes/alboinierra/IMG-03.jpg",
+      "imageAlt": "Paziente con facies miastenica in ambulatorio con i due specialisti",
+      "badge": "⚠️ Peggioramento acuto",
+      "badgeColor": "warning",
+      "text": "Dopo due anni dall'esordio la terapia della paziente era:\n\n• **Prednisone** 12,5 mg a dì alterni\n• **Azatioprina** 150 mg/die (p.c. 72 kg)\n• **Piridostigmina** 60 mg × 4 al dì\n\nLa paziente presenta un **peggioramento acuto** con:\n• Disfonia\n• Disfagia\n• Dispnea rapidamente ingravescente\n\nSi reca al PS dell'ospedale di riferimento.",
+      "choices": [
+        { "text": "Decidi come procedere →", "next": "cosa-facciamo" }
+      ]
+    },
+    {
+      "id": "cosa-facciamo",
+      "type": "decision",
+      "title": "Cosa facciamo?",
+      "image": "/images/scenes/alboinierra/IMG-04.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "text": "La paziente si presenta al PS con disfonia, disfagia e dispnea ingravescente. È in terapia con prednisone, azatioprina e piridostigmina. Come procedere?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Test di stimolazione nervosa ripetitiva (SNR)",
+          "next": "snr",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Dosaggio anticorpi anti-AChR",
+          "next": "anticorpi",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Valutazione scale cliniche",
+          "next": "scale",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Test alla neostigmina",
+          "next": "neostigmina",
+          "tag": "4"
+        }
+      ]
+    },
+    {
+      "id": "snr",
+      "type": "info",
+      "title": "1 – Test di stimolazione nervosa ripetitiva",
+      "image": "/images/scenes/alboinierra/IMG-05.jpg",
+      "imageAlt": "I due specialisti si consultano e uno scrive sul ricettario",
+      "badge": "✓ Indicativo",
+      "badgeColor": "warning",
+      "text": "Il test SNR è **indicativo di caduta del CMAP** nonostante la piridostigmina in corso.\n\nViene aumentata la posologia dello **steroide fino a 50 mg/die**.\n\n",
+      "choices": [
+        { "text": "Continua →", "next": "rescue" }
+      ]
+    },
+    {
+      "id": "anticorpi",
+      "type": "info",
+      "title": "2 – Dosaggio anticorpi anti-AChR",
+      "image": "/images/scenes/alboinierra/IMG-0.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "📋 Da integrare",
+      "badgeColor": "info",
+      "text": "Il dosaggio degli anticorpi **anti-AChR** può fornire informazioni sull'attività di malattia, ma in una crisi acuta non modifica la gestione immediata.\n\nÈ necessario procedere con ulteriori accertamenti per guidare la rescue therapy.",
+      "choices": [
+        { "text": "Procedi con SNR →", "next": "snr" }
+      ]
+    },
+    {
+      "id": "scale",
+      "type": "info",
+      "title": "3 – Valutazione scale cliniche",
+      "image": "/images/scenes/alboinierra/IMG-04.jpg",
+      "imageAlt": "Paziente con i due specialisti",
+      "badge": "📋 Valutazione",
+      "badgeColor": "info",
+      "text": "Le scale cliniche (MG-ADL, QMG) confermano un **peggioramento significativo** rispetto alla baseline.\n\nIl quadro clinico con dispnea indica un rischio di crisi miastenica. È necessario procedere con accertamenti strumentali e scegliere la rescue therapy.",
+      "choices": [
+        { "text": "Procedi con SNR →", "next": "snr" }
+      ]
+    },
+    {
+      "id": "neostigmina",
+      "type": "info",
+      "title": "4 – Test alla neostigmina",
+      "image": "/images/scenes/alboinierra/IMG-05.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "📋 Da integrare",
+      "badgeColor": "info",
+      "text": "Il test alla neostigmina può essere utile per confermare il difetto della trasmissione neuromuscolare, ma in un quadro di dispnea acuta non è il primo passo.\n\nOccorre procedere con la valutazione strumentale d'urgenza.",
+      "choices": [
+        { "text": "Procedi con SNR →", "next": "snr" }
+      ]
+    },
+    {
+      "id": "rescue",
+      "type": "decision",
+      "title": "Scegliere la rescue therapy",
+      "image": "/images/scenes/alboinierra/IMG-05.jpg",
+      "imageAlt": "I due specialisti si consultano e uno scrive sul ricettario",
+      "text": "Cosa scegli?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "Plasmaferesi",
+          "next": "plasmaferesi",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Immunoglobuline ev",
+          "next": "igg",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Target therapy (anti-complemento o anti-FcRn)",
+          "next": "target",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Bolo steroideo",
+          "next": "bolo",
+          "tag": "4"
+        }
+      ]
+    },
+    {
+      "id": "plasmaferesi",
+      "type": "info",
+      "title": "1 – Plasmaferesi",
+      "image": "/images/scenes/alboinierra/IMG-07.jpg",
+      "imageAlt": "Paziente ricoverata con la macchina della plasmaferesi",
+      "badge": "⚠️ Risposta parziale",
+      "badgeColor": "warning",
+      "text": "La paziente viene ricoverata per un ciclo di **aferesi terapeutica** (sei sedute a giorni alterni).\n\nSi osserva un **transitorio beneficio** ma con necessità di ricorrere alla **NIV** (ventilazione non invasiva), specialmente nelle ore notturne.\n\nLa risposta alle aferesi è **scarsa**.",
+      "choices": [
+        { "text": "Esegui esami complementari →", "next": "esami-complementari" }
+      ]
+    },
+    {
+      "id": "igg",
+      "type": "info",
+      "title": "2 – Immunoglobuline endovena",
+      "image": "/images/scenes/alboinierra/IMG-07.jpg",
+      "imageAlt": "Paziente ricoverata con la sacca delle immunoglobuline",
+      "badge": "📋 In corso",
+      "badgeColor": "info",
+      "text": "Viene effettuato un ciclo di **immunoglobuline endovena** (140 g totali in 5 giorni consecutivi).\n\nNonostante il trattamento, la situazione richiede un approfondimento diagnostico per identificare la causa del peggioramento.",
+      "choices": [
+        { "text": "Esami complementari →", "next": "esami-complementari" }
+      ]
+    },
+    {
+      "id": "target",
+      "type": "info",
+      "title": "3 – Target therapy",
+      "image": "/images/scenes/alboinierra/IMG-06.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "💡 Opzione avanzata",
+      "badgeColor": "info",
+      "text": "La target therapy (anti-complemento o anti-FcRn) è un'opzione terapeutica avanzata per la MG refrattaria.\n\nIn questa fase acuta, prima di impostare una terapia innovativa è necessario **identificare la causa del peggioramento** con esami complementari.",
+      "choices": [
+        { "text": "Esami complementari →", "next": "esami-complementari" }
+      ]
+    },
+    {
+      "id": "bolo",
+      "type": "info",
+      "title": "4 – Bolo steroideo",
+      "image": "/images/scenes/alboinierra/IMG-06.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "⚠️ Rischio peggioramento",
+      "badgeColor": "danger",
+      "text": "Il bolo steroideo può essere considerato, ma in un quadro di crisi miastenica con dispnea il rischio di **peggioramento paradosso** nelle prime settimane è elevato.\n\nÈ preferibile procedere prima con gli esami complementari per guidare la scelta terapeutica.",
+      "choices": [
+        { "text": "Esami complementari →", "next": "esami-complementari" }
+      ]
+    },
+    {
+      "id": "esami-complementari",
+      "type": "decision",
+      "title": "Esami complementari",
+      "image": "/images/scenes/alboinierra/IMG-05.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "text": "Per definire la causa del peggioramento, quali esami esegui?",
+      "choices": [
+        {
+          "id": "c1",
+          "text": "TC torace con mdc",
+          "next": "tc-torace",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Indici di flogosi, rx torace, pannello respiratorio multiplex",
+          "next": "flogosi",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Elettromiografia per diagnosi differenziale",
+          "next": "emg-dd",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Spirometria MIP/MEP",
+          "next": "spirometria",
+          "tag": "4"
+        }
+      ]
+    },
+    {
+      "id": "tc-torace",
+      "type": "info",
+      "title": "1 – TC torace con mdc",
+      "image": "/images/scenes/alboinierra/IMG-08.jpg",
+      "imageAlt": "Paziente nella TC con i due specialisti",
+      "badge": "⚠️ Recidiva timoma",
+      "badgeColor": "danger",
+      "text": "Nonostante la timectomia, la **TC torace** identifica una **nuova lesione mediastinica**, sospetta **recidiva di timoma**.\n\n",
+      "choices": [
+        { "text": "Continua →", "next": "peggioramento" }
+      ]
+    },
+    {
+      "id": "flogosi",
+      "type": "info",
+      "title": "2 – Indici di flogosi e pannello respiratorio",
+      "image": "/images/scenes/alboinierra/IMG-06.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "📋 Da integrare",
+      "badgeColor": "info",
+      "text": "Gli indici di flogosi, la radiografia del torace e il pannello respiratorio multiplex sono utili per escludere cause infettive o infiammatorie del peggioramento.\n\nIn questo caso non emergono elementi infettivi rilevanti. È necessario eseguire la **TC torace** per escludere recidiva del timoma.",
+      "choices": [
+        { "text": "TC torace →", "next": "tc-torace" }
+      ]
+    },
+    {
+      "id": "emg-dd",
+      "type": "info",
+      "title": "3 – Elettromiografia per diagnosi differenziale",
+      "image": "/images/scenes/alboinierra/IMG-06.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "📋 Confermato",
+      "badgeColor": "info",
+      "text": "L'elettromiografia conferma il quadro di **difetto della trasmissione neuromuscolare post-sinaptica**, coerente con MG in riacutizzazione.\n\nNon emergono elementi per diagnosi alternative. È necessario procedere con la **TC torace** per escludere recidiva del timoma.",
+      "choices": [
+        { "text": "TC torace →", "next": "tc-torace" }
+      ]
+    },
+    {
+      "id": "spirometria",
+      "type": "info",
+      "title": "4 – Spirometria MIP/MEP",
+      "image": "/images/scenes/alboinierra/IMG-06.jpg",
+      "imageAlt": "I due specialisti si consultano",
+      "badge": "⚠️ Compromissione respiratoria",
+      "badgeColor": "warning",
+      "text": "La spirometria con misurazione di **MIP** (pressione inspiratoria massima) e **MEP** (pressione espiratoria massima) documenta una **significativa compromissione della funzionalità respiratoria**.\n\nI valori indicano un rischio elevato di insufficienza respiratoria. È urgente procedere con la **TC torace** e impostare una terapia efficace.",
+      "choices": [
+        { "text": "TC torace →", "next": "tc-torace" }
+      ]
+    },
+    {
+      "id": "peggioramento",
+      "type": "info",
+      "title": "Ulteriore peggioramento",
+      "image": "/images/scenes/alboinierra/IMG-09.jpg",
+      "imageAlt": "Paziente intubata in rianimazione con i due specialisti",
+      "badge": "🚨 Crisi miastenica",
+      "badgeColor": "danger",
+      "text": "Nonostante plasmaferesi e immunoglobuline, la **situazione respiratoria peggiora ulteriormente**.\n\nLa paziente viene **intubata** e trasferita in **rianimazione**.\n\n",
+      "choices": [
+        { "text": "Scegli la terapia →", "next": "terapia-finale" }
+      ]
+    },
+    {
+      "id": "terapia-finale",
+      "type": "endpoint",
+      "title": "Terapia con farmaci innovativi",
+      "image": "/images/scenes/alboinierra/IMG-10.jpg",
+      "imageAlt": "Paziente contenta con i due specialisti",
+      "badge": "✓ Marcato beneficio",
+      "badgeColor": "success",
+      "text": "Si opta per il trattamento con **farmaci innovativi** (anti-complemento o anti-FcRn).\n\nDopo la **seconda somministrazione** si documenta un **marcatissimo beneficio** clinico.\n\n**Lezione chiave:** In un caso di MG con timoma B2-B3 e recidiva mediastinica, la crisi miastenica refrattaria alle terapie convenzionali (plasmaferesi + IgEV) richiede una rivalutazione precoce con TC torace e l'introduzione tempestiva di farmaci innovativi.",
+      "choices": [
+        { "text": "Ricomincia dall'inizio", "next": "intro" }
+      ]
+    }
+  ]
+}
