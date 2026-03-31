@@ -135,7 +135,7 @@
         {
           "id": "c3",
           "text": "Target therapy (anti-complemento o anti-FcRn)",
-          "next": "target",
+          "next": "terapia-finale",
           "tag": "3"
         },
         {
@@ -156,7 +156,7 @@
       "badgeColor": "warning",
       "text": "La paziente viene ricoverata per un ciclo di **aferesi terapeutica** (sei sedute a giorni alterni).\n\nSi osserva un **transitorio beneficio** ma con necessità di ricorrere alla **NIV** (ventilazione non invasiva), specialmente nelle ore notturne.\n\nLa risposta alle aferesi è **scarsa**.",
       "choices": [
-        { "text": "Esegui esami complementari →", "next": "esami-complementari" }
+        { "text": "Torna alla rescue therapy →", "next": "rescue" }
       ]
     },
     {
@@ -173,7 +173,7 @@
       ]
     },
     {
-      "id": "target",
+      "id": "target2222",
       "type": "info",
       "title": "3 – Target therapy",
       "image": "/images/scenes/alboinierra/IMG-06.jpg",
@@ -294,7 +294,7 @@
       "badgeColor": "danger",
       "text": "Nonostante plasmaferesi e immunoglobuline, la **situazione respiratoria peggiora ulteriormente**.\n\nLa paziente viene **intubata** e trasferita in **rianimazione**.\n\n",
       "choices": [
-        { "text": "Scegli la terapia →", "next": "terapia-finale" }
+        { "text": "Torna alla rescue therapy →", "next": "rescue" }
       ]
     },
     {
@@ -305,7 +305,7 @@
       "imageAlt": "Paziente contenta con i due specialisti",
       "badge": "✓ Marcato beneficio",
       "badgeColor": "success",
-      "text": "Si opta per il trattamento con **farmaci innovativi** (anti-complemento o anti-FcRn).\n\nDopo la **seconda somministrazione** si documenta un **marcatissimo beneficio** clinico.\n\n**Lezione chiave:** In un caso di MG con timoma B2-B3 e recidiva mediastinica, la crisi miastenica refrattaria alle terapie convenzionali (plasmaferesi + IgEV) richiede una rivalutazione precoce con TC torace e l'introduzione tempestiva di farmaci innovativi.",
+      "text": "Si opta per il trattamento con **farmaci innovativi** (anti-complemento o anti-FcRn).\n\nDopo la **seconda somministrazione** si documenta un **marcatissimo beneficio** clinico.\n\n",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "intro" }
       ]
