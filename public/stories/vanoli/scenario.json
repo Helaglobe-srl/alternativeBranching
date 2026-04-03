@@ -258,9 +258,9 @@
       "title": "RM orbitale con mdc",
       "image": "/images/scenes/vanoli/IMG-09.jpg",
       "imageAlt": "Specialista con idea illuminante",
-      "badge": "⚠️ Miosite orbitaria?",
+      "badge": " ",
       "badgeColor": "warning",
-      "text": "La **RM orbitale con mdc** mostra:\n\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\n**MG o Miosite orbitaria?**\n\nLa coesistenza di patologia tiroidea autoimmune, sieronegatività anticorpale e coinvolgimento selettivo dei muscoli orbitari impone una valutazione multidisciplinare. La diagnosi differenziale tra MG sieronegativa e miosite orbitaria rimane aperta.",
+      "text": "La **RM orbitale con mdc** mostra:\n\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\nIl caso descritto presenta un quadro clinico potenzialmente suggestivo di miastenia oculare. A rinforzo di questa ipotesi vi erano un ice pack test positivo e un'iperplasia timica. Tuttavia, in caso di sintomatologia oculare suggestiva di miastenia, ma con negatività degli esami neurofisiologici e anticorpali, è sempre indicato eseguire una RMN orbite con mdc per valutare altre cause di diplopia",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "intro" }
       ]
