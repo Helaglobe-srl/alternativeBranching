@@ -1,16 +1,19 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import Image from 'next/image'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useUcbTracking } from '@/hooks/useUcbTracking'
+import { useLiveSession } from '@/hooks/useLiveSession'
+import { createClient } from '@/lib/supabase/client'
+import QRCode from 'qrcode'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Choice { id?: string; text: string; next: string; tag?: string }
-interface Stat   { label: string; value: string; color: 'warning' | 'danger' | 'success' | 'info' }
-interface Video  { title: string; src: string }
-interface Table  { headers: string[]; rows: string[][]; footer?: string }
+interface Stat { label: string; value: string; color: 'warning' | 'danger' | 'success' | 'info' }
+interface Video { title: string; src: string }
+interface Table { headers: string[]; rows: string[][]; footer?: string }
 interface Scene {
   id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
   title: string; image?: string | null; imageAlt?: string; context?: string
@@ -19,7 +22,7 @@ interface Scene {
 }
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
-// ── Text parser ──────────────────────────────────────────────────────────────
+// ── Text parser ───────────────────────────────────────────────────────────────
 
 function parseText(text: string) {
   return text.split('\n').map((line, i) => {
@@ -43,39 +46,40 @@ function parseText(text: string) {
   })
 }
 
-// ── Config ───────────────────────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────────────────────
 
 const CFG = {
   decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Decisione' },
   endpoint: { accent: '#0e88a5', light: '#f0fdf4', label: 'Conclusione' },
-  outcome:  { accent: '#0e88a5', light: '#fffbeb', label: 'Esito scenario' },
-  intro:    { accent: '#0e88a5', light: '#e8f4f8', label: 'Caso clinico' },
-  info:     { accent: '#0e88a5', light: '#e8f4f8', label: ' ' },
+  outcome: { accent: '#0e88a5', light: '#fffbeb', label: 'Esito scenario' },
+  intro: { accent: '#0e88a5', light: '#e8f4f8', label: 'Caso clinico' },
+  info: { accent: '#0e88a5', light: '#e8f4f8', label: ' ' },
 } as const
 
 const BADGE_COLORS = {
   success: { bg: '#f0fdf4', color: '#0e88a5', border: '1px solid #bbf7d0' },
   warning: { bg: '#fffbeb', color: '#0e88a5', border: '1px solid #fde68a' },
-  danger:  { bg: '#fef2f2', color: '#0e88a5', border: '1px solid #fecaca' },
-  info:    { bg: '#eff6ff', color: '#0e88a5', border: '1px solid #bfdbfe' },
+  danger: { bg: '#fef2f2', color: '#0e88a5', border: '1px solid #fecaca' },
+  info: { bg: '#eff6ff', color: '#0e88a5', border: '1px solid #bfdbfe' },
 }
 
 const STAT_COLORS = {
   warning: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
-  danger:  { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
+  danger: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
   success: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
-  info:    { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
+  info: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
 }
 
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
+const VOTE_PANEL_W = 320
 
 const T_OUT = 200
 const T_PRE = 40
-const T_IN  = 340
+const T_IN = 340
 const T_IMG_FALLBACK = 2500
 
-// ── StatBox ──────────────────────────────────────────────────────────────────
+// ── StatBox ───────────────────────────────────────────────────────────────────
 
 function StatBox({ stats }: { stats: Stat[] }) {
   return (
@@ -93,7 +97,6 @@ function StatBox({ stats }: { stats: Stat[] }) {
   )
 }
 
-
 // ── TableBox ──────────────────────────────────────────────────────────────────
 
 function TableBox({ table }: { table: Table }) {
@@ -104,13 +107,7 @@ function TableBox({ table }: { table: Table }) {
           <thead>
             <tr style={{ background: 'rgba(14,136,165,0.07)' }}>
               {table.headers.map((h, i) => (
-                <th key={i} style={{
-                  padding: '6px 10px', textAlign: i < 2 ? 'left' : 'center',
-                  fontWeight: 700, color: '#0e88a5', fontSize: 10,
-                  letterSpacing: '0.05em', textTransform: 'uppercase',
-                  borderBottom: '1px solid rgba(14,136,165,0.15)',
-                  whiteSpace: 'nowrap',
-                }}>{h}</th>
+                <th key={i} style={{ padding: '6px 10px', textAlign: i < 2 ? 'left' : 'center', fontWeight: 700, color: '#0e88a5', fontSize: 10, letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid rgba(14,136,165,0.15)', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -118,32 +115,19 @@ function TableBox({ table }: { table: Table }) {
             {table.rows.map((row, ri) => (
               <tr key={ri} style={{ background: ri % 2 === 0 ? 'white' : 'rgba(14,136,165,0.02)' }}>
                 {row.map((cell, ci) => (
-                  <td key={ci} style={{
-                    padding: '7px 10px',
-                    textAlign: ci < 2 ? 'left' : 'center',
-                    color: cell ? '#1e4a5c' : '#ccc',
-                    fontWeight: ci === 0 ? 600 : 400,
-                    fontFamily: ci >= 2 ? 'Georgia,serif' : 'inherit',
-                    fontSize: ci >= 2 ? 13 : 11.5,
-                    borderBottom: ri < table.rows.length - 1 ? '1px solid rgba(14,136,165,0.07)' : 'none',
-                    whiteSpace: 'nowrap',
-                  }}>{cell || '—'}</td>
+                  <td key={ci} style={{ padding: '7px 10px', textAlign: ci < 2 ? 'left' : 'center', color: cell ? '#1e4a5c' : '#ccc', fontWeight: ci === 0 ? 600 : 400, fontFamily: ci >= 2 ? 'Georgia,serif' : 'inherit', fontSize: ci >= 2 ? 13 : 11.5, borderBottom: ri < table.rows.length - 1 ? '1px solid rgba(14,136,165,0.07)' : 'none', whiteSpace: 'nowrap' }}>{cell || '—'}</td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {table.footer && (
-        <div style={{ marginTop: 8, fontSize: 11.5, color: '#4C7D93', fontStyle: 'italic', paddingLeft: 2 }}>
-          {table.footer}
-        </div>
-      )}
+      {table.footer && <div style={{ marginTop: 8, fontSize: 11.5, color: '#4C7D93', fontStyle: 'italic', paddingLeft: 2 }}>{table.footer}</div>}
     </div>
   )
 }
 
-// ── VideoBox — buttons that open the modal ────────────────────────────────────
+// ── VideoBox ──────────────────────────────────────────────────────────────────
 
 function VideoBox({ videos, onOpen }: { videos: Video[]; onOpen: (v: Video) => void }) {
   return (
@@ -154,11 +138,8 @@ function VideoBox({ videos, onOpen }: { videos: Video[]; onOpen: (v: Video) => v
           style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 9, border: '1.5px solid #c4e0e9', background: 'white', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', width: '100%' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = '#0e88a5'; e.currentTarget.style.background = '#e8f4f8' }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#c4e0e9'; e.currentTarget.style.background = 'white' }}>
-          {/* Play icon */}
           <span style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 8, background: '#0e88a5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
-              <path d="M1 1.5L10 6.5L1 11.5V1.5Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round"/>
-            </svg>
+            <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><path d="M1 1.5L10 6.5L1 11.5V1.5Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round" /></svg>
           </span>
           <span style={{ flex: 1, fontSize: 12.5, fontWeight: 500, color: '#1e4a5c', lineHeight: 1.3 }}>{v.title}</span>
           <span style={{ fontSize: 11, color: '#9cb8c4', flexShrink: 0 }}>▶</span>
@@ -172,62 +153,35 @@ function VideoBox({ videos, onOpen }: { videos: Video[]; onOpen: (v: Video) => v
 
 function VideoModal({ video, onClose }: { video: Video; onClose: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onClose])
-
-  // Pause and reset when closing
-  const handleClose = () => {
-    videoRef.current?.pause()
-    onClose()
-  }
-
+  const handleClose = () => { videoRef.current?.pause(); onClose() }
   return (
-    <div
-      onClick={handleClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ background: '#0c1a1a', borderRadius: 20, overflow: 'hidden', maxWidth: 860, width: '100%', boxShadow: '0 40px 100px rgba(0,0,0,0.6)', animation: 'popIn .22s cubic-bezier(0.22,1,0.36,1)' }}>
-
-        {/* Header */}
+    <div onClick={handleClose} style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,20,0.85)', backdropFilter: 'blur(8px)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0c1a1a', borderRadius: 20, overflow: 'hidden', maxWidth: 860, width: '100%', boxShadow: '0 40px 100px rgba(0,0,0,0.6)', animation: 'popIn .22s cubic-bezier(0.22,1,0.36,1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ width: 28, height: 28, borderRadius: 8, background: '#0e88a5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
-                <path d="M1 1.5L10 6.5L1 11.5V1.5Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round"/>
-              </svg>
+              <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><path d="M1 1.5L10 6.5L1 11.5V1.5Z" fill="white" stroke="white" strokeWidth="1" strokeLinejoin="round" /></svg>
             </span>
             <span style={{ fontSize: 13.5, fontWeight: 700, color: 'white' }}>{video.title}</span>
           </div>
-          <button onClick={handleClose}
-            style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', transition: 'all .15s' }}
+          <button onClick={handleClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', transition: 'all .15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
         </div>
-
-        {/* Video player */}
-        <video
-          ref={videoRef}
-          src={video.src}
-          controls
-          autoPlay
-          playsInline
-          style={{ width: '100%', display: 'block', maxHeight: '70vh', background: '#000', outline: 'none' }}
-        />
+        <video ref={videoRef} src={video.src} controls autoPlay playsInline style={{ width: '100%', display: 'block', maxHeight: '70vh', background: '#000', outline: 'none' }} />
       </div>
     </div>
   )
 }
 
-// ── Confirm Popup ────────────────────────────────────────────────────────────
+// ── Confirm Popup ─────────────────────────────────────────────────────────────
 
 function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   useEffect(() => {
@@ -240,8 +194,8 @@ function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
       <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 20, padding: '32px 28px 26px', maxWidth: 360, width: '90%', boxShadow: '0 32px 80px rgba(0,0,0,0.22)', textAlign: 'center', animation: 'popIn .22s cubic-bezier(0.22,1,0.36,1)' }}>
         <div style={{ width: 56, height: 56, borderRadius: 16, background: '#e8f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-            <path d="M3 10.5L12 3L21 10.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#0e88a5" strokeWidth="1.8" strokeLinejoin="round"/>
-            <path d="M9 21V13h6v8" stroke="#0e88a5" strokeWidth="1.8" strokeLinejoin="round"/>
+            <path d="M3 10.5L12 3L21 10.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#0e88a5" strokeWidth="1.8" strokeLinejoin="round" />
+            <path d="M9 21V13h6v8" stroke="#0e88a5" strokeWidth="1.8" strokeLinejoin="round" />
           </svg>
         </div>
         <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#0c2a38' }}>Ricominciare dall&apos;inizio?</h3>
@@ -257,31 +211,178 @@ function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
   )
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
+// ── Vote Panel ────────────────────────────────────────────────────────────────
+
+function VotePanel({
+  sessionId, scene, isAdmin, onClose,
+}: {
+  sessionId: string
+  scene: Scene
+  isAdmin: boolean
+  onClose: () => void
+}) {
+  const { session, votes, totalVotes, refreshVotes, openVoting, closeVoting, reveal, resetVotes } = useLiveSession(sessionId)
+  const [qrUrl, setQrUrl] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const voteUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${sessionId}` : ''
+
+  // Sync scena corrente quando cambia
+useEffect(() => {
+  refreshVotes(scene.choices, scene.id, session?.current_round)
+}, [scene.id, totalVotes, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!voteUrl) return
+    QRCode.toDataURL(voteUrl, { width: 220, margin: 1, color: { dark: '#0c2a38', light: '#ffffff' } }).then(setQrUrl)
+  }, [voteUrl])
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(voteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div style={{ width: VOTE_PANEL_W, flexShrink: 0, background: '#0c1a2a', display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(14,136,165,0.2)', overflowY: 'auto' }}>
+
+      {/* Panel header */}
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Voto live</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {session?.voting_open && <span style={{ fontSize: 9, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '2px 7px', borderRadius: 10, border: '1px solid rgba(74,222,128,0.3)' }}>APERTO</span>}
+          {session?.revealed && <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 7px', borderRadius: 10, border: '1px solid rgba(251,191,36,0.3)' }}>RIVELATO</span>}
+          <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* QR code */}
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+        {qrUrl && (
+          <div style={{ background: 'white', borderRadius: 10, padding: 8, marginBottom: 8 }}>
+            <img src={qrUrl} alt="QR" style={{ width: '100%', display: 'block', borderRadius: 6 }} />
+          </div>
+        )}
+        <button onClick={copyLink} style={{ width: '100%', padding: '7px 0', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'rgba(14,136,165,0.2)', color: copied ? '#4ade80' : '#0e88a5', border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(14,136,165,0.3)'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+          {copied ? '✓ Link copiato' : 'Copia link'}
+        </button>
+      </div>
+
+      {/* Bars — mostrate solo dopo reveal, prima solo contatore */}
+      <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {session?.revealed ? (
+          // Dopo reveal: barre colorate con percentuali
+          votes.map((v, i) => (
+            <div key={i}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  {v.tag && <span style={{ width: 18, height: 18, borderRadius: 4, background: v.color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag}</span>}
+                  <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: v.color }}>{v.pct}%</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
+              </div>
+            </div>
+          ))
+        ) : (
+          // Prima del reveal: solo contatore grande al centro
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8 }}>
+            <div style={{ fontSize: 52, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+              {totalVotes}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {totalVotes === 1 ? 'voto ricevuto' : 'voti ricevuti'}
+            </div>
+            {session?.reset_at && (
+  <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    Votazione precedente già raccolta
+  </div>
+)}
+            {session?.voting_open && totalVotes > 0 && (
+              <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Admin controls */}
+      {isAdmin && (
+        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 7, flexShrink: 0 }}>
+          {!session?.voting_open && !session?.revealed && (
+            <button onClick={openVoting} style={{ padding: '9px', borderRadius: 8, background: '#16803d', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              ▶ Apri voto
+            </button>
+          )}
+          {session?.voting_open && (
+            <button onClick={closeVoting} style={{ padding: '9px', borderRadius: 8, background: '#b45309', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              ■ Chiudi voto
+            </button>
+          )}
+          {!session?.voting_open && !session?.revealed && totalVotes > 0 && (
+            <button onClick={reveal} style={{ padding: '9px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              ★ Rivela risultati
+            </button>
+          )}
+          {totalVotes > 0 && (
+            <button onClick={resetVotes} style={{ padding: '7px', borderRadius: 8, background: 'rgba(220,38,38,0.12)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.25)', fontSize: 11, cursor: 'pointer' }}>
+              Reset voti
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 type Phase = 'visible' | 'fading-out' | 'hidden' | 'fading-in'
 
-export default function GamePage() {
+function GamePageInner() {
   const router = useRouter()
   const params = useParams()
-  const slug   = params?.slug as string
+  const searchParams = useSearchParams()
+  const slug = params?.slug as string
+  const sessionId = searchParams.get('session')
 
-  const [data, setData]               = useState<ScenarioData | null>(null)
-  const [currentId, setCurrentId]     = useState('intro')
-  const [history, setHistory]         = useState<string[]>([])
-  const [phase, setPhase]             = useState<Phase>('visible')
-  const [imgError, setImgError]       = useState(false)
-  const [isDesktop, setIsDesktop]     = useState(false)
+  const [data, setData] = useState<ScenarioData | null>(null)
+  const [currentId, setCurrentId] = useState('intro')
+  const [history, setHistory] = useState<string[]>([])
+  const [phase, setPhase] = useState<Phase>('visible')
+  const [imgError, setImgError] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [username, setUsername]       = useState('')
+  const [username, setUsername] = useState('')
   const [activeVideo, setActiveVideo] = useState<Video | null>(null)
+  const [showVotePanel, setShowVotePanel] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
+  const supabase = createClient()
+  // const { setSceneId: setLiveSceneId } = useLiveSession(sessionId)
+const setLiveSceneId = useCallback(async (sceneId: string) => {
+  if (!sessionId) return
+  await supabase.from('live_sessions').update({
+    scene_id: sceneId, voting_open: false, revealed: false, current_round: 1,
+  }).eq('id', sessionId)
+}, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
   const pendingImageRef = useRef<string | null>(null)
-  const imgLoadedRef    = useRef<boolean>(false)
-
+  const imgLoadedRef = useRef<boolean>(false)
   const { startSession, trackScene, endSession } = useUcbTracking()
-  const scrollRef   = useRef<HTMLDivElement>(null)
-  const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const startFadeIn = useCallback(() => {
@@ -289,6 +390,16 @@ export default function GamePage() {
     setPhase('fading-in')
     timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
   }, [])
+
+  // Check admin
+  useEffect(() => {
+    if (!sessionId) return
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase.from('user_profiles').select('is_admin').eq('id', user.id).single()
+        .then(({ data }) => setIsAdmin(!!data?.is_admin))
+    })
+  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!slug) return
@@ -301,10 +412,11 @@ export default function GamePage() {
 
   useEffect(() => {
     const saved = sessionStorage.getItem('mg_username')
-    if (!saved) { router.push('/'); return }
-    setUsername(saved)
-    if (slug) startSession({ username: saved, storySlug: slug })
-  }, [router, slug]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (saved) {
+      setUsername(saved)
+      if (slug) startSession({ username: saved, storySlug: slug })
+    }
+  }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= BP)
@@ -314,17 +426,11 @@ export default function GamePage() {
 
   const scene = data?.scenes.find(s => s.id === currentId)
 
-  const trackEvent = useCallback((sceneId: string, choice?: string) => {
-    console.log('[track]', { slug, username, sceneId, choice })
-  }, [slug, username])
-
   const go = useCallback((nextId: string, back = false, choiceText?: string) => {
     if (phase !== 'visible') return
     if (timerRef.current) clearTimeout(timerRef.current)
     if (fallbackRef.current) clearTimeout(fallbackRef.current)
-
     setPhase('fading-out')
-
     timerRef.current = setTimeout(() => {
       if (back) {
         setHistory(h => h.slice(0, -1))
@@ -332,39 +438,34 @@ export default function GamePage() {
       } else {
         setHistory(h => [...h, currentId])
         setCurrentId(nextId)
-        trackEvent(nextId, choiceText)
         const nextScene = data?.scenes.find(s => s.id === nextId)
         if (nextScene) trackScene({ sceneId: nextId, sceneType: nextScene.type, choiceText })
+        // Aggiorna la scena corrente nella sessione live
+        if (sessionId && nextScene?.type === 'decision') setLiveSceneId(nextId)
       }
-
       setImgError(false)
       setPhase('hidden')
       scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
-
-      const nextScene  = data?.scenes.find(s => s.id === nextId)
+      const nextScene = data?.scenes.find(s => s.id === nextId)
       const nextImgSrc = nextScene?.image ?? null
-
       if (!nextImgSrc) {
         pendingImageRef.current = null
         timerRef.current = setTimeout(startFadeIn, T_PRE)
         return
       }
-
       pendingImageRef.current = nextImgSrc
-      imgLoadedRef.current    = false
-
+      imgLoadedRef.current = false
       fallbackRef.current = setTimeout(() => {
         if (pendingImageRef.current === nextImgSrc && !imgLoadedRef.current) startFadeIn()
       }, T_IMG_FALLBACK)
-
     }, T_OUT)
-  }, [phase, currentId, trackEvent, data, startFadeIn])
+  }, [phase, currentId, data, startFadeIn, sessionId, setLiveSceneId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImgLoad = useCallback((src: string) => {
     if (pendingImageRef.current === src && phase === 'hidden') {
       imgLoadedRef.current = true
       if (fallbackRef.current) { clearTimeout(fallbackRef.current); fallbackRef.current = null }
-      if (timerRef.current)    { clearTimeout(timerRef.current);    timerRef.current    = null }
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
       startFadeIn()
     }
   }, [phase, startFadeIn])
@@ -376,8 +477,17 @@ export default function GamePage() {
   useEffect(() => {
     if (!scene) return
     if (scene.type === 'endpoint') endSession(true)
+    // Se sessione live e scena è decision, aggiorna subito
+    if (sessionId && scene.type === 'decision') setLiveSceneId(scene.id)
   }, [scene?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Apri pannello voto automaticamente per admin su scene decision
+  useEffect(() => {
+    if (isAdmin && sessionId && scene?.type === 'decision') {
+      setShowVotePanel(true)
+    } else if (scene?.type !== 'decision') {
+      setShowVotePanel(false)
+    }
+  }, [scene?.id, isAdmin, sessionId])
   useEffect(() => {
     const handler = () => endSession(false)
     window.addEventListener('beforeunload', handler)
@@ -414,59 +524,38 @@ export default function GamePage() {
     </div>
   )
 
-  const cfg         = CFG[scene.type] ?? CFG.info
-  const isInfo      = scene.type === 'info'
-  const isDecision  = scene.type === 'decision'
-  const isEndpoint  = scene.type === 'endpoint'
+  const cfg = CFG[scene.type] ?? CFG.info
+  const isInfo = scene.type === 'info'
+  const isDecision = scene.type === 'decision'
+  const isEndpoint = scene.type === 'endpoint'
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
-  const accentLine  = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
+  const accentLine = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
   const isOut = phase === 'fading-out' || phase === 'hidden'
-  const sharedOpacity   = isOut ? 0 : 1
-  const sharedTransition = phase === 'fading-out'
-    ? `opacity ${T_OUT}ms ease-out`
-    : phase === 'fading-in'
-    ? `opacity ${T_IN}ms cubic-bezier(0.4,0,0.2,1)`
-    : 'none'
+  const sharedOpacity = isOut ? 0 : 1
+  const sharedTransition = phase === 'fading-out' ? `opacity ${T_OUT}ms ease-out` : phase === 'fading-in' ? `opacity ${T_IN}ms cubic-bezier(0.4,0,0.2,1)` : 'none'
 
-  const imgStyle: React.CSSProperties = {
-    position: 'absolute', inset: 0,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    opacity: sharedOpacity, transition: sharedTransition,
-  }
-
+  const imgStyle: React.CSSProperties = { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: sharedOpacity, transition: sharedTransition }
   const textStyle: React.CSSProperties = {
     height: '100%', display: 'flex', flexDirection: 'column', padding: '22px 26px 20px',
     opacity: sharedOpacity,
     transform: isOut ? 'translateX(8px)' : phase === 'fading-in' ? 'translateX(-3px)' : 'translateX(0)',
-    transition: phase === 'fading-out'
-      ? `opacity ${T_OUT}ms ease-out, transform ${T_OUT}ms ease-out`
-      : phase === 'fading-in'
-      ? `opacity ${T_IN}ms cubic-bezier(0.4,0,0.2,1), transform ${T_IN}ms cubic-bezier(0.22,1,0.36,1)`
-      : 'none',
+    transition: phase === 'fading-out' ? `opacity ${T_OUT}ms ease-out, transform ${T_OUT}ms ease-out` : phase === 'fading-in' ? `opacity ${T_IN}ms cubic-bezier(0.4,0,0.2,1), transform ${T_IN}ms cubic-bezier(0.22,1,0.36,1)` : 'none',
   }
-
-  const mobileTextStyle: React.CSSProperties = {
-    opacity: sharedOpacity, transition: sharedTransition,
-  }
+  const mobileTextStyle: React.CSSProperties = { opacity: sharedOpacity, transition: sharedTransition }
 
   const imgLayer = (
     <div style={imgStyle}>
       {scene.image && !imgError ? (
-        <Image
-          key={scene.image}
-          src={scene.image}
-          alt={scene.imageAlt ?? scene.title}
-          fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
+        <Image key={scene.image} src={scene.image} alt={scene.imageAlt ?? scene.title} fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
           style={{ objectFit: 'contain', objectPosition: 'center' }}
           onLoad={() => handleImgLoad(scene.image!)}
-          onError={() => { setImgError(true); if (pendingImageRef.current === scene.image) startFadeIn() }}
-        />
+          onError={() => { setImgError(true); if (pendingImageRef.current === scene.image) startFadeIn() }} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
           <svg width="52" height="52" viewBox="0 0 64 64" fill="none" style={{ opacity: 0.22 }}>
-            <rect x="24" y="8" width="16" height="48" rx="4" fill={cfg.accent}/>
-            <rect x="8" y="24" width="48" height="16" rx="4" fill={cfg.accent}/>
+            <rect x="24" y="8" width="16" height="48" rx="4" fill={cfg.accent} />
+            <rect x="8" y="24" width="48" height="16" rx="4" fill={cfg.accent} />
           </svg>
           <div style={{ fontSize: 12, fontWeight: 600, color: cfg.accent, opacity: 0.4 }}>Nessuna immagine</div>
         </div>
@@ -476,14 +565,7 @@ export default function GamePage() {
 
   const imgOverlays = (
     <>
-      <div style={{
-        position: 'absolute', top: 12, left: 14, padding: '3px 10px', borderRadius: 20,
-        background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)',
-        border: `1px solid ${cfg.accent}28`,
-        fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em',
-        textTransform: 'uppercase', color: cfg.accent,
-        zIndex: 2, opacity: isInfo ? 0 : 1, pointerEvents: 'none',
-      }}>{cfg.label}</div>
+      <div style={{ position: 'absolute', top: 12, left: 14, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', border: `1px solid ${cfg.accent}28`, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: cfg.accent, zIndex: 2, opacity: isInfo ? 0 : 1, pointerEvents: 'none' }}>{cfg.label}</div>
       {scene.badge && <div style={{ position: 'absolute', top: 12, right: 14, padding: '3px 10px', borderRadius: 20, backdropFilter: 'blur(8px)', fontSize: 9.5, fontWeight: 600, background: badgeColors.bg, color: badgeColors.color, border: badgeColors.border, zIndex: 2 }}>{scene.badge}</div>}
       <div style={{ position: 'absolute', bottom: 10, left: 14, padding: '2px 8px', borderRadius: 4, background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)', fontSize: 8.5, fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', zIndex: 2 }}>{scene.id}</div>
     </>
@@ -518,20 +600,15 @@ export default function GamePage() {
   const textContent = (compact = false) => (
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
-        <div style={{
-          display: 'inline-flex', padding: '2px 9px', borderRadius: 5,
-          background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: cfg.accent,
-          marginBottom: compact ? 7 : 9, opacity: isInfo ? 0 : 1, pointerEvents: 'none',
-        }}>{cfg.label}</div>
+        <div style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 5, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: compact ? 7 : 9, opacity: isInfo ? 0 : 1, pointerEvents: 'none' }}>{cfg.label}</div>
         <h2 style={{ margin: 0, fontSize: compact ? 17 : 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
         {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
       </div>
       <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
       <div style={{ flex: compact ? undefined : 1, fontSize: 13.5, color: '#1e4a5c', lineHeight: 1.65, overflowY: compact ? undefined : 'auto', minHeight: 0, marginBottom: compact ? 16 : 0 }}>
         {parseText(scene.text)}
-        {scene.stats  && scene.stats.length  > 0 && <StatBox  stats={scene.stats} />}
-        {scene.table  && <TableBox table={scene.table} />}
+        {scene.stats && scene.stats.length > 0 && <StatBox stats={scene.stats} />}
+        {scene.table && <TableBox table={scene.table} />}
         {scene.videos && scene.videos.length > 0 && <VideoBox videos={scene.videos} onOpen={setActiveVideo} />}
       </div>
       <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
@@ -558,17 +635,18 @@ export default function GamePage() {
       `}</style>
 
       {showConfirm && <ConfirmPopup onConfirm={handleConfirmRestart} onCancel={() => setShowConfirm(false)} />}
-      {activeVideo  && <VideoModal  video={activeVideo}             onClose={() => setActiveVideo(null)} />}
+      {activeVideo && <VideoModal video={activeVideo} onClose={() => setActiveVideo(null)} />}
 
       <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#eae5de', fontFamily: "'Segoe UI',system-ui,sans-serif", overflow: 'hidden' }}>
 
+        {/* Navbar */}
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button onClick={goBack} disabled={history.length === 0} title="Torna indietro"
               style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: history.length > 0 ? cfg.light : 'transparent', border: `1px solid ${history.length > 0 ? cfg.accent + '33' : 'rgba(0,0,0,0.08)'}`, cursor: history.length > 0 ? 'pointer' : 'default', transition: 'all .15s' }}
               onMouseEnter={e => { if (history.length > 0) e.currentTarget.style.background = '#c4e0e9' }}
               onMouseLeave={e => { e.currentTarget.style.background = history.length > 0 ? cfg.light : 'transparent' }}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke={history.length > 0 ? cfg.accent : '#ccc'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke={history.length > 0 ? cfg.accent : '#ccc'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <button onClick={handleLogoClick} title="Ricomincia" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'opacity .15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.7' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
@@ -578,6 +656,14 @@ export default function GamePage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {username && <div style={{ fontSize: 11, color: '#4C7D93', background: '#f0f4f6', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>👤 {username}</div>}
+            {/* Bottone voto — visibile se c'è una sessione live e la scena è decisionale */}
+            {sessionId && isDecision && (
+              <button onClick={() => setShowVotePanel(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 20, background: showVotePanel ? '#0e88a5' : '#e8f4f8', color: showVotePanel ? 'white' : '#0e88a5', border: `1px solid ${showVotePanel ? '#0e88a5' : '#c4e0e9'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="8" width="3" height="6" rx="1" fill="currentColor" /><rect x="6.5" y="5" width="3" height="9" rx="1" fill="currentColor" /><rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor" /></svg>
+                {showVotePanel ? 'Chiudi voto' : 'Voto live'}
+              </button>
+            )}
             <button onClick={() => router.push('/')} style={{ fontSize: 11, color: '#9cb8c4', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 8px' }}
               onMouseEnter={e => { e.currentTarget.style.color = '#0e88a5' }} onMouseLeave={e => { e.currentTarget.style.color = '#9cb8c4' }}>← Home</button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 11px', borderRadius: 20, background: cfg.light, border: `1px solid ${cfg.accent}22` }}>
@@ -587,31 +673,59 @@ export default function GamePage() {
           </div>
         </nav>
 
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isDesktop ? '16px 28px' : '12px 16px' }}>
-          {isDesktop ? (
-            <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
-              <div style={{ width: '65%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
-                {imgLayer}
-                {imgOverlays}
+        {/* Content area */}
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
+
+          {/* Story */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isDesktop ? '16px 28px' : '12px 16px', transition: 'padding .3s ease' }}>
+            {isDesktop ? (
+              <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
+                <div style={{ width: '65%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+                  {imgLayer}
+                  {imgOverlays}
+                </div>
+                <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                  <div style={textStyle}>{textContent()}</div>
+                </div>
               </div>
-              <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <div style={textStyle}>{textContent()}</div>
+            ) : (
+              <div style={{ width: '100%', maxWidth: 520, maxHeight: '100%', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', flexShrink: 0, background: 'linear-gradient(160deg,#1e2e2e,#243535)', overflow: 'hidden' }}>
+                  {imgLayer}
+                  {imgOverlays}
+                </div>
+                <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', padding: '16px 18px' }}>
+                  <div style={mobileTextStyle}>{textContent(true)}</div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div style={{ width: '100%', maxWidth: 520, maxHeight: '100%', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
-              <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', flexShrink: 0, background: 'linear-gradient(160deg,#1e2e2e,#243535)', overflow: 'hidden' }}>
-                {imgLayer}
-                {imgOverlays}
-              </div>
-              <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', padding: '16px 18px' }}>
-                <div style={mobileTextStyle}>{textContent(true)}</div>
-              </div>
-            </div>
+            )}
+          </div>
+
+          {/* Vote Panel — pannello laterale */}
+          {sessionId && showVotePanel && scene && (
+            <VotePanel
+              sessionId={sessionId}
+              scene={scene}
+              isAdmin={isAdmin}
+              onClose={() => setShowVotePanel(false)}
+            />
           )}
         </div>
       </div>
     </>
+  )
+}
+
+export default function GamePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f0eb' }}>
+        <div style={{ width: 28, height: 28, border: '3px solid rgba(14,136,165,0.18)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    }>
+      <GamePageInner />
+    </Suspense>
   )
 }

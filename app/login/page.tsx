@@ -5,8 +5,6 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-// ── Inner component that uses useSearchParams ─────────────────────────────────
-
 function LoginForm() {
   const router       = useRouter()
   const searchParams = useSearchParams()
@@ -22,8 +20,9 @@ function LoginForm() {
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace(next)
+    // ✅ getUser() verifica server-side con Supabase
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) router.replace(next)
       else setChecking(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -32,8 +31,19 @@ function LoginForm() {
     if (!email.trim() || !password) { setError('Inserisci email e password.'); return }
     setLoading(true)
     setError('')
-    const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-    if (err) { setError('Credenziali non valide. Verifica email e password.'); setLoading(false); return }
+    const { data, error: err } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    if (err) {
+      setError('Credenziali non valide. Verifica email e password.')
+      setLoading(false)
+      return
+    }
+    // ✅ Salva email come username per il tracking
+    if (data.user?.email) {
+      sessionStorage.setItem('mg_username', data.user.email)
+    }
     router.replace(next)
   }
 
@@ -133,8 +143,6 @@ function LoginForm() {
     </div>
   )
 }
-
-// ── Page wrapper with Suspense (required by Next.js for useSearchParams) ──────
 
 export default function LoginPage() {
   return (

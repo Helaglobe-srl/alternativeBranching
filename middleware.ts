@@ -12,6 +12,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/images') ||
     (pathname.startsWith('/stories') && !pathname.endsWith('.json')) ||
     pathname === '/favicon.ico' ||
+    pathname.startsWith('/vote') ||
+pathname.startsWith('/join') ||
+pathname.startsWith('/stories') ||
     pathname === '/robots.txt'
   ) {
     return NextResponse.next()
