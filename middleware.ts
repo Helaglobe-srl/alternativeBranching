@@ -15,6 +15,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/vote') ||
 pathname.startsWith('/join') ||
 pathname.startsWith('/stories') ||
+pathname.startsWith('/privacy') ||
     pathname === '/robots.txt'
   ) {
     return NextResponse.next()

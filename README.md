@@ -1,109 +1,147 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# UCB Red Flags — Clinical Scenarios
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Piattaforma interattiva di casi clinici per la formazione medica, con sistema di voto live per presentazioni e congressi.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## Stack
 
-## Features
+- **Frontend**: Next.js 16 (App Router, Turbopack)
+- **Database & Auth**: Supabase (PostgreSQL + Auth + Realtime)
+- **Deploy**: Vercel
+- **Linguaggio**: TypeScript
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## Funzionalità
 
-## Demo
+- Casi clinici interattivi a scelte multiple con scenari ramificati
+- Sistema di tracking navigazione utente (scene visitate, scelte, tempo)
+- **Sessioni live di voto** per presentazioni e congressi:
+  - QR code per registrazione/login partecipanti
+  - Voto in tempo reale con aggiornamenti live (WebSocket)
+  - Risultati rivelabili con animazione
+  - Reset voti con storico preservato
+  - Pannello admin integrato nella presentazione
+- Autenticazione email + password (no email di conferma)
+- Profili utente con flag admin
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+## Prerequisiti
 
-## Deploy to Vercel
+- Node.js 18+
+- Account Supabase
+- Account Vercel (per deploy)
 
-Vercel deployment will guide you through creating a Supabase account and project.
+## Setup locale
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+### 1. Clona il repository
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+```bash
+git clone <repo-url>
+cd ucb-red-flags
+npm install
+```
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### 2. Configura le variabili d'ambiente
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+Crea `.env.local` nella root del progetto:
 
-## Clone and run locally
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+Entrambe le chiavi si trovano in **Supabase Dashboard → Project Settings → API**.
 
-2. Create a Next.js app using the Supabase Starter template npx command
+### 3. Configura il database
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+Nel **SQL Editor** di Supabase, esegui il file `docs/migration.sql` per creare tutte le tabelle, policy RLS, trigger e abilitare il Realtime.
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+```bash
+# Oppure copia il contenuto di docs/migration.sql nell'SQL Editor Supabase
+```
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+### 4. Configura gli admin
 
-3. Use `cd` to change into the app's directory
+Dopo aver creato il primo utente tramite la pagina di login, flaggalo come admin:
 
-   ```bash
-   cd with-supabase-app
-   ```
+```sql
+update user_profiles 
+set is_admin = true 
+where id = (select id from auth.users where email = 'tua@email.com');
+```
 
-4. Rename `.env.example` to `.env.local` and update the following:
+### 5. Avvia il server di sviluppo
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+```bash
+npm run dev
+```
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+L'app è disponibile su [localhost:3000](http://localhost:3000).
 
-5. You can now run the Next.js local development server:
+## Struttura file
 
-   ```bash
-   npm run dev
-   ```
+```
+app/
+├── page.tsx              # Homepage con lista casi clinici
+├── login/page.tsx        # Login / registrazione
+├── game/[slug]/page.tsx  # Engine del caso clinico + pannello voto live
+├── vote/[id]/page.tsx    # Pagina voto partecipanti (via QR)
+├── join/[id]/page.tsx    # Registrazione/login partecipanti via QR
+└── admin/
+    ├── page.tsx          # Lista sessioni live (solo admin)
+    └── [id]/page.tsx     # Controllo sessione live
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+hooks/
+├── useLiveSession.ts     # Gestione sessione voto live (realtime + polling)
+└── useUcbTracking.ts     # Tracking navigazione su Supabase
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+public/
+├── stories.json          # Lista casi clinici
+└── stories/[slug]/
+    ├── scenario.json     # Scenario del caso clinico
+    └── cover.png         # Immagine di copertina
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+docs/
+├── migration.sql         # Migration completa del database
+└── db-documentation.md  # Documentazione tabelle e flussi
+```
 
-## Feedback and issues
+## Flusso sessione live
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+```
+Admin clicca storia → popup sessione
+  → sceglie "Nuova sessione" o "Continua sessione recente"
+  → inserisce nome sessione
+  → mostra QR da far scansionare ai partecipanti
+  → avvia la presentazione
 
-## More Supabase examples
+Partecipante scansiona QR → /join/[sessionId]
+  → registrazione o login con email + password
+  → redirect a /vote/[sessionId]
+  → aspetta che l'admin apra il voto
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+Admin naviga al caso → su scene "Decisione" si apre automaticamente il pannello laterale
+  → mostra QR + contatore voti in tempo reale
+  → controlli: Apri voto / Chiudi voto / Rivela risultati / Reset
+
+Partecipante vota → risultati in tempo reale sull'admin
+Admin rivela → partecipanti vedono le percentuali animate
+```
+
+## Aggiungere un caso clinico
+
+1. Crea la cartella `public/stories/[slug]/`
+2. Aggiungi `scenario.json` con la struttura delle scene (vedi `docs/db-documentation.md`)
+3. Aggiungi `cover.png` (1280×720px)
+4. Aggiungi la voce in `public/stories.json`
+
+## Deploy su Vercel
+
+```bash
+vercel --prod
+```
+
+Aggiungi le variabili d'ambiente `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` nel progetto Vercel.
+
+## Note
+
+- Il piano free Supabase supporta fino a **200 connessioni realtime concorrenti** — sufficiente per sessioni fino a ~150 partecipanti
+- I voti non vengono mai cancellati dal DB: il reset usa un timestamp (`reset_at`) per distinguere i cicli, preservando lo storico completo
+- I file `scenario.json` sono protetti da autenticazione nel middleware; le immagini sono pubbliche

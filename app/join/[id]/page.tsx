@@ -2,41 +2,38 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Session { id: string; name: string; story_slug: string }
 
 function JoinForm() {
-  const router       = useRouter()
-  const params       = useParams()
-  const searchParams = useSearchParams()
-  const sid          = params?.id as string
-  const supabase     = createClient()
+  const router   = useRouter()
+  const params   = useParams()
+  const sid      = params?.id as string
+  const supabase = createClient()
 
-  const [session,   setSession]   = useState<Session | null>(null)
-  const [notFound,  setNotFound]  = useState(false)
-  const [mode,      setMode]      = useState<'login' | 'register'>('login')
-  const [email,     setEmail]     = useState('')
-  const [password,  setPassword]  = useState('')
-  const [name,      setName]      = useState('')
-  const [showPwd,   setShowPwd]   = useState(false)
-  const [error,     setError]     = useState('')
-  const [loading,   setLoading]   = useState(false)
-  const [checking,  setChecking]  = useState(true)
+  const [session,       setSession]       = useState<Session | null>(null)
+  const [notFound,      setNotFound]      = useState(false)
+  const [mode,          setMode]          = useState<'login' | 'register'>('register')
+  const [firstName,     setFirstName]     = useState('')
+  const [lastName,      setLastName]      = useState('')
+  const [email,         setEmail]         = useState('')
+  const [password,      setPassword]      = useState('')
+  const [showPwd,       setShowPwd]       = useState(false)
+  const [privacyOk,     setPrivacyOk]     = useState(false)
+  const [error,         setError]         = useState('')
+  const [loading,       setLoading]       = useState(false)
+  const [checking,      setChecking]      = useState(true)
 
   // Se già loggato, vai direttamente alla vote page
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        router.replace(`/vote/${sid}`)
-      } else {
-        setChecking(false)
-      }
+      if (user) router.replace(`/vote/${sid}`)
+      else setChecking(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Carica info sessione
   useEffect(() => {
     if (!sid) return
     supabase.from('live_sessions').select('id,name,story_slug').eq('id', sid).single()
@@ -47,16 +44,18 @@ function JoinForm() {
   }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async () => {
-    if (!email.trim() || !password) { setError('Inserisci email e password.'); return }
-    setLoading(true)
     setError('')
+    if (!email.trim() || !password) { setError('Inserisci email e password.'); return }
 
     if (mode === 'register') {
-      if (!name.trim()) { setError('Inserisci il tuo nome.'); setLoading(false); return }
+      if (!firstName.trim()) { setError('Inserisci il tuo nome.'); return }
+      if (!lastName.trim())  { setError('Inserisci il tuo cognome.'); return }
+      if (!privacyOk)        { setError('Devi accettare la Privacy Policy per continuare.'); return }
+      setLoading(true)
+      const fullName = `${firstName.trim()} ${lastName.trim()}`
       const { error: err } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: { data: { full_name: name.trim() } }
+        email: email.trim(), password,
+        options: { data: { full_name: fullName, first_name: firstName.trim(), last_name: lastName.trim() } }
       })
       if (err) {
         setError(err.message === 'User already registered'
@@ -66,24 +65,17 @@ function JoinForm() {
         return
       }
     } else {
-      const { data, error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim(), password
-      })
-      if (err) {
-        setError('Credenziali non valide.')
-        setLoading(false)
-        return
-      }
-      // Salva username per il tracking
-      if (data.user?.email) sessionStorage.setItem('mg_username', data.user.email)
+      setLoading(true)
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      if (err) { setError('Credenziali non valide.'); setLoading(false); return }
+      if (data.user?.email) sessionStorage.setItem('mg_username', data.user.user_metadata?.full_name || data.user.email)
     }
-
     router.replace(`/vote/${sid}`)
   }
 
   const bc = (hasError: boolean) => hasError ? '#dc2626' : 'rgba(255,255,255,0.15)'
 
-  if (checking || !session) return (
+  if (checking || (!session && !notFound)) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(160deg,#0c1a2a,#0e2a3a)' }}>
       {notFound
         ? <div style={{ textAlign: 'center', color: '#9cb8c4' }}><div style={{ fontSize: 40, marginBottom: 8 }}>404</div><div>Sessione non trovata</div></div>
@@ -94,21 +86,21 @@ function JoinForm() {
   )
 
   return (
-    <div style={{ background: 'white', borderRadius: 24, width: '100%', maxWidth: 400, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.5)', animation: 'fadeUp .3s cubic-bezier(0.22,1,0.36,1)' }}>
+    <div style={{ background: 'white', borderRadius: 24, width: '100%', maxWidth: 420, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.5)', animation: 'fadeUp .3s cubic-bezier(0.22,1,0.36,1)' }}>
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#0c1a2a,#0e2a3a)', padding: '28px 28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
         <Image src="/images/LOGO.webp" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>Sessione live</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{session.name}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{session?.name}</div>
         </div>
         {/* Mode tabs */}
         <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: 3, gap: 3, marginTop: 4 }}>
-          {(['login', 'register'] as const).map(m => (
+          {(['register', 'login'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setError('') }}
               style={{ padding: '6px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, transition: 'all .15s', background: mode === m ? 'white' : 'transparent', color: mode === m ? '#0c2a38' : 'rgba(255,255,255,0.55)' }}>
-              {m === 'login' ? 'Accedi' : 'Registrati'}
+              {m === 'register' ? 'Registrati' : 'Accedi'}
             </button>
           ))}
         </div>
@@ -117,19 +109,31 @@ function JoinForm() {
       {/* Form */}
       <div style={{ padding: '24px 24px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+        {/* Nome e Cognome solo in registrazione */}
         {mode === 'register' && (
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#4C7D93', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>Nome</label>
-            <input type="text" autoFocus={mode === 'register'} value={name} onChange={e => { setName(e.target.value); setError('') }}
-              placeholder="Es. Mario Rossi"
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              style={{ width: '100%', padding: '11px 13px', borderRadius: 10, fontSize: 14, border: `1.5px solid ${bc(!!error && !name.trim())}`, outline: 'none', color: '#0c2a38', fontFamily: 'inherit' }}
-              onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
-              onBlur={e => { e.currentTarget.style.borderColor = bc(!!error && !name.trim()) }}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#4C7D93', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>Nome</label>
+              <input type="text" autoFocus value={firstName} onChange={e => { setFirstName(e.target.value); setError('') }}
+                placeholder="Mario"
+                style={{ width: '100%', padding: '11px 13px', borderRadius: 10, fontSize: 14, border: '1.5px solid #c4e0e9', outline: 'none', color: '#0c2a38', fontFamily: 'inherit' }}
+                onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
+                onBlur={e => { e.currentTarget.style.borderColor = '#c4e0e9' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#4C7D93', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>Cognome</label>
+              <input type="text" value={lastName} onChange={e => { setLastName(e.target.value); setError('') }}
+                placeholder="Rossi"
+                style={{ width: '100%', padding: '11px 13px', borderRadius: 10, fontSize: 14, border: '1.5px solid #c4e0e9', outline: 'none', color: '#0c2a38', fontFamily: 'inherit' }}
+                onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
+                onBlur={e => { e.currentTarget.style.borderColor = '#c4e0e9' }}
+              />
+            </div>
           </div>
         )}
 
+        {/* Email */}
         <div>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#4C7D93', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>Email</label>
           <input type="email" autoFocus={mode === 'login'} value={email} onChange={e => { setEmail(e.target.value); setError('') }}
@@ -141,13 +145,13 @@ function JoinForm() {
           />
         </div>
 
+        {/* Password */}
         <div>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#4C7D93', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>Password</label>
           <div style={{ position: 'relative' }}>
             <input type={showPwd ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setError('') }}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              placeholder="••••••••"
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               style={{ width: '100%', padding: '11px 42px 11px 13px', borderRadius: 10, fontSize: 14, border: `1.5px solid ${bc(!!error)}`, outline: 'none', color: '#0c2a38', fontFamily: 'inherit' }}
               onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
               onBlur={e => { e.currentTarget.style.borderColor = bc(!!error) }}
@@ -162,11 +166,27 @@ function JoinForm() {
               }
             </button>
           </div>
-          {mode === 'register' && (
-            <div style={{ fontSize: 11, color: '#9cb8c4', marginTop: 4 }}>Minimo 6 caratteri</div>
-          )}
+          {mode === 'register' && <div style={{ fontSize: 11, color: '#9cb8c4', marginTop: 4 }}>Minimo 6 caratteri</div>}
         </div>
 
+        {/* Privacy checkbox — solo in registrazione */}
+        {mode === 'register' && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 10, background: privacyOk ? '#f0f8fb' : '#fafafa', border: `1.5px solid ${privacyOk ? '#c4e0e9' : '#e8e8e8'}`, transition: 'all .15s' }}>
+            <input type="checkbox" checked={privacyOk} onChange={e => { setPrivacyOk(e.target.checked); setError('') }}
+              style={{ marginTop: 2, flexShrink: 0, accentColor: '#0e88a5', width: 16, height: 16 }} />
+            <span style={{ fontSize: 12, color: '#4C7D93', lineHeight: 1.5 }}>
+              Ho letto e accetto la{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer"
+                style={{ color: '#0e88a5', fontWeight: 700, textDecoration: 'underline' }}
+                onClick={e => e.stopPropagation()}>
+                Privacy Policy
+              </a>
+              {' '}e acconsento al trattamento dei miei dati personali per la partecipazione a questa sessione formativa.
+            </span>
+          </label>
+        )}
+
+        {/* Errore */}
         {error && (
           <div style={{ padding: '9px 12px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 12.5, color: '#dc2626' }}>
             {error}
@@ -179,6 +199,7 @@ function JoinForm() {
           </div>
         )}
 
+        {/* Submit */}
         <button onClick={handleSubmit} disabled={loading}
           style={{ padding: '12px 0', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: loading ? 'default' : 'pointer', background: loading ? '#9cb8c4' : '#0e88a5', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}
           onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#0c6d82' }}
@@ -190,10 +211,10 @@ function JoinForm() {
         </button>
 
         <p style={{ margin: 0, fontSize: 11.5, color: '#9cb8c4', textAlign: 'center', lineHeight: 1.5 }}>
-          {mode === 'login' ? 'Prima volta?' : 'Hai già un account?'}{' '}
+          {mode === 'register' ? 'Hai già un account?' : 'Prima volta?'}{' '}
           <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
             style={{ background: 'none', border: 'none', color: '#0e88a5', fontSize: 11.5, cursor: 'pointer', fontWeight: 700, padding: 0 }}>
-            {mode === 'login' ? 'Registrati' : 'Accedi'}
+            {mode === 'register' ? 'Accedi' : 'Registrati'}
           </button>
         </p>
       </div>

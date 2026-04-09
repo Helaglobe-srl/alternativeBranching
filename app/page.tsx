@@ -6,33 +6,20 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Story {
-  slug: string
-  title: string
-  subtitle: string
-  description: string
-  cover?: string
-  sponsor?: string
-  tag?: string
-  duration?: string
-  scenes?: number
+  slug: string; title: string; subtitle: string; description: string
+  cover?: string; sponsor?: string; tag?: string; duration?: string; scenes?: number
 }
 
-// ── Cover image with fallback ─────────────────────────────────────────────────
-
 function CoverImage({ src, alt, fill, sizes, style }: {
-  src?: string; alt: string; fill?: boolean
-  sizes?: string; style?: React.CSSProperties
+  src?: string; alt: string; fill?: boolean; sizes?: string; style?: React.CSSProperties
 }) {
   const [error, setError] = useState(false)
   if (!src || error) return null
   return <Image src={src} alt={alt} fill={fill} sizes={sizes} style={style} onError={() => setError(true)} />
 }
 
-// Questo è il nuovo SessionModal da sostituire nella home page
-
-function SessionModal({ story, isAdmin, onStart, onCancel }: {
+function SessionModal({ story, onStart, onCancel }: {
   story: Story
-  isAdmin: boolean
   onStart: (sessionId: string | null) => void
   onCancel: () => void
 }) {
@@ -44,36 +31,24 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
   const [createdId,     setCreatedId]     = useState<string | null>(null)
   const [qrUrl,         setQrUrl]         = useState('')
 
-  // Carica sessione recente (< 24h) per questo slug
   useEffect(() => {
-    if (!isAdmin) { onStart(null); return }
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     supabase.from('live_sessions')
-      .select('id, name, created_at')
-      .eq('story_slug', story.slug)
-      .gte('created_at', yesterday)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+      .select('id, name, created_at').eq('story_slug', story.slug)
+      .gte('created_at', yesterday).order('created_at', { ascending: false }).limit(1).single()
       .then(({ data }) => { if (data) setRecentSession(data) })
-  }, [isAdmin]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Genera QR quando ho sessionId
   useEffect(() => {
     if (!createdId) return
     const url = `${window.location.origin}/join/${createdId}`
     import('qrcode').then(QRCode => {
-      QRCode.toDataURL(url, { width: 260, margin: 1, color: { dark: '#0c2a38', light: '#ffffff' } })
-        .then(setQrUrl)
+      QRCode.toDataURL(url, { width: 260, margin: 1, color: { dark: '#0c2a38', light: '#ffffff' } }).then(setQrUrl)
     })
   }, [createdId])
 
   const createAndShowQr = async (name: string, existingId?: string) => {
-    if (existingId) {
-      setCreatedId(existingId)
-      setStep('qr')
-      return
-    }
+    if (existingId) { setCreatedId(existingId); setStep('qr'); return }
     if (!name.trim()) return
     setCreating(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -93,15 +68,11 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
     return () => window.removeEventListener('keydown', h)
   }, [step, sessionName]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!isAdmin) return null
-
   const joinUrl = createdId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/join/${createdId}` : ''
 
   return (
     <div onClick={step === 'qr' ? undefined : onCancel} style={{ position: 'fixed', inset: 0, background: 'rgba(10,20,30,0.55)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 22, maxWidth: 440, width: '100%', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.22)', animation: 'popIn .22s cubic-bezier(0.22,1,0.36,1)' }}>
-
-        {/* Cover header */}
         <div style={{ position: 'relative', width: '100%', height: 100, background: 'linear-gradient(135deg,#1e2e2e,#243535)', overflow: 'hidden' }}>
           <CoverImage src={story.cover} alt={story.title} fill sizes="440px" style={{ objectFit: 'cover', objectPosition: 'center', opacity: 0.6 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(0,0,0,0.7),transparent)' }} />
@@ -110,14 +81,10 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
             <div style={{ fontSize: 14, fontWeight: 800, color: 'white' }}>{story.title}</div>
           </div>
         </div>
-
         <div style={{ padding: '22px 22px 20px' }}>
-
-          {/* STEP: choose */}
           {step === 'choose' && (
             <>
               <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: '#0c2a38' }}>Avvia sessione</h3>
-
               {recentSession && (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 12, color: '#6b9aaa', marginBottom: 8 }}>Sessione recente trovata:</div>
@@ -135,7 +102,6 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
                   </button>
                 </div>
               )}
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button onClick={() => setStep('name')}
                   style={{ padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: '#0e88a5', color: 'white', border: 'none' }}
@@ -150,8 +116,6 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
               </div>
             </>
           )}
-
-          {/* STEP: name */}
           {step === 'name' && (
             <>
               <h3 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 800, color: '#0c2a38' }}>Nome della sessione</h3>
@@ -174,13 +138,10 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
               </div>
             </>
           )}
-
-          {/* STEP: qr — mostra QR prima di iniziare */}
           {step === 'qr' && (
             <>
               <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 800, color: '#0c2a38', textAlign: 'center' }}>Fai scansionare il QR</h3>
               <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6b9aaa', textAlign: 'center' }}>I partecipanti si registrano e potranno votare durante la presentazione</p>
-
               {qrUrl ? (
                 <div style={{ background: '#f0f8fb', borderRadius: 14, padding: 14, marginBottom: 14, textAlign: 'center' }}>
                   <img src={qrUrl} alt="QR" style={{ width: '100%', maxWidth: 220, borderRadius: 8, display: 'block', margin: '0 auto' }} />
@@ -191,7 +152,6 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
                   <div style={{ width: 24, height: 24, border: '2.5px solid rgba(14,136,165,0.2)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
                 </div>
               )}
-
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => { if (joinUrl) navigator.clipboard.writeText(joinUrl) }}
                   style={{ flex: 1, padding: '10px 0', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: '#e8f4f8', color: '#0e88a5', border: '1px solid #c4e0e9' }}>
@@ -206,28 +166,21 @@ function SessionModal({ story, isAdmin, onStart, onCancel }: {
               </div>
             </>
           )}
-
         </div>
       </div>
     </div>
   )
 }
 
-
-// ── Story Card ────────────────────────────────────────────────────────────────
-
 function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
   const [hovered, setHovered] = useState(false)
-
   return (
     <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       style={{ display: 'flex', flexDirection: 'column', background: 'white', borderRadius: 16, border: `1.5px solid ${hovered ? '#0e88a5' : '#e0eaee'}`, overflow: 'hidden', cursor: 'pointer', textAlign: 'left', boxShadow: hovered ? '0 8px 32px rgba(14,136,165,0.15)' : '0 2px 12px rgba(0,0,0,0.06)', transform: hovered ? 'translateY(-3px)' : 'translateY(0)', transition: 'all .2s cubic-bezier(0.22,1,0.36,1)', width: '100%' }}>
-
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: 'linear-gradient(135deg,#1e2e2e,#243535)', overflow: 'hidden', flexShrink: 0 }}>
         <CoverImage src={story.cover} alt={story.title} fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          style={{ objectFit: 'cover', objectPosition: 'center top', transition: 'transform .3s ease', transform: hovered ? 'scale(1.04)' : 'scale(1)' }}
-        />
+          style={{ objectFit: 'cover', objectPosition: 'center top', transition: 'transform .3s ease', transform: hovered ? 'scale(1.04)' : 'scale(1)' }} />
         {!story.cover && (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="36" height="36" viewBox="0 0 64 64" fill="none" style={{ opacity: 0.2 }}>
@@ -240,7 +193,6 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
         {story.tag && <div style={{ position: 'absolute', top: 10, left: 10, padding: '3px 9px', borderRadius: 20, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0e88a5' }}>{story.tag}</div>}
         {story.sponsor && <div style={{ position: 'absolute', top: 10, right: 10, padding: '3px 9px', borderRadius: 20, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', fontSize: 9.5, fontWeight: 600, color: '#4C7D93' }}>{story.sponsor}</div>}
       </div>
-
       <div style={{ flex: 1, padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 7 }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>{story.subtitle}</div>
@@ -267,8 +219,6 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
   )
 }
 
-// ── Homepage ──────────────────────────────────────────────────────────────────
-
 export default function Home() {
   const router   = useRouter()
   const supabase = createClient()
@@ -277,35 +227,30 @@ export default function Home() {
   const [fetchError, setFetchError] = useState(false)
   const [selected,   setSelected]   = useState<Story | null>(null)
   const [isAdmin,    setIsAdmin]    = useState(false)
+  const [checking,   setChecking]   = useState(true)
 
   useEffect(() => {
-    fetch('/stories.json')
-      .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(setStories)
-      .catch(() => { setFetchError(true); setStories([]) })
-
-    // Check admin
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
+      if (!user) { router.replace('/login'); return }
       supabase.from('user_profiles').select('is_admin').eq('id', user.id).single()
-        .then(({ data }) => setIsAdmin(!!data?.is_admin))
+        .then(({ data }) => {
+          const admin = !!data?.is_admin
+          setIsAdmin(admin)
+          setChecking(false)
+          // Utenti non admin: redirect alla pagina di attesa
+          if (!admin) { router.replace('/waiting'); return }
+          // Solo admin caricano le storie
+          fetch('/stories.json')
+            .then(r => { if (!r.ok) throw new Error(); return r.json() })
+            .then(setStories)
+            .catch(() => { setFetchError(true); setStories([]) })
+        })
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleCardClick = (story: Story) => {
-    if (isAdmin) {
-      setSelected(story) // mostra SessionModal
-    } else {
-      router.push(`/game/${story.slug}`)
-    }
-  }
-
   const handleStart = (sessionId: string | null) => {
     if (!selected) return
-    const url = sessionId
-      ? `/game/${selected.slug}?session=${sessionId}`
-      : `/game/${selected.slug}`
-    router.push(url)
+    router.push(sessionId ? `/game/${selected.slug}?session=${sessionId}` : `/game/${selected.slug}`)
   }
 
   const logout = async () => {
@@ -313,40 +258,31 @@ export default function Home() {
     router.push('/login')
   }
 
+  if (checking) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f0eb' }}>
+      <div style={{ width: 28, height: 28, border: '3px solid rgba(14,136,165,0.18)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+
   return (
     <>
-      <style>{`
-        html,body{margin:0;padding:0}*{box-sizing:border-box}
-        @keyframes popIn{from{opacity:0;transform:scale(0.93) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-      `}</style>
+      <style>{`html,body{margin:0;padding:0}*{box-sizing:border-box}@keyframes popIn{from{opacity:0;transform:scale(0.93) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-      {selected && (
-        <SessionModal
-          story={selected}
-          isAdmin={isAdmin}
-          onStart={handleStart}
-          onCancel={() => setSelected(null)}
-        />
-      )}
+      {selected && <SessionModal story={selected} onStart={handleStart} onCancel={() => setSelected(null)} />}
 
       <div style={{ minHeight: '100vh', background: '#f5f0eb', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
-
         <nav style={{ height: 56, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Image src="/images/LOGO.webp" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', height: 28, width: 'auto' }} />
-            <span style={{ marginLeft: 4, fontSize: 14, fontWeight: 600, color: '#0e88a5' }}>Clinical Scenarios</span>
-            {isAdmin && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '2px 10px', borderRadius: 20, border: '1px solid #c4e0e9' }}>Admin</span>
-            )}
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#0e88a5' }}>Clinical Scenarios</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '2px 10px', borderRadius: 20, border: '1px solid #c4e0e9' }}>Admin</span>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            {isAdmin && (
-              <button onClick={() => router.push('/admin')}
-                style={{ fontSize: 12, color: '#4C7D93', background: '#f0f4f6', border: 'none', padding: '5px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
-                Sessioni →
-              </button>
-            )}
+            <button onClick={() => router.push('/admin')}
+              style={{ fontSize: 12, color: '#4C7D93', background: '#f0f4f6', border: 'none', padding: '5px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+              Sessioni →
+            </button>
             <button onClick={logout}
               style={{ fontSize: 12, color: '#9cb8c4', background: 'none', border: 'none', cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.color = '#dc2626' }}
@@ -380,14 +316,15 @@ export default function Home() {
           {stories && stories.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
               {stories.map(story => (
-                <StoryCard key={story.slug} story={story} onClick={() => handleCardClick(story)} />
+                <StoryCard key={story.slug} story={story} onClick={() => setSelected(story)} />
               ))}
             </div>
           )}
         </div>
 
         <div style={{ padding: '32px', textAlign: 'center', color: '#9cb8c4', fontSize: 12, marginTop: 40 }}>
-          Contenuti a scopo educativo · Helaglobe S.r.l.
+          Contenuti a scopo educativo · Helaglobe S.r.l. ·{' '}
+          <a href="/privacy" style={{ color: '#9cb8c4', textDecoration: 'underline' }}>Privacy Policy</a>
         </div>
       </div>
     </>
