@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import QRCode from 'qrcode'
 
 interface Choice { id?: string; text: string; next: string; tag?: string }
-interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[] }
+interface Scene  { id: string; type: string; title: string; text: string; image?: string | null; choices: Choice[] }
 interface ScenarioData { title: string; scenes: Scene[] }
 interface Session {
   id: string; name: string; story_slug: string; scene_id: string | null
@@ -32,10 +32,9 @@ export default function AdminSessionPage() {
   const subRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   const voteUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/vote/${sid}`
+    ? `${window.location.origin}/join/${sid}`
     : ''
 
-  // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -48,28 +47,24 @@ export default function AdminSessionPage() {
     check()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load session ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (checking || !sid) return
     supabase.from('live_sessions').select('*').eq('id', sid).single()
       .then(({ data }) => { if (data) setSession(data) })
   }, [checking, sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load scenario ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!session) return
     fetch(`/stories/${session.story_slug}/scenario.json`)
       .then(r => r.json()).then(setScenario)
   }, [session?.story_slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load votes ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!sid) return
     supabase.from('live_votes').select('*').eq('session_id', sid)
       .then(({ data }) => setVotes(data ?? []))
   }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Realtime subscriptions ─────────────────────────────────────────────────
   useEffect(() => {
     if (!sid) return
     const ch = supabase.channel(`admin-${sid}`)
@@ -84,14 +79,12 @@ export default function AdminSessionPage() {
     return () => { ch.unsubscribe() }
   }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── QR code ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!voteUrl) return
     QRCode.toDataURL(voteUrl, { width: 300, margin: 2, color: { dark: '#0c2a38', light: '#ffffff' } })
       .then(setQrUrl)
   }, [voteUrl])
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   const setSceneId = useCallback(async (sceneId: string) => {
     await supabase.from('live_sessions').update({
       scene_id: sceneId, voting_open: false, revealed: false
@@ -135,7 +128,6 @@ export default function AdminSessionPage() {
   const decisionScenes = scenario?.scenes.filter(s => s.type === 'decision') ?? []
   const totalVotes = votes.length
 
-  // Conta voti per scelta
   const voteCounts = (currentScene?.choices ?? []).map((c, i) => {
     const cid = c.id ?? String(i)
     const count = votes.filter(v => v.choice_id === cid).length
@@ -148,13 +140,11 @@ export default function AdminSessionPage() {
       <style>{`
         html,body{margin:0;padding:0}*{box-sizing:border-box}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes barGrow{from{width:0}to{width:var(--w)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
       `}</style>
 
       <div style={{ minHeight: '100vh', background: '#f5f0eb', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
 
-        {/* Navbar */}
         <nav style={{ height: 52, background: '#0c2a38', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => router.push('/admin')} style={{ color: 'rgba(255,255,255,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>← Admin</button>
@@ -167,10 +157,8 @@ export default function AdminSessionPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 0, height: 'calc(100vh - 52px)' }}>
 
-          {/* ── SIDEBAR ── */}
+          {/* SIDEBAR */}
           <div style={{ background: '#0e1a2a', overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {/* QR */}
             <div style={{ background: 'white', borderRadius: 14, padding: '16px', textAlign: 'center' }}>
               {qrUrl && <img src={qrUrl} alt="QR" style={{ width: '100%', borderRadius: 8 }} />}
               <div style={{ fontSize: 10, color: '#9cb8c4', marginTop: 8, wordBreak: 'break-all', lineHeight: 1.4 }}>{voteUrl}</div>
@@ -179,7 +167,6 @@ export default function AdminSessionPage() {
               </button>
             </div>
 
-            {/* Scene selector */}
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Scene decisionali</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -192,35 +179,26 @@ export default function AdminSessionPage() {
               </div>
             </div>
 
-            {/* Controls */}
             {session.scene_id && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Controlli voto</div>
                 {!session.voting_open && !session.revealed && (
-                  <button onClick={openVoting} style={{ padding: '10px', borderRadius: 8, background: '#16803d', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    ▶ Apri voto
-                  </button>
+                  <button onClick={openVoting} style={{ padding: '10px', borderRadius: 8, background: '#16803d', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>▶ Apri voto</button>
                 )}
                 {session.voting_open && (
-                  <button onClick={closeVoting} style={{ padding: '10px', borderRadius: 8, background: '#b45309', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    ■ Chiudi voto
-                  </button>
+                  <button onClick={closeVoting} style={{ padding: '10px', borderRadius: 8, background: '#b45309', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>■ Chiudi voto</button>
                 )}
                 {!session.voting_open && !session.revealed && totalVotes > 0 && (
-                  <button onClick={reveal} style={{ padding: '10px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    ★ Rivela risultati
-                  </button>
+                  <button onClick={reveal} style={{ padding: '10px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>★ Rivela risultati</button>
                 )}
                 {totalVotes > 0 && (
-                  <button onClick={resetVotes} style={{ padding: '8px', borderRadius: 8, background: 'rgba(220,38,38,0.15)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.3)', fontSize: 12, cursor: 'pointer' }}>
-                    Reset voti
-                  </button>
+                  <button onClick={resetVotes} style={{ padding: '8px', borderRadius: 8, background: 'rgba(220,38,38,0.15)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.3)', fontSize: 12, cursor: 'pointer' }}>Reset voti</button>
                 )}
               </div>
             )}
           </div>
 
-          {/* ── MAIN ── */}
+          {/* MAIN */}
           <div style={{ overflowY: 'auto', padding: '32px' }}>
             {!session.scene_id ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', flexDirection: 'column', gap: 16, color: '#9cb8c4' }}>
@@ -235,8 +213,22 @@ export default function AdminSessionPage() {
                 {/* Scene header */}
                 <div style={{ marginBottom: 28 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Scena decisionale</div>
-                  <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: '#0c2a38', letterSpacing: '-0.02em' }}>{currentScene.title}</h2>
-                  <div style={{ marginTop: 10, padding: '12px 16px', background: 'white', borderRadius: 10, fontSize: 13, color: '#4C7D93', lineHeight: 1.6, borderLeft: '3px solid #0e88a5' }}>
+                  <h2 style={{ margin: '0 0 12px', fontSize: 24, fontWeight: 900, color: '#0c2a38', letterSpacing: '-0.02em' }}>{currentScene.title}</h2>
+
+                  {/* IMMAGINE SCENA — nuova */}
+                  {currentScene.image && (
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', marginBottom: 12, background: 'linear-gradient(135deg,#1e2e2e,#243535)' }}>
+                      <Image
+                        src={currentScene.image}
+                        alt={currentScene.title}
+                        fill
+                        sizes="680px"
+                        style={{ objectFit: 'contain', objectPosition: 'center' }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ padding: '12px 16px', background: 'white', borderRadius: 10, fontSize: 13, color: '#4C7D93', lineHeight: 1.6, borderLeft: '3px solid #0e88a5' }}>
                     {currentScene.text}
                   </div>
                 </div>
@@ -245,6 +237,7 @@ export default function AdminSessionPage() {
                 <div style={{ background: 'white', borderRadius: 16, padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.07)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#0c2a38' }}>Risultati</span>
+                    {/* SOLO CONTATORE — rimosso elenco nomi */}
                     <span style={{ fontSize: 13, color: '#9cb8c4' }}>{totalVotes} partecipant{totalVotes === 1 ? 'e' : 'i'}</span>
                   </div>
 
@@ -261,29 +254,18 @@ export default function AdminSessionPage() {
                             <span style={{ fontSize: 12, color: '#9cb8c4' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</span>
                           </div>
                         </div>
-                        {/* Bar */}
                         <div style={{ height: 10, borderRadius: 6, background: '#f0f4f6', overflow: 'hidden' }}>
-                          <div style={{
-                            height: '100%', borderRadius: 6,
-                            background: session.revealed ? c.color : '#c4e0e9',
-                            width: session.revealed ? `${c.pct}%` : totalVotes > 0 ? `${c.pct}%` : '0%',
-                            transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)',
-                            opacity: session.revealed ? 1 : 0.5,
-                          }} />
+                          <div style={{ height: '100%', borderRadius: 6, background: session.revealed ? c.color : '#c4e0e9', width: totalVotes > 0 ? `${c.pct}%` : '0%', transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)', opacity: session.revealed ? 1 : 0.5 }} />
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Partecipanti */}
+                  {/* Solo contatore, nessun nome */}
                   {totalVotes > 0 && (
-                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f0f4f6' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Hanno votato</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {votes.map((v, i) => (
-                          <span key={i} style={{ fontSize: 11, background: '#f0f4f6', color: '#4C7D93', padding: '3px 10px', borderRadius: 20 }}>{v.participant_name}</span>
-                        ))}
-                      </div>
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f0f4f6', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="#9cb8c4" strokeWidth="1.5"/><path d="M2 13c0-3 2.5-5 6-5s6 2 6 5" stroke="#9cb8c4" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      <span style={{ fontSize: 12, color: '#9cb8c4' }}>{totalVotes} partecipant{totalVotes === 1 ? 'e ha' : 'i hanno'} votato</span>
                     </div>
                   )}
                 </div>
