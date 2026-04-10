@@ -116,7 +116,7 @@
       "imageAlt": "Specialista che visita la paziente",
       "badge": "✓ Positivo",
       "badgeColor": "success",
-      "text": "L'**Ice Pack Test** risulta **positivo**.\n\nLa positività supporta la diagnosi di **MG sieronegativa**.\n\nSi imposta terapia con **piridostigmina**. Si pianifica esame oculistico e RM orbite.\n\nLa paziente tuttavia **non risponde alla piridostigmina** e la diplopia peggiora.",
+      "text": "L'**Ice Pack Test** risulta **positivo**.\n\nLa positività supporta la diagnosi di **MG sieronegativa**.\n\nSi imposta terapia con **piridostigmina**. Si pianifica esame oculistico e RM Encefalo più orbite.\n\nLa paziente tuttavia **non risponde alla piridostigmina** e la diplopia peggiora.",
       "choices": [
         { "text": "Gestisci il peggioramento →", "next": "peggioramento" }
       ]
@@ -166,7 +166,7 @@
       "imageAlt": "Specialista con idea illuminante",
       "badge": "✓ Scelta corretta",
       "badgeColor": "success",
-      "text": "Si aumenta il corticosteroide a **1 mg/kg/die** e si inserisce un **immunosoppressore non steroideo**.\n\nNel frattempo la **RM orbitale con mdc** mostra:\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\n**Diagnosi differenziale: MG vs Miosite orbitaria?**\n\nLa coesistenza di patologia tiroidea, sieronegatività e coinvolgimento muscolare orbitario impone una valutazione multidisciplinare attenta.",
+      "text": "Si aumenta il corticosteroide a **1 mg/kg/die** e si inserisce un **immunosoppressore non steroideo**.\n\nNel frattempo la **RM Encefalo più orbitale con mdc** mostra:\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\n**Diagnosi differenziale: MG vs Miosite orbitaria?**\n\nLa coesistenza di patologia tiroidea, sieronegatività e coinvolgimento muscolare orbitario impone una valutazione multidisciplinare attenta.",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "intro" }
       ]
@@ -203,9 +203,9 @@
       "imageAlt": "Paziente in TC e specialista che osserva",
       "badge": "📋 Iperplasia timica",
       "badgeColor": "info",
-      "text": "La **TC torace** evidenzia **presenza di iperplasia timica**.\n\nIl chirurgo **non dà indicazione all'intervento** in questo momento.\n\nSi procede con valutazione oculistica e RM orbite.",
+      "text": "La **TC torace** evidenzia **presenza di iperplasia timica**.\n\nIl chirurgo **non dà indicazione all'intervento** in questo momento.\n\nSi procede con valutazione oculistica e RM Encefalo più orbite.",
       "choices": [
-        { "text": "Visita oculistica + RM orbite →", "next": "oculistica" }
+        { "text": "Visita oculistica + RM Encefalo più orbite →", "next": "oculistica" }
       ]
     },
     {
@@ -234,7 +234,7 @@
       "choices": [
         {
           "id": "c1",
-          "text": "RM orbite",
+          "text": "RM Encefalo più orbite",
           "next": "rm-orbite",
           "tag": "1"
         },
@@ -255,12 +255,12 @@
     {
       "id": "rm-orbite",
       "type": "endpoint",
-      "title": "RM orbitale con mdc",
+      "title": "RM Encefalo più orbitale con mdc",
       "image": "/images/scenes/vanoli/IMG-09.jpg",
       "imageAlt": "Specialista con idea illuminante",
       "badge": " ",
       "badgeColor": "warning",
-      "text": "La **RM orbitale con mdc** mostra:\n\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\nIl caso descritto presenta un quadro clinico potenzialmente suggestivo di miastenia oculare. A rinforzo di questa ipotesi vi erano un ice pack test positivo e un'iperplasia timica. Tuttavia, in caso di sintomatologia oculare suggestiva di miastenia, ma con negatività degli esami neurofisiologici e anticorpali, è sempre indicato eseguire una RMN orbite con mdc per valutare altre cause di diplopia",
+      "text": "La **RM Encefalo più orbitale con mdc** mostra:\n\n• Aspetto rigonfio e iperintenso in STIR del **muscolo retto laterale OS**\n• Con il peggioramento dei sintomi: coinvolgimento di retto laterale, mediale e inferiore\n\nIl caso descritto presenta un quadro clinico potenzialmente suggestivo di miastenia oculare. A rinforzo di questa ipotesi vi erano un ice pack test positivo e un'iperplasia timica. Tuttavia, in caso di sintomatologia oculare suggestiva di miastenia, ma con negatività degli esami neurofisiologici e anticorpali, è sempre indicato eseguire una RMN orbite con mdc per valutare altre cause di diplopia",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "intro" }
       ]
@@ -277,7 +277,7 @@
       "choices": [
         {
           "id": "c1",
-          "text": "RM orbite + visita oculistica",
+          "text": "RM Encefalo più orbite + visita oculistica",
           "next": "oculistica",
           "tag": "1"
         },
