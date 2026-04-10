@@ -22,6 +22,7 @@ function JoinForm() {
   const [password,      setPassword]      = useState('')
   const [showPwd,       setShowPwd]       = useState(false)
   const [privacyOk,     setPrivacyOk]     = useState(false)
+  const [marketingOk,   setMarketingOk]   = useState(false)
   const [error,         setError]         = useState('')
   const [loading,       setLoading]       = useState(false)
   const [checking,      setChecking]      = useState(true)
@@ -55,7 +56,13 @@ function JoinForm() {
       const fullName = `${firstName.trim()} ${lastName.trim()}`
       const { error: err } = await supabase.auth.signUp({
         email: email.trim(), password,
-        options: { data: { full_name: fullName, first_name: firstName.trim(), last_name: lastName.trim() } }
+        options: { data: {
+            full_name: fullName,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            marketing_consent: marketingOk,
+            marketing_consent_at: marketingOk ? new Date().toISOString() : null,
+          } }
       })
       if (err) {
         setError(err.message === 'User already registered'
@@ -182,6 +189,17 @@ function JoinForm() {
                 Privacy Policy
               </a>
               {' '}e acconsento al trattamento dei miei dati personali per la partecipazione a questa sessione formativa.
+            </span>
+          </label>
+        )}
+
+        {/* Marketing consent — solo in registrazione, facoltativo */}
+        {mode === 'register' && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 10, background: marketingOk ? '#f0f8fb' : '#fafafa', border: `1.5px solid ${marketingOk ? '#c4e0e9' : '#e8e8e8'}`, transition: 'all .15s' }}>
+            <input type="checkbox" checked={marketingOk} onChange={e => setMarketingOk(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0, accentColor: '#0e88a5', width: 16, height: 16 }} />
+            <span style={{ fontSize: 12, color: '#4C7D93', lineHeight: 1.5 }}>
+              <span style={{ fontWeight: 600, color: '#0c2a38' }}>Facoltativo</span> — Acconsento a ricevere comunicazioni via email da Helaglobe S.r.l. su eventi, prodotti e iniziative formative in ambito medico-scientifico. Il consenso è revocabile in qualsiasi momento.
             </span>
           </label>
         )}
