@@ -25,7 +25,7 @@
         { "value": "MG-ADL", "label": "5",  "color": "warning" },
         { "value": "MGFA",   "label": "IIIa","color": "warning" }
       ],
-      "text": "**Accertamenti:**\n• Spirometria: deficit restrittivo (FVC 1,95 L, 63%)\n• TAC torace: neoformazione timica 40 mm\n• PET-TC: moderato ipermetabolismo della neoformazione timica\n• RNS: negativo (non diagnostico — Mestinon non sospeso)\n• Ac anti-AChR: **5,0 nmol/L** (ELISA)\n\n**Terapia in atto:**\nPrednisone 50 mg/die (avviato a fine febbraio, già incrementato/ridotto/re-incrementato) + piridostigmina 60 mg x 3/die (percepisce beneficio).\n\nNon ha mai eseguito IgEV o plasmaferesi.\n\n**Conclusione:** MG AChR+ con timoma, interessamento generalizzato moderato, parziale compenso sotto steroide.",
+      "text": "**Accertamenti:**\n• Spirometria: deficit restrittivo (FVC 1,95 L, 63%)\n• TAC torace: neoformazione timica 40 mm\n• PET-TC: moderato ipermetabolismo della neoformazione timica\n• RNS: negativo (non diagnostico — Piridostigmina non sospesa)\n• Ac anti-AChR: **5,0 nmol/L** (ELISA)\n\n**Terapia in atto:**\nPrednisone 50 mg/die (avviato a fine febbraio, già incrementato/ridotto/re-incrementato) + piridostigmina 60 mg x 3 die/die (percepisce beneficio).\n\nNon ha mai eseguito IgEV o plasmaferesi.\n\n**Conclusione:** MG AChR+ con timoma, interessamento generalizzato moderato, parziale compenso sotto steroide.",
       "choices": [
         { "text": "Valuta il caso →", "next": "cosa-faccio-1" }
       ]
@@ -125,7 +125,7 @@
         { "value": "MG-ADL", "label": "7",  "color": "danger"  },
         { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nAzatioprina 100 + 50 mg, prednisone 22,5 mg/die, piridostigmina 60 mg x 3 + 90 mg RP la sera\n\n**Peso:** 115 kg\n\n **Urgenza incontinenza urinaria **\n\n L'azatioprina non sembra aver portato il beneficio atteso. Il controllo della malattia rimane insufficiente.",
+      "text": "**Terapia attuale:**\nAzatioprina 100 + 50 mg, prednisone 22,5 mg/die, piridostigmina 60 mg x 3 die + 90 mg RP la sera\n\n**Peso:** 115 kg\n\n **Urgenza incontinenza urinaria **\n\n L'azatioprina non sembra aver portato il beneficio atteso. Il controllo della malattia rimane insufficiente.",
       "choices": [
         { "text": "Rivaluta la strategia →", "next": "cosa-faccio-2" }
       ]
@@ -161,7 +161,7 @@
         { "value": "MG-ADL", "label": "6",  "color": "warning" },
         { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
-      "text": "**Visita di controllo:**\nMicofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro.\n\n Gli accessi in Day Hospital per terapie infusive sono scomodi.\n\n Lamenta difficoltà nella gestione familiare e lavorativa,sia per i sintomia sia per necessità di accessi ospedalieri.\n\n",
+      "text": "**Visita di controllo:**\nMicofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3 die\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro.\n\n Gli accessi in Day Hospital per terapie infusive sono scomodi.\n\n Lamenta difficoltà nella gestione familiare e lavorativa,sia per i sintomia sia per necessità di accessi ospedalieri.\n\n",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3a" }
       ]
@@ -208,7 +208,7 @@
         { "label": "MG-ADL", "value": "7",  "color": "danger"  },
         { "label": "MGFA",   "value": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nPrednisone 17,5 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi un mese prima \n**Peso:** 120 kg · dispnea per sforzi moderati\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe minimizzare gli accessi ospedalieri per plasmaferesi.",
+      "text": "**Terapia attuale:**\nPrednisone 17,5 mg/die, piridostigmina 30 mg x 3 die, ultima plasmaferesi un mese prima \n**Peso:** 120 kg · dispnea per sforzi moderati\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe minimizzare gli accessi ospedalieri per plasmaferesi.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3b" }
       ]
@@ -255,7 +255,7 @@
         { "value": "MG-ADL", "label": "6",  "color": "warning" },
         { "value": "MGFA",   "label": "IIb", "color": "warning" }
       ],
-      "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3, ultima plasmaferesi un mese prima\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
+      "text": "**Terapia attuale:**\nPrednisone 10 mg/die, piridostigmina 30 mg x 3 die, ultima plasmaferesi un mese prima\n**Peso:** 110 kg\n\nLa paziente desidera essere seguita presso il tuo centro e vorrebbe **minimizzare gli accessi ospedalieri** per terapie trasfusionali o in Day Hospital.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
@@ -293,7 +293,7 @@
     },
     {
       "id": "scenario-zilucoplan-esito",
-      "type": "info",
+      "type": "endpoint",
       "title": "Esito con zilucoplan",
       "image": "/images/scenes/bello/11.png",
       "context_": "Primavera · Controllo",
@@ -304,7 +304,7 @@
         { "value": "MG-ADL", "label": "1",  "color": "success" },
         { "value": "MGFA",   "label": "Minime Manifestazioni", "color": "success" }
       ],
-      "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nZilucoplan 32,4 mg/die s.c., micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n\nSi pianifica un **décalage graduale del prednisone**, con maggiore fiducia rispetto al passato di riuscire a sospenderlo e di non dover riprendere le plasmaferesi.",
+      "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nZilucoplan 32,4 mg/die s.c., micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3 die\n\nSi pianifica un **décalage graduale del prednisone**, con maggiore fiducia rispetto al passato di riuscire a sospenderlo e di non dover riprendere le plasmaferesi.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
@@ -324,7 +324,7 @@
     },
     {
       "id": "scenario-rozano-esito",
-      "type": "info",
+      "type": "endpoint",
       "title": "Esito con rozanolixizumab",
       "image": "/images/scenes/bello/11.png",
       "context_": "Primavera · Controllo post-ciclo",
@@ -335,7 +335,7 @@
         { "value": "MG-ADL", "label": "1",  "color": "success" },
         { "value": "MGFA",   "label": "Minime Manifestazioni", "color": "success" }
       ],
-      "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nRozanolixizumab 840 mg/settimana (terminato 1° ciclo di 6 settimane), micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3\n\n**MGFA:** Minime manifestazioni\n\nSi procede a un **décalage graduale del prednisone**, con fiducia di riuscire a sospenderlo e non dover riprendere le plasmaferesi.",
+      "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nRozanolixizumab 840 mg/settimana (terminato 1° ciclo di 6 settimane), micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3 die\n\n**MGFA:** Minime manifestazioni\n\nSi procede a un **décalage graduale del prednisone**, con fiducia di riuscire a sospenderlo e non dover riprendere le plasmaferesi.",
       "choices": [
         { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
       ]
@@ -387,7 +387,7 @@
       "context_": "Follow-up",
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
-      "text": "Incrementando il prednisone a 75 mg, la paziente ha un miglioramento fino a **minime manifestazioni miasteniche**, ma presenta:\n• Aumento di peso fino a **125 kg**\n• **Diabete da steroidi**\n\nLa paziente ti comunica di essersi recata presso un centro in un'altra regione per un ulteriore parere neurologico e chirurgico toracico, e al momento non intende programmare un follow-up presso il tuo centro.\n\nL'escalation steroidea senza timectomia e senza terapia di bridging non è la strategia ottimale in una paziente con timoma.",
+      "text": "Incrementando il prednisone a 75 mg, la paziente ha un miglioramento fino a **minime manifestazioni miasteniche**, ma presenta:\n• Aumento di peso fino a **125 kg**\n• **Diabete da steroidi**\n\nLa paziente ti comunica di essersi recata presso un centro in un'altra regione per un ulteriore parere neurologico e chirurgico toracico, e al momento non intende programmare un follow-up presso il tuo centro.\n\n",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "cosa-faccio-1" }
       ]

@@ -411,12 +411,22 @@ const setLiveSceneId = useCallback(async (sceneId: string) => {
   }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('mg_username')
-    if (saved) {
-      setUsername(saved)
-      if (slug) startSession({ username: saved, storySlug: slug })
+  if (!slug) return
+  const init = async () => {
+    let uname = sessionStorage.getItem('mg_username')
+    if (!uname) {
+      // Admin non passa dalla join page — recupera email da Supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      uname = user?.email ?? null
+      if (uname) sessionStorage.setItem('mg_username', uname)
     }
-  }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (uname) {
+      setUsername(uname)
+      startSession({ username: uname, storySlug: slug })
+    }
+  }
+  init()
+}, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= BP)

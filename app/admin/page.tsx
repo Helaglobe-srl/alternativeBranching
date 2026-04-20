@@ -21,7 +21,7 @@ interface UcbEvent {
 interface SessionDetail {
   votes: Vote[]
   events: UcbEvent[]
-  scenario: { scenes: { id: string; title: string; type: string; choices: { id?: string; text: string }[] }[] } | null
+  scenario: { scenes: { id: string; title: string; type: string; image?: string | null; choices: { id?: string; text: string }[] }[] } | null
 }
 
 const COLORS = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e', '#7c3aed', '#b45309']
@@ -483,30 +483,43 @@ function SessionReportLoader({ sessionId, storySlug, stories }: { sessionId: str
       {events.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Percorso presentazione</div>
-          <div style={{ position: 'relative', paddingLeft: 22 }}>
-            <div style={{ position: 'absolute', left: 7, top: 8, bottom: 8, width: 2, background: 'linear-gradient(to bottom,#0e88a5,#c4e0e9)', borderRadius: 2 }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {events.map((e, i) => {
-                const isDecision = e.scene_type === 'decision'
-                const isEndpoint = e.scene_type === 'endpoint'
-                const sceneTitle = scenario?.scenes.find((s: { id: string; title: string }) => s.id === e.scene_id)?.title ?? e.scene_id
-                const seconds = e.time_on_scene ? Math.round(e.time_on_scene / 1000) : null
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: '50%', marginTop: 2, background: isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : 'white', border: `2px solid ${isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#c4e0e9'}`, zIndex: 1 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 13, fontWeight: isDecision ? 700 : 400, color: isDecision ? '#0c2a38' : '#4C7D93' }}>{sceneTitle}</span>
-                        {isDecision && <span style={{ fontSize: 10, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '1px 7px', borderRadius: 20 }}>Decisione</span>}
-                        {isEndpoint && <span style={{ fontSize: 10, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '1px 7px', borderRadius: 20 }}>Fine</span>}
-                        {seconds !== null && <span style={{ fontSize: 10, color: '#9cb8c4' }}>{seconds}s</span>}
+
+          {/* Layout verticale con miniatura */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {events.map((e, i) => {
+              const isDecision = e.scene_type === 'decision'
+              const isEndpoint = e.scene_type === 'endpoint'
+              const sceneData = scenario?.scenes.find((s: { id: string; title: string; image?: string | null }) => s.id === e.scene_id)
+              const sceneTitle = sceneData?.title ?? e.scene_id
+              const sceneImage = sceneData?.image ?? null
+              const seconds = e.time_on_scene ? Math.round(e.time_on_scene / 1000) : null
+              const accentColor = isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#e0eaee'
+              return (
+                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 12px', borderRadius: 10, background: isDecision ? '#f0f8fb' : '#fafafa', border: `1.5px solid ${accentColor}` }}>
+                  {/* Miniatura */}
+                  <div style={{ flexShrink: 0, width: 100, height: 64, borderRadius: 8, overflow: 'hidden', background: '#1e2e2e', position: 'relative' }}>
+                    {sceneImage ? (
+                      <img src={sceneImage} alt={sceneTitle} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                        <svg width="20" height="20" viewBox="0 0 64 64" fill="none"><rect x="24" y="8" width="16" height="48" rx="4" fill="#0e88a5"/><rect x="8" y="24" width="48" height="16" rx="4" fill="#0e88a5"/></svg>
                       </div>
-                      {e.choice_text && <div style={{ fontSize: 11, color: '#6b9aaa', marginTop: 2, fontStyle: 'italic' }}>→ {e.choice_text}</div>}
-                    </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: 3, right: 4, fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{i + 1}</div>
                   </div>
-                )
-              })}
-            </div>
+                  {/* Testo */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: isDecision ? 700 : 500, color: isDecision ? '#0c2a38' : '#4C7D93' }}>{sceneTitle}</span>
+                      {isDecision && <span style={{ fontSize: 9, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '1px 6px', borderRadius: 20 }}>Decisione</span>}
+                      {isEndpoint && <span style={{ fontSize: 9, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '1px 6px', borderRadius: 20 }}>Fine</span>}
+                      {seconds !== null && <span style={{ fontSize: 10, color: '#9cb8c4' }}>{seconds}s</span>}
+                    </div>
+                    {e.choice_text && <div style={{ fontSize: 11, color: '#6b9aaa', fontStyle: 'italic' }}>→ {e.choice_text}</div>}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
