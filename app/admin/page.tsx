@@ -476,143 +476,68 @@ function SessionReportLoader({ sessionId, storySlug, stories }: { sessionId: str
     return { sceneId, title: scene?.title ?? sceneId, total, choices }
   })
 
-  // Costruisci percorso unificato:
-  // Per ogni evento, se è una scena decisionale cerca anche i voti corrispondenti
-  const unifiedPath = events.map(e => {
-    const sceneData = scenario?.scenes.find((s: { id: string; title: string; image?: string | null; choices?: { id?: string; text: string }[] }) => s.id === e.scene_id)
-    const sceneVotes = votes.filter(v => v.scene_id === e.scene_id)
-    const total = sceneVotes.length
-    const choices = (sceneData?.choices ?? []).map((c: { id?: string; text: string }, i: number) => {
-      const cid = c.id ?? String(i)
-      const count = sceneVotes.filter(v => v.choice_id === cid).length
-      return { text: c.text, cid, count, pct: total > 0 ? Math.round((count / total) * 100) : 0, color: COLORS[i % COLORS.length] }
-    })
-    // Scelta del moderatore — matcha choice_text con le choices
-    const modChoiceIdx = choices.findIndex(c => c.text === e.choice_text)
-    return { event: e, sceneData, choices, total, modChoiceIdx }
-  })
-
-  // Scene con voti ma senza evento (moderatore non tracciato)
-  const orphanVoteScenes = votesByScene.filter(vs => !events.find(e => e.scene_id === vs.sceneId))
-
   return (
     <div style={{ padding: '20px' }}>
 
-      {events.length === 0 && votesByScene.length === 0 && (
-        <div style={{ fontSize: 13, color: '#9cb8c4', textAlign: 'center', padding: '12px 0' }}>Nessun dato disponibile per questa sessione.</div>
+      {/* Percorso moderatore */}
+      {events.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Percorso presentazione</div>
+
+          {/* Layout verticale con miniatura */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {events.map((e, i) => {
+              const isDecision = e.scene_type === 'decision'
+              const isEndpoint = e.scene_type === 'endpoint'
+              const sceneData = scenario?.scenes.find((s: { id: string; title: string; image?: string | null }) => s.id === e.scene_id)
+              const sceneTitle = sceneData?.title ?? e.scene_id
+              const sceneImage = sceneData?.image ?? null
+              const seconds = e.time_on_scene ? Math.round(e.time_on_scene / 1000) : null
+              const accentColor = isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#e0eaee'
+              return (
+                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 12px', borderRadius: 10, background: isDecision ? '#f0f8fb' : '#fafafa', border: `1.5px solid ${accentColor}` }}>
+                  {/* Miniatura */}
+                  <div style={{ flexShrink: 0, width: 100, height: 64, borderRadius: 8, overflow: 'hidden', background: '#1e2e2e', position: 'relative' }}>
+                    {sceneImage ? (
+                      <img src={sceneImage} alt={sceneTitle} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                        <svg width="20" height="20" viewBox="0 0 64 64" fill="none"><rect x="24" y="8" width="16" height="48" rx="4" fill="#0e88a5"/><rect x="8" y="24" width="48" height="16" rx="4" fill="#0e88a5"/></svg>
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: 3, right: 4, fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{i + 1}</div>
+                  </div>
+                  {/* Testo */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: isDecision ? 700 : 500, color: isDecision ? '#0c2a38' : '#4C7D93' }}>{sceneTitle}</span>
+                      {isDecision && <span style={{ fontSize: 9, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '1px 6px', borderRadius: 20 }}>Decisione</span>}
+                      {isEndpoint && <span style={{ fontSize: 9, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '1px 6px', borderRadius: 20 }}>Fine</span>}
+                      {seconds !== null && <span style={{ fontSize: 10, color: '#9cb8c4' }}>{seconds}s</span>}
+                    </div>
+                    {e.choice_text && <div style={{ fontSize: 11, color: '#6b9aaa', fontStyle: 'italic' }}>→ {e.choice_text}</div>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
-      {events.length === 0 && votesByScene.length > 0 && (
+      {events.length === 0 && (
         <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: '#f8f9fa', border: '1px solid #e8e8e8', fontSize: 12, color: '#9cb8c4' }}>
           Percorso moderatore non disponibile — aggiorna <code>useUcbTracking</code> con <code>user_id</code> per le prossime sessioni.
         </div>
       )}
 
-      {/* Percorso unificato */}
-      {unifiedPath.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {unifiedPath.map(({ event: e, sceneData, choices, total, modChoiceIdx }, i) => {
-            const isDecision = e.scene_type === 'decision'
-            const isEndpoint = e.scene_type === 'endpoint'
-            const sceneImage = sceneData?.image ?? null
-            const sceneTitle = sceneData?.title ?? e.scene_id
-            const seconds = e.time_on_scene ? Math.round(e.time_on_scene / 1000) : null
-            const hasVotes = total > 0
-
-            return (
-              <div key={i} style={{ borderRadius: 14, overflow: 'hidden', border: `1.5px solid ${isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#e0eaee'}`, background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-
-                {/* Immagine + header */}
-                {sceneImage ? (
-                  <div style={{ position: 'relative', width: '100%', height: 160, background: '#1e2e2e', overflow: 'hidden' }}>
-                    <img src={sceneImage} alt={sceneTitle} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)' }} />
-                    <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                        {isDecision && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: '#0e88a5', padding: '2px 7px', borderRadius: 20 }}>Decisione</span>}
-                        {isEndpoint && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: '#16803d', padding: '2px 7px', borderRadius: 20 }}>Fine</span>}
-                        {!isDecision && !isEndpoint && <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.7)', background: 'rgba(0,0,0,0.3)', padding: '2px 7px', borderRadius: 20 }}>Info</span>}
-                        {seconds !== null && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>{seconds}s</span>}
-                        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>#{i + 1}</span>
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{sceneTitle}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ padding: '14px 16px', background: isDecision ? '#f0f8fb' : '#fafafa', borderBottom: '1px solid #f0f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 48, height: 32, borderRadius: 6, background: '#1e2e2e', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.4 }}>
-                        <svg width="14" height="14" viewBox="0 0 64 64" fill="none"><rect x="24" y="8" width="16" height="48" rx="4" fill="#0e88a5"/><rect x="8" y="24" width="48" height="16" rx="4" fill="#0e88a5"/></svg>
-                      </div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: isDecision ? '#0c2a38' : '#4C7D93' }}>{sceneTitle}</span>
-                      {isDecision && <span style={{ fontSize: 9, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '2px 7px', borderRadius: 20 }}>Decisione</span>}
-                      {isEndpoint && <span style={{ fontSize: 9, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '2px 7px', borderRadius: 20 }}>Fine</span>}
-                    </div>
-                    <span style={{ fontSize: 10, color: '#9cb8c4' }}>#{i + 1}{seconds !== null ? ` · ${seconds}s` : ''}</span>
-                  </div>
-                )}
-
-                {/* Corpo — solo per scene decisionali */}
-                {isDecision && (
-                  <div style={{ padding: '14px 16px' }}>
-
-                    {/* Scelta moderatore */}
-                    {e.choice_text && (
-                      <div style={{ marginBottom: 14, padding: '8px 12px', borderRadius: 8, background: '#0e88a5', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>Moderatore: {e.choice_text}</span>
-                      </div>
-                    )}
-
-                    {/* Voti partecipanti */}
-                    {hasVotes ? (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Voti partecipanti</span>
-                          <span style={{ fontSize: 11, color: '#9cb8c4' }}>{total} vot{total === 1 ? 'o' : 'i'}</span>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          {choices.map((c, j) => {
-                            const isModChoice = j === modChoiceIdx
-                            return (
-                              <div key={j} style={{ padding: '8px 10px', borderRadius: 8, background: isModChoice ? 'rgba(14,136,165,0.06)' : 'transparent', border: `1px solid ${isModChoice ? 'rgba(14,136,165,0.2)' : 'transparent'}` }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    {isModChoice && <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#0e88a5" strokeWidth="2"/><path d="M8 12l3 3 5-5" stroke="#0e88a5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                                    <span style={{ fontSize: 12, color: isModChoice ? '#0c2a38' : '#4C7D93', fontWeight: isModChoice ? 700 : 400 }}>{c.text}</span>
-                                  </div>
-                                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                    <span style={{ fontSize: 11, color: '#9cb8c4' }}>{c.count}</span>
-                                    <span style={{ fontSize: 13, fontWeight: 800, color: c.color, minWidth: 36, textAlign: 'right' }}>{c.pct}%</span>
-                                  </div>
-                                </div>
-                                <div style={{ height: 6, borderRadius: 4, background: '#e0eaee', overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width .6s cubic-bezier(0.22,1,0.36,1)' }} />
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 12, color: '#9cb8c4', fontStyle: 'italic' }}>Nessun voto registrato per questa domanda.</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Scene con voti ma senza percorso moderatore */}
-      {orphanVoteScenes.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Risultati votazioni (percorso non disponibile)</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {orphanVoteScenes.map((vs, i) => (
+      {/* Voti per domanda */}
+      {votesByScene.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Risultati votazioni</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {votesByScene.map((vs, i) => (
               <div key={i} style={{ background: '#f8fbfc', borderRadius: 12, padding: '14px 16px', border: '1px solid #e0eaee' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#0c2a38' }}>{vs.title}</span>
                   <span style={{ fontSize: 12, color: '#9cb8c4' }}>{vs.total} vot{vs.total === 1 ? 'o' : 'i'}</span>
                 </div>
@@ -621,10 +546,13 @@ function SessionReportLoader({ sessionId, storySlug, stories }: { sessionId: str
                     <div key={j}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                         <span style={{ fontSize: 12, color: '#4C7D93' }}>{c.text}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: c.color }}>{c.pct}%</span>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <span style={{ fontSize: 12, color: '#9cb8c4' }}>{c.count}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: c.color, minWidth: 32, textAlign: 'right' }}>{c.pct}%</span>
+                        </div>
                       </div>
-                      <div style={{ height: 6, borderRadius: 4, background: '#e0eaee', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width .6s' }} />
+                      <div style={{ height: 7, borderRadius: 4, background: '#e0eaee', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width .6s cubic-bezier(0.22,1,0.36,1)' }} />
                       </div>
                     </div>
                   ))}
@@ -633,6 +561,10 @@ function SessionReportLoader({ sessionId, storySlug, stories }: { sessionId: str
             ))}
           </div>
         </div>
+      )}
+
+      {votesByScene.length === 0 && events.length === 0 && (
+        <div style={{ fontSize: 13, color: '#9cb8c4', textAlign: 'center', padding: '12px 0' }}>Nessun dato disponibile per questa sessione.</div>
       )}
     </div>
   )
