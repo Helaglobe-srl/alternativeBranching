@@ -1,5 +1,5 @@
 {
-    "title": "UCB Red Flags — Caso Biasini",
+    "title": "UCB Red Flags — IT-RZ-2600026",
     "subtitle": "Miastenia Gravis · Esordio Bulbare",
     "scenes": [
         {
@@ -8,7 +8,7 @@
             "title": "Una mail dalla figlia",
             "image": "/images/scenes/biasini/IMG-01.jpg",
             "imageAlt": "Interno casa Messina, la figlia scrive una mail",
-            "text": "La figlia di **Silvano** scrive alla dott.ssa Biasini una mail accorata:\n\n«Gentile dottoressa, buongiorno. Mi chiamo Melania e le scrivo perché mio padre ha un disperato bisogno di aiuto.\n\nIl 21 agosto, ad ora di pranzo, è stato portato in pronto soccorso perché non riusciva a parlare bene: i medici hanno ipotizzato un'ischemia cerebrale e lo hanno ricoverato. Il 23 agosto hanno eseguito TC encefalo e RMN senza mdc, ma senza riscontrare ischemia: paziente dimesso.\n\nNei giorni seguenti (24–26 agosto) i sintomi sono peggiorati: oltre alle difficoltà di eloquio è comparsa disfagia. Il 26 agosto non riusciva nemmeno a ingerire l'acqua, così lo stesso giorno è stato trasportato al reparto di Neurologia, dove è tuttora ricoverato.»",
+            "text": "La figlia di **Silvano** scrive ad una dott.ssa di un centro di riferimento una mail accorata:\n\n«Gentile dottoressa, buongiorno. Mi chiamo Melania e le scrivo perché mio padre ha un disperato bisogno di aiuto.\n\nIl 21 agosto, ad ora di pranzo, è stato portato in pronto soccorso perché non riusciva a parlare bene: i medici hanno ipotizzato un'ischemia cerebrale e lo hanno ricoverato. Il 23 agosto hanno eseguito TC encefalo e RMN senza mdc, ma senza riscontrare ischemia: paziente dimesso.\n\nNei giorni seguenti (24–26 agosto) i sintomi sono peggiorati: oltre alle difficoltà di eloquio è comparsa disfagia. Il 26 agosto non riusciva nemmeno a ingerire l'acqua, così lo stesso giorno è stato trasportato al reparto di Neurologia, dove è tuttora ricoverato.»",
             "choices": [
                 {
                     "text": "Leggi la presentazione del caso →",

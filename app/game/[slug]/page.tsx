@@ -642,8 +642,18 @@ const setLiveSceneId = useCallback(async (sceneId: string) => {
         {/* Navbar */}
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Bottone Home — lato sinistro */}
+<button onClick={() => router.push('/')} title="Home"
+  style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8f4f8', border: '1px solid #c4e0e9', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
+  onMouseEnter={e => { e.currentTarget.style.background = '#c4e0e9' }}
+  onMouseLeave={e => { e.currentTarget.style.background = '#e8f4f8' }}>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <path d="M3 10.5L12 3L21 10.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#0e88a5" strokeWidth="2" strokeLinejoin="round"/>
+    <path d="M9 21V13h6v8" stroke="#0e88a5" strokeWidth="2" strokeLinejoin="round"/>
+  </svg>
+</button>
             <button onClick={goBack} disabled={history.length === 0} title="Torna indietro"
-              style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: history.length > 0 ? cfg.light : 'transparent', border: `1px solid ${history.length > 0 ? cfg.accent + '33' : 'rgba(0,0,0,0.08)'}`, cursor: history.length > 0 ? 'pointer' : 'default', transition: 'all .15s' }}
+              style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: history.length > 0 ? cfg.light : 'transparent', border: `1px solid ${history.length > 0 ? cfg.accent + '33' : 'rgba(0,0,0,0.08)'}`, cursor: history.length > 0 ? 'pointer' : 'default', transition: 'all .15s' }}
               onMouseEnter={e => { if (history.length > 0) e.currentTarget.style.background = '#c4e0e9' }}
               onMouseLeave={e => { e.currentTarget.style.background = history.length > 0 ? cfg.light : 'transparent' }}>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke={history.length > 0 ? cfg.accent : '#ccc'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -664,8 +674,8 @@ const setLiveSceneId = useCallback(async (sceneId: string) => {
                 {showVotePanel ? 'Chiudi voto' : 'Voto live'}
               </button>
             )}
-            <button onClick={() => router.push('/')} style={{ fontSize: 11, color: '#9cb8c4', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 8px' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#0e88a5' }} onMouseLeave={e => { e.currentTarget.style.color = '#9cb8c4' }}>← Home</button>
+            {/* <button onClick={() => router.push('/')} style={{ fontSize: 11, color: '#9cb8c4', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 8px' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#0e88a5' }} onMouseLeave={e => { e.currentTarget.style.color = '#9cb8c4' }}>← Home</button> */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 11px', borderRadius: 20, background: cfg.light, border: `1px solid ${cfg.accent}22` }}>
               <span style={{ fontSize: 10.5, color: cfg.accent, fontWeight: 700, fontFamily: 'monospace' }}>{String(history.length + 1).padStart(2, '0')}</span>
               <span style={{ fontSize: 9.5, color: cfg.accent, opacity: 0.55 }}>/ step</span>

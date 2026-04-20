@@ -1,5 +1,5 @@
 {
-  "title": "UCB Red Flags — Caso Clinico",
+  "title": "UCB Red Flags — IT XXX",
   "subtitle": "Miastenia Gravis · Scenario Decisionale",
   "scenes": [
     {
@@ -9,7 +9,7 @@
       "image": "/images/scenes/maestri/presentazione.jpg",
       "imageAlt": "Ambulatorio medico",
       "context_": "Scena in ambulatorio: paziente e specialista parlano",
-      "text": "**Antonello**, 45 anni. 2 anni fa ha presentato una storia di:\n\n• Disartria\n• Disfonia\n• Sintomatologia oculare grave\n\nAll'analisi anticorpale risulta **anti-AChR positivo**. Ha iniziato terapia con piridostigmina bromuro fino a un massimo di 50 mg e prednisone fino a un massimo di 25 mg. Sottoposto a **timectomia** per iperplasia timica 1 anno e mezzo prima. Ha iniziato azatioprina 100 mg da un anno circa.",
+      "text": "**Antonello**, 45 anni. 2 anni fa ha presentato una storia di:\n\n• Disartria\n• Disfonia\n• Sintomatologia oculare grave\n\nAll'analisi anticorpale risulta **anti-AChR positivo**. Ha iniziato terapia con piridostigmina bromuro fino a un massimo di 210 mg e prednisone fino a un massimo di 25 mg. Sottoposto a **timectomia** per iperplasia timica 1 anno e mezzo prima. Ha iniziato azatioprina 100 mg da un anno circa.",
       "choices": [
         {
           "text": "Continua →",
@@ -42,7 +42,7 @@
       "title": "Cosa faccio?",
       "image": "/images/scenes/maestri/maestri_2.jpg",
       "context_": "Specialista che riflette",
-      "text": "Il paziente è in terapia con azatioprina 100 mg, prednisone 25 mg e piridostigmina 50 mg. I parametri clinici indicano malattia non controllata. Qual è la tua scelta terapeutica?",
+      "text": "Il paziente è in terapia con azatioprina 100 mg, prednisone 25 mg e piridostigmina 210 mg. I parametri clinici indicano malattia non controllata. Qual è la tua scelta terapeutica?",
       "choices": [
         {
           "id": "c1",
@@ -76,25 +76,20 @@
       "title": "Cosa faccio?",
       "image": "/images/scenes/maestri/maestri_2.jpg",
       "context_": "Specialista che riflette",
-      "text": "Il paziente è in terapia con azatioprina 100 mg, prednisone 25 mg e piridostigmina 50 mg. I parametri clinici indicano malattia non controllata. Qual è la tua scelta terapeutica?",
+      "text": "Il paziente è in terapia con micofenolato 2g, prednisone 25 mg e piridostigmina 120 mg/die. I parametri clinici indicano malattia non controllata. Qual è la tua scelta terapeutica?",
       "choices": [
-        {
-          "id": "c1",
-          "text": "Aumento azatioprina a 150 mg/die (peso 85 kg)",
-          "next": "scenario-1",
-          "tag": "1"
-        },
+       
         {
           "id": "c2",
           "text": "Aumento prednisone a 37,5 mg/die",
           "next": "scenario-2",
-          "tag": "2"
+          "tag": "1"
         },
         {
           "id": "c4",
           "text": "Associo terapia con farmaci innovativi",
           "next": "scenario-4-intro",
-          "tag": "4"
+          "tag": "2"
         }
       ]
     },
@@ -138,7 +133,7 @@
       "context_": "Dopo 6 mesi: paziente sollevato",
       "badge": "✓ Lieve miglioramento",
       "badgeColor": "success",
-      "text": "Dopo **6 mesi**, il paziente torna con situazione **lievemente migliorata** (MG-ADL 2).\n\nCosa faccio?",
+      "text": "Dopo **6 mesi**, il paziente torna con situazione **lievemente migliorata** (MG-ADL 5).\n\nCosa faccio?",
       "choices": [
         {
           "id": "c1",
@@ -178,7 +173,7 @@
       "context_": "Segnale di divieto d'accesso",
       "badge": "🚫 Non possibile",
       "badgeColor": "danger",
-      "text": "**Inserimento terapia innovativa — Non è possibile.**\n\nLa normativa richiede **MG-ADL ≥ 6** per accedere alla terapia innovativa. Il paziente con MG-ADL 2 non soddisfa i criteri di eleggibilità in questo momento.",
+      "text": "**Inserimento terapia innovativa — Non è possibile.**\n\nLa normativa richiede **MG-ADL ≥ 6** per accedere alla terapia innovativa. Il paziente con MG-ADL 5 non soddisfa i criteri di eleggibilità in questo momento.",
       "choices": [
         {
           "text": "← Torna alla scelta",

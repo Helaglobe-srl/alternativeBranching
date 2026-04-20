@@ -11,6 +11,198 @@ interface Session {
   scene_id: string | null; voting_open: boolean
   revealed: boolean; created_at: string
 }
+interface Vote {
+  scene_id: string; choice_id: string; choice_text: string; voted_at: string
+}
+interface UcbEvent {
+  scene_id: string; scene_type: string; choice_text: string | null
+  entered_at: string; time_on_scene: number | null
+}
+interface SessionDetail {
+  votes: Vote[]
+  events: UcbEvent[]
+  scenario: { scenes: { id: string; title: string; type: string; choices: { id?: string; text: string }[] }[] } | null
+}
+
+const COLORS = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e', '#7c3aed', '#b45309']
+
+function SessionReport({ session, stories }: { session: Session; stories: Story[] }) {
+  const supabase = createClient()
+  const [detail, setDetail] = useState<SessionDetail | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const load = useCallback(async () => {
+    if (detail) return // già caricato
+    setLoading(true)
+
+    // 1. Voti della sessione live
+    const { data: votes } = await supabase
+      .from('live_votes')
+      .select('scene_id, choice_id, choice_text, voted_at')
+      .eq('session_id', session.id)
+      .order('voted_at', { ascending: true })
+
+    // 2. Percorso del moderatore — via ucb_events + ucb_sessions
+    //    join: ucb_sessions.user_id = live_sessions.created_by (non disponibile qui)
+    //    usiamo RPC o query separata
+    const { data: ucbSessions } = await supabase
+      .from('ucb_sessions')
+      .select('id')
+      .eq('story_slug', session.story_slug)
+      // Filtriamo per created_by — leggiamo live_session per avere created_by
+    
+    // Recupera created_by dalla sessione live
+    const { data: liveSession } = await supabase
+      .from('live_sessions')
+      .select('created_by, created_at')
+      .eq('id', session.id)
+      .single()
+
+    let events: UcbEvent[] = []
+    if (liveSession?.created_by) {
+      // Trova ucb_session del moderatore per questo slug in corrispondenza temporale
+      const { data: modSession } = await supabase
+        .from('ucb_sessions')
+        .select('id')
+        .eq('story_slug', session.story_slug)
+        .eq('user_id', liveSession.created_by)
+        .gte('started_at', new Date(new Date(liveSession.created_at).getTime() - 60000).toISOString())
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (modSession) {
+        const { data: evs } = await supabase
+          .from('ucb_events')
+          .select('scene_id, scene_type, choice_text, entered_at, time_on_scene')
+          .eq('session_id', modSession.id)
+          .order('entered_at', { ascending: true })
+        events = evs ?? []
+      }
+    }
+
+    // 3. Scenario JSON
+    let scenario = null
+    try {
+      const r = await fetch(`/stories/${session.story_slug}/scenario.json`)
+      scenario = await r.json()
+    } catch {}
+
+    setDetail({ votes: votes ?? [], events, scenario })
+    setLoading(false)
+  }, [session.id, session.story_slug, detail]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) return (
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <div style={{ width: 20, height: 20, border: '2px solid rgba(14,136,165,0.2)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto' }} />
+    </div>
+  )
+
+  if (!detail) return null
+
+  const { votes, events, scenario } = detail
+
+  // Raggruppa voti per scene_id
+  const sceneIds = [...new Set(votes.map(v => v.scene_id))]
+  const votesByScene = sceneIds.map(sceneId => {
+    const sceneVotes = votes.filter(v => v.scene_id === sceneId)
+    const scene = scenario?.scenes.find(s => s.id === sceneId)
+    const total = sceneVotes.length
+    const choices = (scene?.choices ?? []).map((c, i) => {
+      const cid = c.id ?? String(i)
+      const count = sceneVotes.filter(v => v.choice_id === cid).length
+      return { text: c.text, count, pct: total > 0 ? Math.round((count / total) * 100) : 0, color: COLORS[i % COLORS.length] }
+    })
+    return { sceneId, title: scene?.title ?? sceneId, total, choices }
+  })
+
+  return (
+    <div style={{ padding: '0 20px 20px' }}>
+
+      {/* Percorso moderatore */}
+      {events.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+            Percorso presentazione
+          </div>
+          <div style={{ position: 'relative', paddingLeft: 20 }}>
+            {/* Linea verticale */}
+            <div style={{ position: 'absolute', left: 7, top: 8, bottom: 8, width: 2, background: 'linear-gradient(to bottom, #0e88a5, #c4e0e9)', borderRadius: 2 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {events.map((e, i) => {
+                const isDecision = e.scene_type === 'decision'
+                const isEndpoint = e.scene_type === 'endpoint'
+                const sceneTitle = scenario?.scenes.find(s => s.id === e.scene_id)?.title ?? e.scene_id
+                const seconds = e.time_on_scene ? Math.round(e.time_on_scene / 1000) : null
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    {/* Dot */}
+                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: '50%', marginTop: 3, background: isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#e8f4f8', border: `2px solid ${isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#c4e0e9'}`, zIndex: 1 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 13, fontWeight: isDecision ? 700 : 400, color: isDecision ? '#0c2a38' : '#4C7D93' }}>{sceneTitle}</span>
+                        {isDecision && <span style={{ fontSize: 10, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '1px 7px', borderRadius: 20 }}>Decisione</span>}
+                        {isEndpoint && <span style={{ fontSize: 10, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '1px 7px', borderRadius: 20 }}>Fine</span>}
+                        {seconds !== null && <span style={{ fontSize: 10, color: '#9cb8c4' }}>{seconds}s</span>}
+                      </div>
+                      {e.choice_text && (
+                        <div style={{ fontSize: 11, color: '#6b9aaa', marginTop: 2, fontStyle: 'italic' }}>→ {e.choice_text}</div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {events.length === 0 && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: '#f8f9fa', border: '1px solid #e8e8e8', fontSize: 12, color: '#9cb8c4' }}>
+          Percorso moderatore non disponibile — assicurati che <code>user_id</code> sia stato aggiunto a <code>ucb_sessions</code>
+        </div>
+      )}
+
+      {/* Voti per domanda */}
+      {votesByScene.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+            Risultati votazioni
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {votesByScene.map((vs, i) => (
+              <div key={i} style={{ background: '#f8fbfc', borderRadius: 12, padding: '14px 16px', border: '1px solid #e0eaee' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0c2a38' }}>{vs.title}</span>
+                  <span style={{ fontSize: 12, color: '#9cb8c4' }}>{vs.total} vot{vs.total === 1 ? 'o' : 'i'}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {vs.choices.map((c, j) => (
+                    <div key={j}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: '#4C7D93' }}>{c.text}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: c.color }}>{c.pct}%</span>
+                      </div>
+                      <div style={{ height: 7, borderRadius: 4, background: '#e0eaee', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width .6s cubic-bezier(0.22,1,0.36,1)' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {votesByScene.length === 0 && events.length === 0 && (
+        <div style={{ fontSize: 13, color: '#9cb8c4', textAlign: 'center', padding: '12px 0' }}>
+          Nessun dato disponibile per questa sessione.
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function AdminPage() {
   const router   = useRouter()
@@ -24,8 +216,8 @@ export default function AdminPage() {
   const [newName,   setNewName]   = useState('')
   const [newSlug,   setNewSlug]   = useState('')
   const [creating,  setCreating]  = useState(false)
+  const [expanded,  setExpanded]  = useState<string | null>(null)
 
-  // ── Check admin ────────────────────────────────────────────────────────────
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -39,7 +231,6 @@ export default function AdminPage() {
     check()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load sessions + stories ────────────────────────────────────────────────
   useEffect(() => {
     if (!isAdmin) return
     supabase.from('live_sessions').select('*').order('created_at', { ascending: false })
@@ -55,15 +246,14 @@ export default function AdminPage() {
       name: newName.trim(), story_slug: newSlug, created_by: user?.id
     }).select().single()
     setCreating(false)
-    if (!error && data) {
-      router.push(`/admin/${data.id}`)
-    }
+    if (!error && data) router.push(`/admin/${data.id}`)
   }, [newName, newSlug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteSession = useCallback(async (id: string) => {
     await supabase.from('live_sessions').delete().eq('id', id)
     setSessions(s => s.filter(x => x.id !== id))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (expanded === id) setExpanded(null)
+  }, [expanded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const logout = async () => {
     await supabase.auth.signOut()
@@ -82,7 +272,6 @@ export default function AdminPage() {
       <style>{`html,body{margin:0;padding:0}*{box-sizing:border-box}@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
       <div style={{ minHeight: '100vh', background: '#f5f0eb', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
 
-        {/* Navbar */}
         <nav style={{ height: 56, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Image src="/images/LOGO.webp" alt="Logo" width={90} height={26} style={{ objectFit: 'contain', height: 26, width: 'auto' }} />
@@ -96,7 +285,6 @@ export default function AdminPage() {
 
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px' }}>
 
-          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, color: '#0c2a38', letterSpacing: '-0.02em' }}>Sessioni live</h1>
@@ -108,7 +296,6 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Form nuova sessione */}
           {showForm && (
             <div style={{ background: 'white', borderRadius: 16, padding: '24px', marginBottom: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', animation: 'fadeUp .2s ease', border: '1.5px solid #c4e0e9' }}>
               <h3 style={{ margin: '0 0 18px', fontSize: 16, fontWeight: 800, color: '#0c2a38' }}>Nuova sessione</h3>
@@ -145,40 +332,227 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Lista sessioni */}
           {sessions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: '#9cb8c4', fontSize: 14 }}>
               Nessuna sessione ancora. Creane una!
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {sessions.map(s => (
-                <div key={s.id} style={{ background: 'white', borderRadius: 14, padding: '18px 20px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: '#0c2a38' }}>{s.name}</span>
-                      {s.voting_open && <span style={{ fontSize: 10, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '2px 8px', borderRadius: 20, border: '1px solid #bbf7d0' }}>VOTO APERTO</span>}
+              {sessions.map(s => {
+                const isOpen = expanded === s.id
+                return (
+                  <div key={s.id} style={{ background: 'white', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', overflow: 'hidden', border: isOpen ? '1.5px solid #c4e0e9' : '1.5px solid transparent', transition: 'border-color .2s' }}>
+
+                    {/* Header sessione */}
+                    <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: '#0c2a38' }}>{s.name}</span>
+                          {s.voting_open && <span style={{ fontSize: 10, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '2px 8px', borderRadius: 20, border: '1px solid #bbf7d0' }}>VOTO APERTO</span>}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#9cb8c4' }}>
+                          {s.story_slug} · {new Date(s.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {/* Toggle riepilogo */}
+                        <button
+                          onClick={() => {
+                            const opening = expanded !== s.id
+                            setExpanded(opening ? s.id : null)
+                          }}
+                          style={{ padding: '7px 14px', borderRadius: 8, background: isOpen ? '#e8f4f8' : '#f0f4f6', color: isOpen ? '#0e88a5' : '#4C7D93', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                            <rect x="2" y="8" width="3" height="5" rx="1" fill="currentColor"/>
+                            <rect x="6.5" y="5" width="3" height="8" rx="1" fill="currentColor"/>
+                            <rect x="11" y="2" width="3" height="11" rx="1" fill="currentColor"/>
+                          </svg>
+                          {isOpen ? 'Chiudi' : 'Riepilogo'}
+                        </button>
+                        <button onClick={() => router.push(`/admin/${s.id}`)}
+                          style={{ padding: '8px 16px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          Apri →
+                        </button>
+                        <button onClick={() => deleteSession(s.id)}
+                          style={{ padding: '8px 12px', borderRadius: 8, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontSize: 12, cursor: 'pointer' }}>
+                          ✕
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, color: '#9cb8c4' }}>
-                      {s.story_slug} · {new Date(s.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </div>
+
+                    {/* Riepilogo espandibile */}
+                    {isOpen && (
+                      <div style={{ borderTop: '1px solid #f0f4f6', animation: 'fadeUp .2s ease' }}>
+                        <SessionReportLoader sessionId={s.id} storySlug={s.story_slug} stories={stories} />
+                      </div>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => router.push(`/admin/${s.id}`)}
-                      style={{ padding: '8px 16px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                      Apri →
-                    </button>
-                    <button onClick={() => deleteSession(s.id)}
-                      style={{ padding: '8px 12px', borderRadius: 8, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontSize: 12, cursor: 'pointer' }}>
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
       </div>
     </>
+  )
+}
+
+// Wrapper che carica i dati al mount
+function SessionReportLoader({ sessionId, storySlug, stories }: { sessionId: string; storySlug: string; stories: Story[] }) {
+  const supabase = createClient()
+  const [detail, setDetail] = useState<SessionDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      // 1. Voti
+      const { data: votes } = await supabase
+        .from('live_votes')
+        .select('scene_id, choice_id, choice_text, voted_at')
+        .eq('session_id', sessionId)
+        .order('voted_at', { ascending: true })
+
+      // 2. created_by della sessione live
+      const { data: liveSession } = await supabase
+        .from('live_sessions')
+        .select('created_by, created_at')
+        .eq('id', sessionId)
+        .single()
+
+      let events: UcbEvent[] = []
+      if (liveSession?.created_by) {
+        const { data: modSession } = await supabase
+          .from('ucb_sessions')
+          .select('id')
+          .eq('story_slug', storySlug)
+          .eq('user_id', liveSession.created_by)
+          .gte('started_at', new Date(new Date(liveSession.created_at).getTime() - 60000).toISOString())
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (modSession) {
+          const { data: evs } = await supabase
+            .from('ucb_events')
+            .select('scene_id, scene_type, choice_text, entered_at, time_on_scene')
+            .eq('session_id', modSession.id)
+            .order('entered_at', { ascending: true })
+          events = evs ?? []
+        }
+      }
+
+      // 3. Scenario
+      let scenario = null
+      try {
+        const r = await fetch(`/stories/${storySlug}/scenario.json`)
+        scenario = await r.json()
+      } catch {}
+
+      setDetail({ votes: votes ?? [], events, scenario })
+      setLoading(false)
+    }
+    load()
+  }, [sessionId, storySlug]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) return (
+    <div style={{ padding: '24px', textAlign: 'center' }}>
+      <div style={{ width: 20, height: 20, border: '2px solid rgba(14,136,165,0.2)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto' }} />
+    </div>
+  )
+
+  if (!detail) return null
+
+  const { votes, events, scenario } = detail
+  const sceneIds = [...new Set(votes.map(v => v.scene_id))]
+  const votesByScene = sceneIds.map(sceneId => {
+    const sceneVotes = votes.filter(v => v.scene_id === sceneId)
+    const scene = scenario?.scenes.find((s: { id: string }) => s.id === sceneId)
+    const total = sceneVotes.length
+    const choices = (scene?.choices ?? []).map((c: { id?: string; text: string }, i: number) => {
+      const cid = c.id ?? String(i)
+      const count = sceneVotes.filter(v => v.choice_id === cid).length
+      return { text: c.text, count, pct: total > 0 ? Math.round((count / total) * 100) : 0, color: COLORS[i % COLORS.length] }
+    })
+    return { sceneId, title: scene?.title ?? sceneId, total, choices }
+  })
+
+  return (
+    <div style={{ padding: '20px' }}>
+
+      {/* Percorso moderatore */}
+      {events.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Percorso presentazione</div>
+          <div style={{ position: 'relative', paddingLeft: 22 }}>
+            <div style={{ position: 'absolute', left: 7, top: 8, bottom: 8, width: 2, background: 'linear-gradient(to bottom,#0e88a5,#c4e0e9)', borderRadius: 2 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {events.map((e, i) => {
+                const isDecision = e.scene_type === 'decision'
+                const isEndpoint = e.scene_type === 'endpoint'
+                const sceneTitle = scenario?.scenes.find((s: { id: string; title: string }) => s.id === e.scene_id)?.title ?? e.scene_id
+                const seconds = e.time_on_scene ? Math.round(e.time_on_scene / 1000) : null
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ flexShrink: 0, width: 14, height: 14, borderRadius: '50%', marginTop: 2, background: isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : 'white', border: `2px solid ${isDecision ? '#0e88a5' : isEndpoint ? '#16803d' : '#c4e0e9'}`, zIndex: 1 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 13, fontWeight: isDecision ? 700 : 400, color: isDecision ? '#0c2a38' : '#4C7D93' }}>{sceneTitle}</span>
+                        {isDecision && <span style={{ fontSize: 10, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '1px 7px', borderRadius: 20 }}>Decisione</span>}
+                        {isEndpoint && <span style={{ fontSize: 10, fontWeight: 700, color: '#16803d', background: '#f0fdf4', padding: '1px 7px', borderRadius: 20 }}>Fine</span>}
+                        {seconds !== null && <span style={{ fontSize: 10, color: '#9cb8c4' }}>{seconds}s</span>}
+                      </div>
+                      {e.choice_text && <div style={{ fontSize: 11, color: '#6b9aaa', marginTop: 2, fontStyle: 'italic' }}>→ {e.choice_text}</div>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {events.length === 0 && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 8, background: '#f8f9fa', border: '1px solid #e8e8e8', fontSize: 12, color: '#9cb8c4' }}>
+          Percorso moderatore non disponibile — aggiorna <code>useUcbTracking</code> con <code>user_id</code> per le prossime sessioni.
+        </div>
+      )}
+
+      {/* Voti per domanda */}
+      {votesByScene.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9cb8c4', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Risultati votazioni</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {votesByScene.map((vs, i) => (
+              <div key={i} style={{ background: '#f8fbfc', borderRadius: 12, padding: '14px 16px', border: '1px solid #e0eaee' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0c2a38' }}>{vs.title}</span>
+                  <span style={{ fontSize: 12, color: '#9cb8c4' }}>{vs.total} vot{vs.total === 1 ? 'o' : 'i'}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {vs.choices.map((c, j) => (
+                    <div key={j}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: '#4C7D93' }}>{c.text}</span>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <span style={{ fontSize: 12, color: '#9cb8c4' }}>{c.count}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: c.color, minWidth: 32, textAlign: 'right' }}>{c.pct}%</span>
+                        </div>
+                      </div>
+                      <div style={{ height: 7, borderRadius: 4, background: '#e0eaee', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width .6s cubic-bezier(0.22,1,0.36,1)' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {votesByScene.length === 0 && events.length === 0 && (
+        <div style={{ fontSize: 13, color: '#9cb8c4', textAlign: 'center', padding: '12px 0' }}>Nessun dato disponibile per questa sessione.</div>
+      )}
+    </div>
   )
 }
