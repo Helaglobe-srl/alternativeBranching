@@ -306,7 +306,7 @@
       ],
       "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nZilucoplan 32,4 mg/die s.c., micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3 die\n\nSi pianifica un **décalage graduale del prednisone**, con maggiore fiducia rispetto al passato di riuscire a sospenderlo e di non dover riprendere le plasmaferesi.",
       "choices": [
-        { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
+        { "text": "Ricomincia dall'inizio", "next": "intro" }
       ]
     },
     {
@@ -337,7 +337,7 @@
       ],
       "text": "La paziente riferisce un **miglior controllo dei sintomi** rispetto agli ultimi anni.\n\n**Terapia attuale:**\nRozanolixizumab 840 mg/settimana (terminato 1° ciclo di 6 settimane), micofenolato 1000 mg x 2/die, prednisone 10 mg/die, piridostigmina 30 mg x 3 die\n\n**MGFA:** Minime manifestazioni\n\nSi procede a un **décalage graduale del prednisone**, con fiducia di riuscire a sospenderlo e non dover riprendere le plasmaferesi.",
       "choices": [
-        { "text": "Rivaluta il piano →", "next": "cosa-faccio-3c" }
+        { "text": "Ricòmincia dall'inizio", "next": "intro" }
       ]
     },
     {
