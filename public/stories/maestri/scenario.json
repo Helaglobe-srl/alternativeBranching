@@ -133,7 +133,7 @@
       "context_": "Dopo 6 mesi: paziente sollevato",
       "badge": "✓ Lieve miglioramento",
       "badgeColor": "success",
-      "text": "Dopo **6 mesi**, il paziente torna con situazione **lievemente migliorata** (MG-ADL 5).\n\nCosa faccio?",
+      "text": "Dopo **6 mesi**, il paziente torna con situazione **lievemente migliorata** (MG-ADL 4), con persistenza di sintomi invalidanti nella vita quotidiana.\n\nCosa faccio?",
       "choices": [
         {
           "id": "c1",
@@ -169,11 +169,11 @@
       "id": "scenario-3-2",
       "type": "info",
       "title": "Scenario 3.2",
-      "image": "/images/scenes/maestri/maestri_stop.png",
+      "image": "/images/scenes/maestri/stop.png",
       "context_": "Segnale di divieto d'accesso",
       "badge": "🚫 Non possibile",
       "badgeColor": "danger",
-      "text": "**Inserimento terapia innovativa — Non è possibile.**\n\nLa normativa richiede **MG-ADL ≥ 6** per accedere alla terapia innovativa. Il paziente con MG-ADL 5 non soddisfa i criteri di eleggibilità in questo momento.",
+      "text": "**Inserimento terapia innovativa — Non è possibile.**\n\nLa normativa richiede **MG-ADL ≥ 5** per accedere alla terapia innovativa.",
       "choices": [
         {
           "text": "← Torna alla scelta",

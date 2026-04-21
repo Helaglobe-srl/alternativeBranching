@@ -45,7 +45,7 @@
       "choices": [
         { "id": "c1", "text": "Timectomia da organizzare con urgenza", "next": "scenario-1-1", "tag": "1" },
         { "id": "c2", "text": "Ciclo di IgEV o plasmaferesi, poi timectomia in elezione", "next": "scenario-1-2-pf", "tag": "2" },
-        { "id": "c3", "text": "Incremento del prednisone a 75 mg/die", "next": "scenario-1-3", "tag": "3" }
+        { "id": "c3", "text": "Incremento del prednisone a 75 mg/die", "next": "scenario-1-3-bis", "tag": "3" }
       ]
     },
     {
@@ -388,6 +388,19 @@
       "badge": "🚫 Esito sfavorevole",
       "badgeColor": "danger",
       "text": "Incrementando il prednisone a 75 mg, la paziente ha un miglioramento fino a **minime manifestazioni miasteniche**, ma presenta:\n• Aumento di peso fino a **125 kg**\n• **Diabete da steroidi**\n\nLa paziente ti comunica di essersi recata presso un centro in un'altra regione per un ulteriore parere neurologico e chirurgico toracico, e al momento non intende programmare un follow-up presso il tuo centro.\n\n",
+      "choices": [
+        { "text": "Ricomincia dall'inizio", "next": "cosa-faccio-1" }
+      ]
+    },
+    {
+      "id": "scenario-1-3-bis",
+      "type": "info",
+      "title": "Incremento prednisone a 75 mg/die",
+      "image": "/images/scenes/bello/12.png",
+      "context_": "Follow-up",
+      "badge": "🚫 Esito sfavorevole",
+      "badgeColor": "danger",
+      "text": "Incrementando il prednisone a 75 mg, la paziente ha un miglioramento fino a **minime manifestazioni miasteniche**, ma presenta:\n• Aumento di peso fino a **125 kg**\n• **Diabete da steroidi**\n\nLa paziente ti comunica di essersi recata presso un centro in un'altra regione per un ulteriore parere neurologico e chirurgico toracico, e al momento non intende programmare un follow-up presso il tuo centro.\n\nL'escalation tiroidea senza timectomia e senza terapia di bridging non è la strategia ottimale in una paziente con timoma",
       "choices": [
         { "text": "Ricomincia dall'inizio", "next": "cosa-faccio-1" }
       ]
