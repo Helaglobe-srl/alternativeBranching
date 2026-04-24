@@ -72,7 +72,7 @@ const STAT_COLORS = {
 
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
-const VOTE_PANEL_W = 320
+const VOTE_PANEL_W = 200
 
 const T_OUT = 200
 const T_PRE = 40
@@ -228,9 +228,9 @@ function VotePanel({
   const voteUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${sessionId}` : ''
 
   // Sync scena corrente quando cambia
-useEffect(() => {
-  refreshVotes(scene.choices, scene.id, session?.current_round)
-}, [scene.id, totalVotes, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    refreshVotes(scene.choices, scene.id, session?.current_round)
+  }, [scene.id, totalVotes, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!voteUrl) return
     QRCode.toDataURL(voteUrl, { width: 220, margin: 1, color: { dark: '#0c2a38', light: '#ffffff' } }).then(setQrUrl)
@@ -278,14 +278,25 @@ useEffect(() => {
       <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {session?.revealed ? (
           // Dopo reveal: barre colorate con percentuali
+          // votes.map((v, i) => (
+          //   <div key={i}>
+          //     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          //       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          //         {v.tag && <span style={{ width: 18, height: 18, borderRadius: 4, background: v.color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag}</span>}
+          //         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
+          //       </div>
+          //       <span style={{ fontSize: 13, fontWeight: 800, color: v.color }}>{v.pct}%</span>
+          //     </div>
+          //     <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+          //       <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
+          //     </div>
+          //   </div>
+          // ))
           votes.map((v, i) => (
             <div key={i}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                  {v.tag && <span style={{ width: 18, height: 18, borderRadius: 4, background: v.color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag}</span>}
-                  <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 800, color: v.color }}>{v.pct}%</span>
+                <span style={{ width: 20, height: 20, borderRadius: 5, background: v.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: v.color }}>{v.pct}%</span>
               </div>
               <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                 <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
@@ -295,18 +306,18 @@ useEffect(() => {
         ) : (
           // Prima del reveal: solo contatore grande al centro
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8 }}>
-            <div style={{ fontSize: 52, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+            <div style={{ fontSize: 58, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
               {totalVotes}
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {totalVotes === 1 ? 'voto ricevuto' : 'voti ricevuti'}
             </div>
             {session?.reset_at && (
-  <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
-    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
-    Votazione precedente già raccolta
-  </div>
-)}
+              <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5" /><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                Votazione precedente già raccolta
+              </div>
+            )}
             {session?.voting_open && totalVotes > 0 && (
               <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
                 {[0, 1, 2].map(i => (
@@ -372,12 +383,12 @@ function GamePageInner() {
 
   const supabase = createClient()
   // const { setSceneId: setLiveSceneId } = useLiveSession(sessionId)
-const setLiveSceneId = useCallback(async (sceneId: string) => {
-  if (!sessionId) return
-  await supabase.from('live_sessions').update({
-    scene_id: sceneId, voting_open: false, revealed: false, current_round: 1,
-  }).eq('id', sessionId)
-}, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const setLiveSceneId = useCallback(async (sceneId: string) => {
+    if (!sessionId) return
+    await supabase.from('live_sessions').update({
+      scene_id: sceneId, voting_open: false, revealed: false, current_round: 1,
+    }).eq('id', sessionId)
+  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
   const pendingImageRef = useRef<string | null>(null)
   const imgLoadedRef = useRef<boolean>(false)
   const { startSession, trackScene, endSession } = useUcbTracking()
@@ -411,22 +422,22 @@ const setLiveSceneId = useCallback(async (sceneId: string) => {
   }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-  if (!slug) return
-  const init = async () => {
-    let uname = sessionStorage.getItem('mg_username')
-    if (!uname) {
-      // Admin non passa dalla join page — recupera email da Supabase
-      const { data: { user } } = await supabase.auth.getUser()
-      uname = user?.email ?? null
-      if (uname) sessionStorage.setItem('mg_username', uname)
+    if (!slug) return
+    const init = async () => {
+      let uname = sessionStorage.getItem('mg_username')
+      if (!uname) {
+        // Admin non passa dalla join page — recupera email da Supabase
+        const { data: { user } } = await supabase.auth.getUser()
+        uname = user?.email ?? null
+        if (uname) sessionStorage.setItem('mg_username', uname)
+      }
+      if (uname) {
+        setUsername(uname)
+        startSession({ username: uname, storySlug: slug })
+      }
     }
-    if (uname) {
-      setUsername(uname)
-      startSession({ username: uname, storySlug: slug })
-    }
-  }
-  init()
-}, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
+    init()
+  }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= BP)
@@ -653,15 +664,15 @@ const setLiveSceneId = useCallback(async (sceneId: string) => {
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Bottone Home — lato sinistro */}
-<button onClick={() => router.push('/')} title="Home"
-  style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8f4f8', border: '1px solid #c4e0e9', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
-  onMouseEnter={e => { e.currentTarget.style.background = '#c4e0e9' }}
-  onMouseLeave={e => { e.currentTarget.style.background = '#e8f4f8' }}>
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-    <path d="M3 10.5L12 3L21 10.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#0e88a5" strokeWidth="2" strokeLinejoin="round"/>
-    <path d="M9 21V13h6v8" stroke="#0e88a5" strokeWidth="2" strokeLinejoin="round"/>
-  </svg>
-</button>
+            <button onClick={() => router.push('/')} title="Home"
+              style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8f4f8', border: '1px solid #c4e0e9', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#c4e0e9' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#e8f4f8' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M3 10.5L12 3L21 10.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="#0e88a5" strokeWidth="2" strokeLinejoin="round" />
+                <path d="M9 21V13h6v8" stroke="#0e88a5" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
+            </button>
             <button onClick={goBack} disabled={history.length === 0} title="Torna indietro"
               style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: history.length > 0 ? cfg.light : 'transparent', border: `1px solid ${history.length > 0 ? cfg.accent + '33' : 'rgba(0,0,0,0.08)'}`, cursor: history.length > 0 ? 'pointer' : 'default', transition: 'all .15s' }}
               onMouseEnter={e => { if (history.length > 0) e.currentTarget.style.background = '#c4e0e9' }}
