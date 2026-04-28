@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           {[
             {
               title: '1. Titolare del trattamento',
-              body: `Helaglobe S.r.l., con sede in Italia, è il titolare del trattamento dei dati personali raccolti tramite questa applicazione ("UCB Red Flags — Clinical Scenarios").\n\nPer qualsiasi richiesta relativa alla privacy scrivere a: privacy@helaglobe.com`
+              body: `Helaglobe S.r.l., con sede in Italia, è il titolare del trattamento dei dati personali raccolti tramite questa applicazione ("Learning labs — Clinical Scenarios").\n\nPer qualsiasi richiesta relativa alla privacy scrivere a: privacy@helaglobe.com`
             },
             {
               title: '2. Dati raccolti',
