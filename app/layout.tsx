@@ -23,7 +23,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "UCB Red Flags",
+  title: "Helaglobes",
   description: "Branching test",
   icons: {
     icon: [
