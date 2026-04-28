@@ -85,31 +85,7 @@ export default function VotePage() {
       .subscribe()
 
     // Polling silenzioso — aggiorna solo se cambiano campi rilevanti
-    const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('live_sessions').select('*').eq('id', sid).single()
-      if (!data) return
-      const prev = sessionRef.current
-      if (
-        !prev ||
-        prev.voting_open   !== data.voting_open   ||
-        prev.revealed      !== data.revealed      ||
-        prev.scene_id      !== data.scene_id      ||
-        prev.current_round !== data.current_round ||
-        prev.reset_at      !== data.reset_at       // ← aggiungi
-      ) {
-        // Se reset_at è cambiato, permetti di rivotare
-        if (prev?.reset_at !== data.reset_at) {
-          setVoted(null)
-          setVoteCounts([])
-          setTotalVotes(0)
-        }
-        sessionRef.current = data
-        setSession(data)
-      }
-    }, 5000)
-
-    return () => { ch.unsubscribe(); clearInterval(interval) }
+return () => { ch.unsubscribe() }      
   }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load scene quando scene_id o reset_at cambia ──────────────────────────

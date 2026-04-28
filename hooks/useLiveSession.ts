@@ -13,7 +13,7 @@ interface LiveSession {
   voting_open: boolean
   revealed: boolean
   current_round: number
-  reset_at: string | null  // ← aggiunto
+  reset_at: string | null
 }
 
 interface VoteCount {
@@ -53,7 +53,6 @@ export function useLiveSession(sessionId: string | null) {
       .then(({ data }) => {
         if (!data) return
         setSession(data)
-        // Carica contatore iniziale filtrato per scena, round e reset_at
         if (data.scene_id) {
           let query = supabase.from('live_votes')
             .select('*', { count: 'exact', head: true })
@@ -66,7 +65,7 @@ export function useLiveSession(sessionId: string | null) {
       })
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Realtime + polling fallback ────────────────────────────────────────────
+  // ── Realtime (niente polling) ──────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId) return
 
@@ -81,7 +80,6 @@ export function useLiveSession(sessionId: string | null) {
       }, payload => {
         const newSession = payload.new as LiveSession
         setSession(prev => {
-          // Se reset_at è cambiato, azzera i contatori locali
           if (prev?.reset_at !== newSession.reset_at) {
             setVotes([])
             setTotalVotes(0)
@@ -91,25 +89,15 @@ export function useLiveSession(sessionId: string | null) {
       })
       .subscribe()
 
-    // Polling fallback ogni 4s
-    const interval = setInterval(async () => {
-      const { data: sess } = await supabase
-        .from('live_sessions').select('*').eq('id', sessionId).single()
-      if (sess) setSession(sess)
-    }, 4000)
-
     subRef.current = ch
-    return () => { ch.unsubscribe(); clearInterval(interval) }
+    return () => { ch.unsubscribe() }
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Calcola vote counts per scena + round + reset_at ──────────────────────
+  // ── Calcola vote counts ────────────────────────────────────────────────────
   const refreshVotes = useCallback(async (choices: Choice[], sceneId: string, round?: number) => {
     if (!sessionId || !choices.length || !sceneId) return
-    // Legge sessione fresca per avere reset_at e current_round aggiornati
-    const { data: sess } = await supabase
-      .from('live_sessions').select('current_round, reset_at').eq('id', sessionId).single()
-    const currentRound = round ?? sess?.current_round ?? 1
-    const resetAt = sess?.reset_at ?? null
+    const currentRound = round ?? session?.current_round ?? 1
+    const resetAt = session?.reset_at ?? null
 
     let query = supabase.from('live_votes')
       .select('choice_id')
@@ -131,7 +119,7 @@ export function useLiveSession(sessionId: string | null) {
         color: COLORS[i % COLORS.length],
       }
     }))
-  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessionId, session?.current_round, session?.reset_at]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Admin actions ──────────────────────────────────────────────────────────
 
@@ -142,7 +130,7 @@ export function useLiveSession(sessionId: string | null) {
       voting_open: false,
       revealed: false,
       current_round: 1,
-      reset_at: null,  // nuova scena, reset pulito
+      reset_at: null,
     }).eq('id', sessionId)
     setVotes([])
     setTotalVotes(0)
@@ -163,7 +151,6 @@ export function useLiveSession(sessionId: string | null) {
     await supabase.from('live_sessions').update({ voting_open: false, revealed: true }).eq('id', sessionId)
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset — salva timestamp, i voti vecchi restano nel DB per storico
   const resetVotes = useCallback(async () => {
     if (!sessionId) return
     await supabase.from('live_sessions').update({
