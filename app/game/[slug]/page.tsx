@@ -74,10 +74,10 @@ const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 const VOTE_PANEL_W = 200
 
-const T_OUT = 200
-const T_PRE = 40
-const T_IN = 340
-const T_IMG_FALLBACK = 2500
+const T_OUT = 120   // era 200
+const T_PRE = 20    // era 40
+const T_IN  = 260   // era 340
+const T_IMG_FALLBACK = 1000
 
 // ── StatBox ───────────────────────────────────────────────────────────────────
 
