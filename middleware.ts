@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/middleware'
 
-const PUBLIC_PATHS = ['/login']
+const PUBLIC_PATHS = [
+  '/login',
+  '/vote',
+  '/join',
+  '/stories',
+  '/privacy',
+]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -10,12 +16,7 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.some(p => pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/images') ||
-    (pathname.startsWith('/stories') && !pathname.endsWith('.json')) ||
     pathname === '/favicon.ico' ||
-    pathname.startsWith('/vote') ||
-pathname.startsWith('/join') ||
-pathname.startsWith('/stories') ||
-pathname.startsWith('/privacy') ||
     pathname === '/robots.txt'
   ) {
     return NextResponse.next()
@@ -23,17 +24,22 @@ pathname.startsWith('/privacy') ||
 
   const response = NextResponse.next({ request })
   const supabase = createClient(request, response)
-  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(loginUrl)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('next', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  } catch {
+    // Supabase down — lascia passare invece di bloccare con 504
+    return NextResponse.next()
   }
 
   return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|images|stories).*)'],
 }
