@@ -49,15 +49,21 @@ export default function VotePage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load session ───────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!sid) return
+  // ── Load session ───────────────────────────────────────────────────────────
+useEffect(() => {
+  if (!sid) return
+  // Delay random 0-2s per distribuire il carico al login simultaneo
+  const delay = Math.floor(Math.random() * 2000)
+  const t = setTimeout(() => {
     supabase.from('live_sessions').select('*').eq('id', sid).single()
       .then(({ data, error }) => {
         if (error || !data) { setNotFound(true); return }
         sessionRef.current = data
         setSession(data)
       })
-  }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, delay)
+  return () => clearTimeout(t)
+}, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Realtime + polling silenzioso ──────────────────────────────────────────
   useEffect(() => {
@@ -104,16 +110,29 @@ return () => { ch.unsubscribe() }
 
   // ── Check se ha già votato (dopo reset_at) ────────────────────────────────
   useEffect(() => {
-    if (!sid || !userId || !session?.scene_id) return
-    let query = supabase.from('live_votes')
-      .select('choice_id')
-      .eq('session_id', sid)
-      .eq('scene_id', session.scene_id)
-      .eq('user_id', userId)
-      .eq('round', session.current_round ?? 1)
-    if (session.reset_at) query = query.gte('voted_at', session.reset_at)
-    query.single().then(({ data }) => { if (data) setVoted(data.choice_id) })
-  }, [session?.scene_id, session?.current_round, session?.reset_at, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!sid) return
+  const delay = Math.floor(Math.random() * 2000)
+  const t = setTimeout(async () => {
+    const { data, error } = await supabase
+      .from('live_sessions').select('*').eq('id', sid).single()
+    if (error || !data) { setNotFound(true); return }
+    sessionRef.current = data
+    setSession(data)
+
+    // Check "già votato" inline — evita un useEffect separato
+    if (data.scene_id && userId) {
+      let q = supabase.from('live_votes')
+        .select('choice_id')
+        .eq('session_id', sid)
+        .eq('scene_id', data.scene_id)
+        .eq('user_id', userId)
+        .eq('round', data.current_round ?? 1)
+      if (data.reset_at) q = q.gte('voted_at', data.reset_at)
+      q.single().then(({ data: v }) => { if (v) setVoted(v.choice_id) })
+    }
+  }, delay)
+  return () => clearTimeout(t)
+}, [sid, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sync phase ─────────────────────────────────────────────────────────────
   useEffect(() => {
