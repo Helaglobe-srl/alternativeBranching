@@ -194,7 +194,7 @@ function DelphiOverlay({ votes, onClose }: {
       <div onClick={e => e.stopPropagation()} style={{ background: '#0c1a2a', borderRadius: 20, padding: '28px 28px 24px', maxWidth: 520, width: '100%', boxShadow: '0 32px 80px rgba(0,0,0,0.6)', border: '1px solid rgba(14,136,165,0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Analisi Delphi</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>ANALISI RISULTATI</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{total} vot{total === 1 ? 'o' : 'i'}</div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}

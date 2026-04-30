@@ -293,7 +293,7 @@ export default function AdminSessionPage() {
                       return (
                         <div style={{background:'#f8fbfc',borderTop:'1px solid #e0eaee',padding:'14px 24px',flexShrink:0}}>
                           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-                            <span style={{fontSize:10,fontWeight:700,color:'#9cb8c4',textTransform:'uppercase',letterSpacing:'0.06em'}}>Analisi Delphi</span>
+                            <span style={{fontSize:10,fontWeight:700,color:'#9cb8c4',textTransform:'uppercase',letterSpacing:'0.06em'}}>ANALISI RISULTATI</span>
                             <span style={{fontSize:11,color:'#9cb8c4'}}>{tot} vot{tot===1?'o':'i'}</span>
                           </div>
                           {/* Consenso + statistiche */}
