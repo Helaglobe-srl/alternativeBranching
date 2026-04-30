@@ -2,12 +2,28 @@
   {
     "slug": "general_statement",
     "title": "SIMEU",
-    "__subtitle": "Caso clinico decisionale",
-    "__description": "Antonello, 45 anni, anti-AChR positivo. Naviga le scelte terapeutiche per la Miastenia Gravis seguendo le linee guida più recenti.",
-  "cover": "/images/scenes/general_statement/simeu1.PNG",
+    "cover": "/images/scenes/general_statement/simeu1.PNG",
     "sponsor": "SIMEU",
     "tag": "General",
     "duration": "10–15 min",
     "scenes": 1
+  },
+    {
+    "slug": "google_event",
+    "title": "Google Event",
+    "cover": "/images/scenes/google_event/copertina.PNG",
+    "sponsor": "Google",
+    "tag": "General",
+    "duration": "10–15 min",
+    "scenes": 1
+  },
+  {
+    "slug": "vanoli",
+    "title": "UCB Red Flags — Rinaldi",
+    "cover": "/images/logo_resized_proportional.png",
+    "sponsor": "UCB",
+    "tag": "Neurologia",
+    "duration": "10–15 min",
+    "scenes": 14
   }
 ]

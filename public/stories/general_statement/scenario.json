@@ -10,38 +10,35 @@
       "title": "Scegli la risposta",
       "image": "/images/scenes/general_statement/simeu1.PNG",
       "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
       "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "intro",
       "choices": [
         {
 
  
           "id": "c1",
           "text": "Totale disaccordo",
-          "next": "intro",
           "tag": "1"
         },
         {
           "id": "c2",
           "text": "Disaccordo",
-          "next": "intro",
           "tag": "2"
         },
         {
           "id": "c3",
           "text": "Neutro",
-          "next": "intro",
           "tag": "3"
         },
         {
           "id": "c4",
           "text": "Accordo",
-          "next": "intro",
           "tag": "4"
         },
         {
           "id": "c5",
           "text": "Totale accordo",
-          "next": "intro",
           "tag": "5"
         }
       ]

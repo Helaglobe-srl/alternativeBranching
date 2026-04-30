@@ -10,12 +10,13 @@ import QRCode from 'qrcode'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Choice { id?: string; text: string; next: string; tag?: string }
+interface Choice { id?: string; text: string; next?: string; tag?: string }
 interface Stat { label: string; value: string; color: 'warning' | 'danger' | 'success' | 'info' }
 interface Video { title: string; src: string }
 interface Table { headers: string[]; rows: string[][]; footer?: string }
 interface Scene {
   id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
+  mode?: string; next?: string
   title: string; image?: string | null; imageAlt?: string; context?: string
   badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
   stats?: Stat[]; videos?: Video[]; table?: Table; text: string; choices: Choice[]
@@ -59,25 +60,195 @@ const CFG = {
 const BADGE_COLORS = {
   success: { bg: '#f0fdf4', color: '#0e88a5', border: '1px solid #bbf7d0' },
   warning: { bg: '#fffbeb', color: '#0e88a5', border: '1px solid #fde68a' },
-  danger: { bg: '#fef2f2', color: '#0e88a5', border: '1px solid #fecaca' },
-  info: { bg: '#eff6ff', color: '#0e88a5', border: '1px solid #bfdbfe' },
+  danger:  { bg: '#fef2f2', color: '#0e88a5', border: '1px solid #fecaca' },
+  info:    { bg: '#eff6ff', color: '#0e88a5', border: '1px solid #bfdbfe' },
 }
 
 const STAT_COLORS = {
   warning: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
-  danger: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
+  danger:  { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
   success: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
-  info: { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
+  info:    { c: '#0e88a5', bg: 'rgba(14,136,165,0.07)' },
 }
 
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const BP = 960
 const VOTE_PANEL_W = 200
 
-const T_OUT = 120   // era 200
-const T_PRE = 20    // era 40
-const T_IN  = 260   // era 340
+const T_OUT = 120
+const T_PRE = 20
+const T_IN  = 260
 const T_IMG_FALLBACK = 1000
+
+// ── Delphi helpers ────────────────────────────────────────────────────────────
+
+const likertColor = (n: number, i: number): string => {
+  const stops = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
+  if (n <= 1) return stops[4]
+  const t = i / (n - 1)
+  return stops[Math.min(Math.floor(t * (stops.length - 1)), stops.length - 2)]
+}
+
+function delphiStats(votes: { cid: string; count: number; pct: number; color: string; tag?: string; text: string }[]) {
+  const allVals: number[] = votes.flatMap(v => Array(v.count).fill(Number(v.tag ?? v.cid)))
+  const total = allVals.length
+  const mean = total ? allVals.reduce((a, b) => a + b, 0) / total : 0
+  const sorted = [...allVals].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  const median = sorted.length === 0 ? 0 : sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  const n = votes.length
+  const lo = Math.ceil(n / 3), hi = n - Math.floor(n / 3)
+  const loPct = total ? votes.filter(v => Number(v.tag ?? v.cid) <= lo).reduce((s, v) => s + v.count, 0) / total : 0
+  const miPct = total ? votes.filter(v => { const nv = Number(v.tag ?? v.cid); return nv > lo && nv < hi }).reduce((s, v) => s + v.count, 0) / total : 0
+  const hiPct = total ? votes.filter(v => Number(v.tag ?? v.cid) >= hi).reduce((s, v) => s + v.count, 0) / total : 0
+  const consensus = loPct >= 0.75 ? { label: 'Consenso: Disaccordo', color: '#ef4444', pct: Math.round(loPct * 100), ok: true }
+    : miPct >= 0.75 ? { label: 'Consenso: Neutro', color: '#eab308', pct: Math.round(miPct * 100), ok: true }
+    : hiPct >= 0.75 ? { label: 'Consenso: Accordo', color: '#22c55e', pct: Math.round(hiPct * 100), ok: true }
+    : { label: 'Nessun consenso (< 75%)', color: '#f97316', pct: 0, ok: false }
+  return { mean, median, consensus, total }
+}
+
+// ── Charts SVG ────────────────────────────────────────────────────────────────
+
+function PieChart({ votes }: { votes: { color: string; pct: number; count: number; text: string }[] }) {
+  const total = votes.reduce((s, v) => s + v.count, 0)
+  if (!total) return null
+  const cx = 80, cy = 80, r = 68
+  const nonZero = votes.filter(v => v.count > 0)
+  if (nonZero.length === 1) {
+    return (
+      <svg viewBox="0 0 160 160" width="140" height="140">
+        <circle cx={cx} cy={cy} r={r} fill={nonZero[0].color} opacity={0.85} />
+        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="14" fontWeight="900">100%</text>
+      </svg>
+    )
+  }
+  let angle = -Math.PI / 2
+  const slices = nonZero.map(v => {
+    const sweep = (v.count / total) * 2 * Math.PI
+    const x1 = cx + r * Math.cos(angle)
+    const y1 = cy + r * Math.sin(angle)
+    angle += sweep
+    const x2 = cx + r * Math.cos(angle)
+    const y2 = cy + r * Math.sin(angle)
+    const large = sweep > Math.PI ? 1 : 0
+    const mid = angle - sweep / 2
+    return { ...v, x1, y1, x2, y2, large, mid, pctLabel: Math.round(v.count / total * 100) }
+  })
+  return (
+    <svg viewBox="0 0 160 160" width="140" height="140">
+      {slices.map((s, i) => (
+        <path key={i} d={`M${cx},${cy} L${s.x1},${s.y1} A${r},${r} 0 ${s.large},1 ${s.x2},${s.y2} Z`}
+          fill={s.color} opacity={0.85} stroke="#0c1a2a" strokeWidth="1.5">
+          <title>{s.text}: {s.pctLabel}%</title>
+        </path>
+      ))}
+      {slices.map((s, i) => {
+        if (s.pctLabel < 8) return null
+        return (
+          <text key={i} x={cx + r * 0.65 * Math.cos(s.mid)} y={cy + r * 0.65 * Math.sin(s.mid)}
+            textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="11" fontWeight="900">
+            {s.pctLabel}%
+          </text>
+        )
+      })}
+    </svg>
+  )
+}
+
+function BarChart({ votes }: { votes: { color: string; count: number; text: string; tag?: string; cid: string }[] }) {
+  const maxCount = Math.max(...votes.map(v => v.count), 1)
+  const w = 220, h = 90, pad = 16
+  const barW = Math.floor((w - pad * 2) / votes.length) - 4
+  return (
+    <svg viewBox={`0 0 ${w} ${h + 22}`} width={w} height={h + 22}>
+      {votes.map((v, i) => {
+        const barH = Math.max((v.count / maxCount) * h, v.count > 0 ? 3 : 1)
+        const x = pad + i * (barW + 4)
+        const y = h - barH
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={barW} height={barH} fill={v.color} opacity={v.count ? 0.85 : 0.15} rx="3">
+              <title>{v.text}: {v.count} voti</title>
+            </rect>
+            {v.count > 0 && (
+              <text x={x + barW / 2} y={y - 4} textAnchor="middle" fill={v.color} fontSize="10" fontWeight="800">{v.count}</text>
+            )}
+            <text x={x + barW / 2} y={h + 15} textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize="10" fontWeight="700">{v.tag ?? v.cid}</text>
+          </g>
+        )
+      })}
+      <line x1={pad - 2} y1={h} x2={w - pad + 2} y2={h} stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+    </svg>
+  )
+}
+
+function DelphiOverlay({ votes, onClose }: {
+  votes: { cid: string; count: number; pct: number; color: string; tag?: string; text: string }[]
+  onClose: () => void
+}) {
+  const { mean, median, consensus, total } = delphiStats(votes)
+  const maxPct = Math.max(...votes.map(v => v.pct), 1)
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,25,0.75)', backdropFilter: 'blur(6px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0c1a2a', borderRadius: 20, padding: '28px 28px 24px', maxWidth: 520, width: '100%', boxShadow: '0 32px 80px rgba(0,0,0,0.6)', border: '1px solid rgba(14,136,165,0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Analisi Delphi</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{total} vot{total === 1 ? 'o' : 'i'}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}>
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 20, background: `${consensus.color}22`, border: `1.5px solid ${consensus.color}66`, fontSize: 13, fontWeight: 700, color: consensus.color }}>
+            <span style={{ fontSize: 16 }}>{consensus.ok ? '✓' : '○'}</span>
+            {consensus.label}
+            {consensus.ok && <span style={{ fontSize: 11, opacity: 0.8 }}>({consensus.pct}%)</span>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+          {[{ label: 'Media', value: mean.toFixed(2) }, { label: 'Mediana', value: median % 1 === 0 ? String(median) : median.toFixed(1) }].map(s => (
+            <div key={s.label} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: '#0e88a5', fontFamily: 'Georgia,serif' }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '12px 8px', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <PieChart votes={votes} />
+          <BarChart votes={votes} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 16 }}>
+            {votes.map((v, i) => (
+              <div key={i} style={{ flex: v.pct || 1, background: v.color, opacity: v.count ? 0.9 : 0.15, minWidth: v.count ? 2 : 0, transition: 'flex 0.8s' }} title={`${v.text}: ${v.pct}%`} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>
+            <span>← {votes[0]?.text}</span><span>{votes[votes.length - 1]?.text} →</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {votes.map((v, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? v.cid}</span>
+              <span style={{ width: 110, fontSize: 11.5, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
+              <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${maxPct > 0 ? (v.pct / maxPct) * 100 : 0}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 900, color: v.color, minWidth: 38, textAlign: 'right' }}>{v.pct}%</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', minWidth: 20, textAlign: 'right' }}>{v.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── StatBox ───────────────────────────────────────────────────────────────────
 
@@ -214,23 +385,37 @@ function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
 // ── Vote Panel ────────────────────────────────────────────────────────────────
 
 function VotePanel({
-  sessionId, scene, isAdmin, onClose,
+  sessionId, scene, isAdmin, isDelphi, onClose,
 }: {
   sessionId: string
   scene: Scene
   isAdmin: boolean
+  isDelphi: boolean
   onClose: () => void
 }) {
   const { session, votes, totalVotes, refreshVotes, openVoting, closeVoting, reveal, resetVotes } = useLiveSession(sessionId)
   const [qrUrl, setQrUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [showDelphiOverlay, setShowDelphiOverlay] = useState(false)
+
+  // Delphi: remap colori Likert
+  const displayVotes = isDelphi
+    ? votes.map((v, i) => ({ ...v, color: likertColor(votes.length, i) }))
+    : votes
 
   const voteUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${sessionId}` : ''
 
-  // Sync scena corrente quando cambia
+  // Sync voti quando cambia scena o round
   useEffect(() => {
     refreshVotes(scene.choices, scene.id, session?.current_round)
   }, [scene.id, totalVotes, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Delphi: apri overlay al reveal
+  useEffect(() => {
+    if (isDelphi && session?.revealed) setShowDelphiOverlay(true)
+    else if (!session?.revealed) setShowDelphiOverlay(false)
+  }, [isDelphi, session?.revealed]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!voteUrl) return
     QRCode.toDataURL(voteUrl, { width: 220, margin: 1, color: { dark: '#0c2a38', light: '#ffffff' } }).then(setQrUrl)
@@ -243,118 +428,109 @@ function VotePanel({
   }
 
   return (
-    <div style={{ width: VOTE_PANEL_W, flexShrink: 0, background: '#0c1a2a', display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(14,136,165,0.2)', overflowY: 'auto' }}>
+    <>
+      {showDelphiOverlay && isDelphi && (
+        <DelphiOverlay votes={displayVotes} onClose={() => setShowDelphiOverlay(false)} />
+      )}
+      <div style={{ width: VOTE_PANEL_W, flexShrink: 0, background: '#0c1a2a', display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(14,136,165,0.2)', overflowY: 'auto' }}>
 
-      {/* Panel header */}
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Voto live</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+        {/* Panel header */}
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Voto live</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {session?.voting_open && <span style={{ fontSize: 9, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '2px 7px', borderRadius: 10, border: '1px solid rgba(74,222,128,0.3)' }}>APERTO</span>}
+            {session?.revealed && <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 7px', borderRadius: 10, border: '1px solid rgba(251,191,36,0.3)' }}>RIVELATO</span>}
+            <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+            </button>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {session?.voting_open && <span style={{ fontSize: 9, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '2px 7px', borderRadius: 10, border: '1px solid rgba(74,222,128,0.3)' }}>APERTO</span>}
-          {session?.revealed && <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 7px', borderRadius: 10, border: '1px solid rgba(251,191,36,0.3)' }}>RIVELATO</span>}
-          <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+
+        {/* QR code */}
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+          {qrUrl && (
+            <div style={{ background: 'white', borderRadius: 10, padding: 8, marginBottom: 8 }}>
+              <img src={qrUrl} alt="QR" style={{ width: '100%', display: 'block', borderRadius: 6 }} />
+            </div>
+          )}
+          <button onClick={copyLink} style={{ width: '100%', padding: '7px 0', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'rgba(14,136,165,0.2)', color: copied ? '#4ade80' : '#0e88a5', border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(14,136,165,0.3)'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            {copied ? '✓ Link copiato' : 'Copia link'}
           </button>
         </div>
-      </div>
 
-      {/* QR code */}
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-        {qrUrl && (
-          <div style={{ background: 'white', borderRadius: 10, padding: 8, marginBottom: 8 }}>
-            <img src={qrUrl} alt="QR" style={{ width: '100%', display: 'block', borderRadius: 6 }} />
-          </div>
-        )}
-        <button onClick={copyLink} style={{ width: '100%', padding: '7px 0', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'rgba(14,136,165,0.2)', color: copied ? '#4ade80' : '#0e88a5', border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(14,136,165,0.3)'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-          {copied ? '✓ Link copiato' : 'Copia link'}
-        </button>
-      </div>
-
-      {/* Bars — mostrate solo dopo reveal, prima solo contatore */}
-      <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {session?.revealed ? (
-          // Dopo reveal: barre colorate con percentuali
-          // votes.map((v, i) => (
-          //   <div key={i}>
-          //     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          //       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-          //         {v.tag && <span style={{ width: 18, height: 18, borderRadius: 4, background: v.color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag}</span>}
-          //         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
-          //       </div>
-          //       <span style={{ fontSize: 13, fontWeight: 800, color: v.color }}>{v.pct}%</span>
-          //     </div>
-          //     <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-          //       <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
-          //     </div>
-          //   </div>
-          // ))
-          votes.map((v, i) => (
-            <div key={i}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ width: 20, height: 20, borderRadius: 5, background: v.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: v.color }}>{v.pct}%</span>
-              </div>
-              <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
-              </div>
+        {/* Bars / contatore */}
+        <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {session?.revealed ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+              {displayVotes.map((v, i) => (
+                <div key={i}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ width: 20, height: 20, borderRadius: 5, background: v.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isDelphi ? v.cid : i + 1}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: v.color }}>{v.pct}%</span>
+                  </div>
+                  <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))
-        ) : (
-          // Prima del reveal: solo contatore grande al centro
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8 }}>
-            <div style={{ fontSize: 58, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
-              {totalVotes}
-            </div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {totalVotes === 1 ? 'voto ricevuto' : 'voti ricevuti'}
-            </div>
-            {session?.reset_at && (
-              <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5" /><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                Votazione precedente già raccolta
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8 }}>
+              <div style={{ fontSize: 58, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+                {totalVotes}
               </div>
-            )}
-            {session?.voting_open && totalVotes > 0 && (
-              <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
-                ))}
+              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                {totalVotes === 1 ? 'voto ricevuto' : 'voti ricevuti'}
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Admin controls */}
-      {isAdmin && (
-        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 7, flexShrink: 0 }}>
-          {!session?.voting_open && !session?.revealed && (
-            <button onClick={openVoting} style={{ padding: '9px', borderRadius: 8, background: '#16803d', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              ▶ Apri voto
-            </button>
-          )}
-          {session?.voting_open && (
-            <button onClick={closeVoting} style={{ padding: '9px', borderRadius: 8, background: '#b45309', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              ■ Chiudi voto
-            </button>
-          )}
-          {!session?.voting_open && !session?.revealed && totalVotes > 0 && (
-            <button onClick={reveal} style={{ padding: '9px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              ★ Rivela risultati
-            </button>
-          )}
-          {totalVotes > 0 && (
-            <button onClick={resetVotes} style={{ padding: '7px', borderRadius: 8, background: 'rgba(220,38,38,0.12)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.25)', fontSize: 11, cursor: 'pointer' }}>
-              Reset voti
-            </button>
+              {session?.reset_at && (
+                <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5" /><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                  Votazione precedente già raccolta
+                </div>
+              )}
+              {session?.voting_open && totalVotes > 0 && (
+                <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
-      )}
-    </div>
+
+        {/* Admin controls */}
+        {isAdmin && (
+          <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 7, flexShrink: 0 }}>
+            {!session?.voting_open && !session?.revealed && (
+              <button onClick={openVoting} style={{ padding: '9px', borderRadius: 8, background: '#16803d', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                ▶ Apri voto
+              </button>
+            )}
+            {session?.voting_open && (
+              <button onClick={closeVoting} style={{ padding: '9px', borderRadius: 8, background: '#b45309', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                ■ Chiudi voto
+              </button>
+            )}
+            {!session?.voting_open && !session?.revealed && totalVotes > 0 && (
+              <button onClick={reveal} style={{ padding: '9px', borderRadius: 8, background: '#0e88a5', color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                ★ Rivela risultati
+              </button>
+            )}
+            {totalVotes > 0 && (
+              <button onClick={resetVotes} style={{ padding: '7px', borderRadius: 8, background: 'rgba(220,38,38,0.12)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.25)', fontSize: 11, cursor: 'pointer' }}>
+                Reset voti
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
@@ -382,13 +558,16 @@ function GamePageInner() {
   const [isAdmin, setIsAdmin] = useState(false)
 
   const supabase = createClient()
-  // const { setSceneId: setLiveSceneId } = useLiveSession(sessionId)
+
+  // setLiveSceneId — usa prevSceneIdRef per non resettare al refresh
+  const prevSceneIdRef = useRef<string | null>(null)
   const setLiveSceneId = useCallback(async (sceneId: string) => {
     if (!sessionId) return
     await supabase.from('live_sessions').update({
       scene_id: sceneId, voting_open: false, revealed: false, current_round: 1,
     }).eq('id', sessionId)
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const pendingImageRef = useRef<string | null>(null)
   const imgLoadedRef = useRef<boolean>(false)
   const { startSession, trackScene, endSession } = useUcbTracking()
@@ -402,7 +581,6 @@ function GamePageInner() {
     timerRef.current = setTimeout(() => setPhase('visible'), T_IN)
   }, [])
 
-  // Check admin
   useEffect(() => {
     if (!sessionId) return
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -426,15 +604,11 @@ function GamePageInner() {
     const init = async () => {
       let uname = sessionStorage.getItem('mg_username')
       if (!uname) {
-        // Admin non passa dalla join page — recupera email da Supabase
         const { data: { user } } = await supabase.auth.getUser()
         uname = user?.email ?? null
         if (uname) sessionStorage.setItem('mg_username', uname)
       }
-      if (uname) {
-        setUsername(uname)
-        startSession({ username: uname, storySlug: slug })
-      }
+      if (uname) { setUsername(uname); startSession({ username: uname, storySlug: slug }) }
     }
     init()
   }, [slug]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -461,7 +635,6 @@ function GamePageInner() {
         setCurrentId(nextId)
         const nextScene = data?.scenes.find(s => s.id === nextId)
         if (nextScene) trackScene({ sceneId: nextId, sceneType: nextScene.type, choiceText })
-        // Aggiorna la scena corrente nella sessione live
         if (sessionId && nextScene?.type === 'decision') setLiveSceneId(nextId)
       }
       setImgError(false)
@@ -498,17 +671,22 @@ function GamePageInner() {
   useEffect(() => {
     if (!scene) return
     if (scene.type === 'endpoint') endSession(true)
-    // Se sessione live e scena è decision, aggiorna subito
-    if (sessionId && scene.type === 'decision') setLiveSceneId(scene.id)
+    // Chiama setLiveSceneId solo quando la scena CAMBIA davvero (non al refresh)
+    if (sessionId && scene.type === 'decision' && prevSceneIdRef.current !== null && prevSceneIdRef.current !== scene.id) {
+      setLiveSceneId(scene.id)
+    }
+    prevSceneIdRef.current = scene.id
   }, [scene?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Apri pannello voto automaticamente per admin su scene decision
+
+  // Auto-apri pannello voto su scene decision con sessione attiva
   useEffect(() => {
-    if (isAdmin && sessionId && scene?.type === 'decision') {
+    if (sessionId && scene?.type === 'decision') {
       setShowVotePanel(true)
     } else if (scene?.type !== 'decision') {
       setShowVotePanel(false)
     }
-  }, [scene?.id, isAdmin, sessionId])
+  }, [scene?.id, sessionId])
+
   useEffect(() => {
     const handler = () => endSession(false)
     window.addEventListener('beforeunload', handler)
@@ -549,6 +727,7 @@ function GamePageInner() {
   const isInfo = scene.type === 'info'
   const isDecision = scene.type === 'decision'
   const isEndpoint = scene.type === 'endpoint'
+  const isDelphi = scene.mode === 'delphi'
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
   const accentLine = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
@@ -592,11 +771,40 @@ function GamePageInner() {
     </>
   )
 
-  const choicesBtns = (
+  // Bottoni scelta — branch normale e branch Delphi
+  const choicesBtns = isDelphi ? (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9cb8c4', marginBottom: 8 }}>
+        <span>← {scene.choices[0]?.text}</span>
+        <span>{scene.choices[scene.choices.length - 1]?.text} →</span>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {scene.choices.map((c, i) => {
+          const color = likertColor(scene.choices.length, i)
+          return (
+            <div key={i} style={{ flex: 1, padding: '14px 4px 10px', borderRadius: 10, border: `2px solid ${color}44`, background: `${color}0d`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>{c.tag ?? String(i + 1)}</span>
+              <span style={{ fontSize: 8, color: 'rgba(0,0,0,0.4)', textAlign: 'center', lineHeight: 1.2 }}>{c.text}</span>
+            </div>
+          )
+        })}
+      </div>
+      {scene.next && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+          <button onClick={() => go(scene.next!, false)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 9, background: cfg.accent, color: 'white', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#0c6d82' }}
+            onMouseLeave={e => { e.currentTarget.style.background = cfg.accent }}>
+            Avanti <span style={{ fontSize: 16 }}>→</span>
+          </button>
+        </div>
+      )}
+    </div>
+  ) : (
     <div style={{ display: 'flex', flexDirection: isDecision ? 'column' : 'row', flexWrap: isDecision ? 'nowrap' : 'wrap', gap: 7 }}>
       {scene.choices.map((choice, i) => {
         if (isDecision) return (
-          <button key={i} onClick={() => go(choice.next, false, choice.text)}
+          <button key={i} onClick={() => go(choice.next!, false, choice.text)}
             style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 9, border: '1.5px solid #c4e0e9', background: 'white', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', width: '100%' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = cfg.accent; e.currentTarget.style.background = cfg.light; e.currentTarget.style.transform = 'translateX(2px)' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#c4e0e9'; e.currentTarget.style.background = 'white'; e.currentTarget.style.transform = 'translateX(0)' }}>
@@ -607,7 +815,7 @@ function GamePageInner() {
         )
         const neutral = choice.next === 'intro' || choice.text.startsWith('←')
         return (
-          <button key={i} onClick={() => go(choice.next, false, choice.text)}
+          <button key={i} onClick={() => go(choice.next!, false, choice.text)}
             style={{ padding: '9px 18px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', background: neutral ? 'white' : isEndpoint ? '#f0fdf4' : cfg.accent, color: neutral ? '#4C7D93' : isEndpoint ? '#15803d' : 'white', border: neutral ? '1.5px solid #c4e0e9' : isEndpoint ? '1.5px solid #bbf7d0' : 'none' }}
             onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(0.93)' }}
             onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)' }}>
@@ -633,7 +841,7 @@ function GamePageInner() {
         {scene.videos && scene.videos.length > 0 && <VideoBox videos={scene.videos} onOpen={setActiveVideo} />}
       </div>
       <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
-        {isDecision && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
+        {isDecision && !isDelphi && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
         {choicesBtns}
       </div>
       {!compact && history.length > 0 && (
@@ -653,6 +861,7 @@ function GamePageInner() {
         *{box-sizing:border-box}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes popIn{from{opacity:0;transform:scale(0.92) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
       `}</style>
 
       {showConfirm && <ConfirmPopup onConfirm={handleConfirmRestart} onCancel={() => setShowConfirm(false)} />}
@@ -663,7 +872,7 @@ function GamePageInner() {
         {/* Navbar */}
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Bottone Home — lato sinistro */}
+            {/* Home icon */}
             <button onClick={() => router.push('/')} title="Home"
               style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8f4f8', border: '1px solid #c4e0e9', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = '#c4e0e9' }}
@@ -687,7 +896,6 @@ function GamePageInner() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {username && <div style={{ fontSize: 11, color: '#4C7D93', background: '#f0f4f6', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>👤 {username}</div>}
-            {/* Bottone voto — visibile se c'è una sessione live e la scena è decisionale */}
             {sessionId && isDecision && (
               <button onClick={() => setShowVotePanel(v => !v)}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 20, background: showVotePanel ? '#0e88a5' : '#e8f4f8', color: showVotePanel ? 'white' : '#0e88a5', border: `1px solid ${showVotePanel ? '#0e88a5' : '#c4e0e9'}`, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
@@ -695,8 +903,6 @@ function GamePageInner() {
                 {showVotePanel ? 'Chiudi voto' : 'Voto live'}
               </button>
             )}
-            {/* <button onClick={() => router.push('/')} style={{ fontSize: 11, color: '#9cb8c4', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 8px' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#0e88a5' }} onMouseLeave={e => { e.currentTarget.style.color = '#9cb8c4' }}>← Home</button> */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 11px', borderRadius: 20, background: cfg.light, border: `1px solid ${cfg.accent}22` }}>
               <span style={{ fontSize: 10.5, color: cfg.accent, fontWeight: 700, fontFamily: 'monospace' }}>{String(history.length + 1).padStart(2, '0')}</span>
               <span style={{ fontSize: 9.5, color: cfg.accent, opacity: 0.55 }}>/ step</span>
@@ -706,8 +912,6 @@ function GamePageInner() {
 
         {/* Content area */}
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
-
-          {/* Story */}
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isDesktop ? '16px 28px' : '12px 16px', transition: 'padding .3s ease' }}>
             {isDesktop ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
@@ -733,12 +937,13 @@ function GamePageInner() {
             )}
           </div>
 
-          {/* Vote Panel — pannello laterale */}
+          {/* Vote Panel */}
           {sessionId && showVotePanel && scene && (
             <VotePanel
               sessionId={sessionId}
               scene={scene}
               isAdmin={isAdmin}
+              isDelphi={isDelphi}
               onClose={() => setShowVotePanel(false)}
             />
           )}
@@ -760,3 +965,5 @@ export default function GamePage() {
     </Suspense>
   )
 }
+
+// ULTIMA VERSIONE

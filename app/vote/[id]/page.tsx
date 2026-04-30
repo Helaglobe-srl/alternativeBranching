@@ -5,18 +5,118 @@ import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-interface Choice { id?: string; text: string; next: string; tag?: string }
-interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[] }
+interface Choice { id?: string; text: string; next?: string; tag?: string }
+interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[]; mode?: string; next?: string }
 interface Session {
   id: string; name: string; story_slug: string; scene_id: string | null
   voting_open: boolean; revealed: boolean
   current_round: number
-  reset_at: string | null  // ← aggiunto
+  reset_at: string | null
 }
-interface VoteCount { cid: string; text: string; tag?: string; count: number; pct: number; color: string }
+interface VoteCount { cid: string; text: string; tag?: string; count: number; pct: number; color: string; numVal: number }
 
 const COLORS = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e', '#7c3aed', '#b45309']
 type Phase = 'waiting' | 'voting' | 'voted' | 'revealed'
+
+// ── Delphi helpers ─────────────────────────────────────────────────────────
+
+const LIKERT_COLORS = (n: number, i: number): string => {
+  const stops = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e']
+  if (n <= 1) return stops[4]
+  const t = i / (n - 1)
+  return stops[Math.min(Math.floor(t * (stops.length - 1)), stops.length - 2)]
+}
+
+function calcMean(votes: VoteCount[]): number {
+  const total = votes.reduce((s, v) => s + v.count, 0)
+  if (!total) return 0
+  return votes.reduce((s, v) => s + v.numVal * v.count, 0) / total
+}
+
+function calcMedian(votes: VoteCount[]): number {
+  const all: number[] = []
+  votes.forEach(v => { for (let i = 0; i < v.count; i++) all.push(v.numVal) })
+  if (!all.length) return 0
+  all.sort((a, b) => a - b)
+  const mid = Math.floor(all.length / 2)
+  return all.length % 2 !== 0 ? all[mid] : (all[mid - 1] + all[mid]) / 2
+}
+
+function calcConsensus(votes: VoteCount[], n: number): { reached: boolean; label: string; color: string; pct: number } {
+  const total = votes.reduce((s, v) => s + v.count, 0)
+  if (!total) return { reached: false, label: 'Nessun voto', color: '#9cb8c4', pct: 0 }
+  const low  = Math.ceil(n / 3)
+  const high = n - Math.floor(n / 3)
+  const lowPct  = votes.filter(v => v.numVal <= low).reduce((s, v) => s + v.count, 0) / total
+  const midPct  = votes.filter(v => v.numVal > low && v.numVal < high).reduce((s, v) => s + v.count, 0) / total
+  const highPct = votes.filter(v => v.numVal >= high).reduce((s, v) => s + v.count, 0) / total
+  if (lowPct  >= 0.75) return { reached: true,  label: 'Consenso: Disaccordo', color: '#ef4444', pct: Math.round(lowPct * 100) }
+  if (midPct  >= 0.75) return { reached: true,  label: 'Consenso: Neutro',     color: '#eab308', pct: Math.round(midPct * 100) }
+  if (highPct >= 0.75) return { reached: true,  label: 'Consenso: Accordo',    color: '#22c55e', pct: Math.round(highPct * 100) }
+  return { reached: false, label: 'Nessun consenso (< 75%)', color: '#f97316', pct: 0 }
+}
+
+function DelphiResults({ voteCounts, totalVotes, voted, n }: {
+  voteCounts: VoteCount[], totalVotes: number, voted: string | null, n: number
+}) {
+  const mean      = calcMean(voteCounts)
+  const median    = calcMedian(voteCounts)
+  const consensus = calcConsensus(voteCounts, n)
+  const maxPct    = Math.max(...voteCounts.map(v => v.pct), 1)
+  return (
+    <div style={{ animation: 'fadeUp .3s ease' }}>
+      <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
+      <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 20, background: `${consensus.color}22`, border: `1.5px solid ${consensus.color}66`, fontSize: 13, fontWeight: 700, color: consensus.color }}>
+          <span style={{ fontSize: 16 }}>{consensus.reached ? '✓' : '○'}</span>
+          {consensus.label}
+          {consensus.reached && <span style={{ fontSize: 11, opacity: 0.8 }}>({consensus.pct}%)</span>}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        {[{ label: 'Media', value: mean.toFixed(2) }, { label: 'Mediana', value: median % 1 === 0 ? String(median) : median.toFixed(1) }].map(s => (
+          <div key={s.label} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: '#0e88a5', fontFamily: 'Georgia,serif' }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>su {n}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Distribuzione</div>
+        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 20 }}>
+          {voteCounts.map(v => (
+            <div key={v.cid} style={{ flex: v.pct || 1, background: v.color, opacity: v.count ? 0.9 : 0.15, transition: 'flex 0.8s cubic-bezier(0.22,1,0.36,1)', minWidth: v.count ? 2 : 0 }} title={`${v.text}: ${v.pct}%`} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>
+          <span>{voteCounts[0]?.text}</span><span>{voteCounts[voteCounts.length - 1]?.text}</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {voteCounts.map(v => {
+          const isMyVote = voted === v.cid
+          const barW = maxPct > 0 ? (v.pct / maxPct) * 100 : 0
+          return (
+            <div key={v.cid} style={{ background: isMyVote ? `${v.color}18` : 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '9px 12px', border: `1.5px solid ${isMyVote ? v.color : 'rgba(255,255,255,0.07)'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? v.cid}</span>
+                <span style={{ flex: 1, fontSize: 12, color: isMyVote ? 'white' : 'rgba(255,255,255,0.55)', fontWeight: isMyVote ? 700 : 400 }}>{v.text}</span>
+                {isMyVote && <span style={{ fontSize: 9, color: v.color, fontWeight: 700 }}>← il tuo</span>}
+                <span style={{ fontSize: 15, fontWeight: 900, color: v.color }}>{v.pct}%</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 3, background: v.color, width: `${barW}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
+              </div>
+              <div style={{ marginTop: 3, fontSize: 10, color: 'rgba(255,255,255,0.3)', textAlign: 'right' }}>{v.count} vot{v.count === 1 ? 'o' : 'i'}</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 export default function VotePage() {
   const params   = useParams()
@@ -38,6 +138,8 @@ export default function VotePage() {
 
   const sessionRef = useRef<Session | null>(null)
 
+  const isDelphi = scene?.mode === 'delphi'
+
   // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -49,52 +151,43 @@ export default function VotePage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load session ───────────────────────────────────────────────────────────
-  // ── Load session ───────────────────────────────────────────────────────────
-useEffect(() => {
-  if (!sid) return
-  // Delay random 0-2s per distribuire il carico al login simultaneo
-  const delay = Math.floor(Math.random() * 2000)
-  const t = setTimeout(() => {
-    supabase.from('live_sessions').select('*').eq('id', sid).single()
-      .then(({ data, error }) => {
-        if (error || !data) { setNotFound(true); return }
-        sessionRef.current = data
-        setSession(data)
-      })
-  }, delay)
-  return () => clearTimeout(t)
-}, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!sid) return
+    const delay = Math.floor(Math.random() * 2000)
+    const t = setTimeout(() => {
+      supabase.from('live_sessions').select('*').eq('id', sid).single()
+        .then(({ data, error }) => {
+          if (error || !data) { setNotFound(true); return }
+          sessionRef.current = data
+          setSession(data)
+        })
+    }, delay)
+    return () => clearTimeout(t)
+  }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Realtime + polling silenzioso ──────────────────────────────────────────
+  // ── Realtime ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!sid) return
     const ch = supabase.channel(`vote-${sid}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'live_votes',
-        filter: `session_id=eq.${sid}`
-      }, () => setTotalVotes(v => v + 1))
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'live_sessions',
-        filter: `id=eq.${sid}`
-      }, payload => {
-        const s = payload.new as Session
-        const prev = sessionRef.current
-        // Se reset_at è cambiato, permetti di rivotare
-        if (prev?.reset_at !== s.reset_at) {
-          setVoted(null)
-          setVoteCounts([])
-          setTotalVotes(0)
-        }
-        sessionRef.current = s
-        setSession(s)
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_votes', filter: `session_id=eq.${sid}` },
+        () => setTotalVotes(v => v + 1))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_sessions', filter: `id=eq.${sid}` },
+        payload => {
+          const s = payload.new as Session
+          const prev = sessionRef.current
+          if (prev?.reset_at !== s.reset_at) {
+            setVoted(null)
+            setVoteCounts([])
+            setTotalVotes(0)
+          }
+          sessionRef.current = s
+          setSession(s)
+        })
       .subscribe()
-
-    // Polling silenzioso — aggiorna solo se cambiano campi rilevanti
-return () => { ch.unsubscribe() }      
+    return () => { ch.unsubscribe() }
   }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Load scene quando scene_id o reset_at cambia ──────────────────────────
+  // ── Load scene ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!session?.story_slug || !session?.scene_id) return
     setVoted(null)
@@ -108,31 +201,25 @@ return () => { ch.unsubscribe() }
       })
   }, [session?.scene_id, session?.current_round, session?.reset_at]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Check se ha già votato (dopo reset_at) ────────────────────────────────
+  // ── Check già votato ───────────────────────────────────────────────────────
   useEffect(() => {
-  if (!sid) return
-  const delay = Math.floor(Math.random() * 2000)
-  const t = setTimeout(async () => {
-    const { data, error } = await supabase
-      .from('live_sessions').select('*').eq('id', sid).single()
-    if (error || !data) { setNotFound(true); return }
-    sessionRef.current = data
-    setSession(data)
-
-    // Check "già votato" inline — evita un useEffect separato
-    if (data.scene_id && userId) {
-      let q = supabase.from('live_votes')
-        .select('choice_id')
-        .eq('session_id', sid)
-        .eq('scene_id', data.scene_id)
-        .eq('user_id', userId)
-        .eq('round', data.current_round ?? 1)
-      if (data.reset_at) q = q.gte('voted_at', data.reset_at)
-      q.single().then(({ data: v }) => { if (v) setVoted(v.choice_id) })
-    }
-  }, delay)
-  return () => clearTimeout(t)
-}, [sid, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!sid) return
+    const delay = Math.floor(Math.random() * 2000)
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.from('live_sessions').select('*').eq('id', sid).single()
+      if (error || !data) { setNotFound(true); return }
+      sessionRef.current = data
+      setSession(data)
+      if (data.scene_id && userId) {
+        let q = supabase.from('live_votes').select('choice_id')
+          .eq('session_id', sid).eq('scene_id', data.scene_id)
+          .eq('user_id', userId).eq('round', data.current_round ?? 1)
+        if (data.reset_at) q = q.gte('voted_at', data.reset_at)
+        q.single().then(({ data: v }) => { if (v) setVoted(v.choice_id) })
+      }
+    }, delay)
+    return () => clearTimeout(t)
+  }, [sid, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Sync phase ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -146,20 +233,19 @@ return () => { ch.unsubscribe() }
   // ── Vote counts ────────────────────────────────────────────────────────────
   const loadVoteCounts = useCallback(async () => {
     if (!sid || !scene || !session?.scene_id) return
-    let query = supabase.from('live_votes')
-      .select('choice_id')
-      .eq('session_id', sid)
-      .eq('scene_id', session.scene_id)
-      .eq('round', session.current_round ?? 1)
+    let query = supabase.from('live_votes').select('choice_id')
+      .eq('session_id', sid).eq('scene_id', session.scene_id).eq('round', session.current_round ?? 1)
     if (session.reset_at) query = query.gte('voted_at', session.reset_at)
     const { data } = await query
     if (!data) return
     const total = data.length
     setTotalVotes(total)
     setVoteCounts(scene.choices.map((c, i) => {
-      const cid   = c.id ?? String(i)
-      const count = data.filter(v => v.choice_id === cid).length
-      return { cid, text: c.text, tag: c.tag, count, pct: total > 0 ? Math.round((count / total) * 100) : 0, color: COLORS[i % COLORS.length] }
+      const cid    = c.id ?? String(i)
+      const count  = data.filter(v => v.choice_id === cid).length
+      const color  = scene.mode === 'delphi' ? LIKERT_COLORS(scene.choices.length, i) : COLORS[i % COLORS.length]
+      const numVal = Number(c.tag ?? i + 1)
+      return { cid, text: c.text, tag: c.tag, count, pct: total > 0 ? Math.round((count / total) * 100) : 0, color, numVal }
     }))
   }, [sid, scene, session?.scene_id, session?.current_round, session?.reset_at]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -172,14 +258,9 @@ return () => { ch.unsubscribe() }
     setSubmitting(true)
     const cid = choice.id ?? String(idx)
     const { error } = await supabase.from('live_votes').insert({
-      session_id:       sid,
-      scene_id:         session.scene_id,
-      user_id:          userId,
-      participant_name: userName,
-      choice_id:        cid,
-      choice_text:      choice.text,
-      round:            session.current_round ?? 1,
-      reset_key:        session.reset_at ?? 'initial',  // ← chiave unica per ciclo
+      session_id: sid, scene_id: session.scene_id, user_id: userId,
+      participant_name: userName, choice_id: cid, choice_text: choice.text,
+      round: session.current_round ?? 1, reset_key: session.reset_at ?? 'initial',
     })
     setSubmitting(false)
     if (!error) { setVoted(cid); setPhase('voted') }
@@ -208,12 +289,7 @@ return () => { ch.unsubscribe() }
     </>
   )
 
-  if (notFound) return baseLayout(
-    <div style={{ textAlign: 'center', color: '#9cb8c4' }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>404</div>
-      <div>Sessione non trovata</div>
-    </div>
-  )
+  if (notFound) return baseLayout(<div style={{ textAlign: 'center', color: '#9cb8c4' }}><div style={{ fontSize: 48, marginBottom: 12 }}>404</div><div>Sessione non trovata</div></div>)
 
   if (!session || !session.scene_id) return baseLayout(
     <div style={{ textAlign: 'center', color: 'white' }}>
@@ -221,18 +297,16 @@ return () => { ch.unsubscribe() }
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#0e88a5" strokeWidth="2"/><path d="M12 7v5l3 3" stroke="#0e88a5" strokeWidth="2" strokeLinecap="round"/></svg>
       </div>
       <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>In attesa della sessione</div>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Il moderatore sta preparando il caso clinico…</div>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Il moderatore sta preparando…</div>
       {userName && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong></div>}
     </div>
   )
 
+  const votedChoice = scene?.choices.find((c, i) => (c.id ?? String(i)) === voted)
+
   return baseLayout(
     <>
-      {userName && (
-        <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
-          Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong>
-        </div>
-      )}
+      {userName && <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong></div>}
 
       {/* WAITING */}
       {phase === 'waiting' && (
@@ -251,17 +325,15 @@ return () => { ch.unsubscribe() }
         </div>
       )}
 
-      {/* VOTING */}
-      {phase === 'voting' && scene && (
+      {/* VOTING — normale */}
+      {phase === 'voting' && scene && !isDelphi && (
         <div style={{ animation: 'fadeUp .25s ease' }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Vota ora</div>
-            {session?.reset_at && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
-                <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                Votazione ripetuta — una risposta precedente era già stata raccolta
-              </div>
-            )}
+            {session?.reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              Votazione ripetuta
+            </div>}
             <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
           </div>
@@ -279,6 +351,39 @@ return () => { ch.unsubscribe() }
         </div>
       )}
 
+      {/* VOTING — Delphi */}
+      {phase === 'voting' && scene && isDelphi && (
+        <div style={{ animation: 'fadeUp .25s ease' }}>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Esprimi il tuo accordo</div>
+            {session?.reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              Votazione ripetuta
+            </div>}
+            <h2 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>{scene.title}</h2>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, padding: '12px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, borderLeft: '3px solid rgba(14,136,165,0.5)' }}>{scene.text}</div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 8, padding: '0 2px' }}>
+            <span>← {scene.choices[0]?.text}</span>
+            <span>{scene.choices[scene.choices.length - 1]?.text} →</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {scene.choices.map((c, i) => {
+              const color = LIKERT_COLORS(scene.choices.length, i)
+              return (
+                <button key={i} onClick={() => submitVote(c, i)} disabled={submitting}
+                  style={{ flex: 1, padding: '18px 4px 14px', borderRadius: 12, border: `2px solid ${color}44`, background: `${color}11`, cursor: submitting ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all .2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = `${color}33`; e.currentTarget.style.borderColor = color; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = `${color}11`; e.currentTarget.style.borderColor = `${color}44`; e.currentTarget.style.transform = 'translateY(0)' }}>
+                  <span style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1 }}>{c.tag ?? String(i + 1)}</span>
+                  <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.2 }}>{c.text}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* VOTED */}
       {phase === 'voted' && (
         <div style={{ textAlign: 'center', color: 'white' }}>
@@ -286,15 +391,30 @@ return () => { ch.unsubscribe() }
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>Voto inviato!</h2>
-          <p style={{ margin: '0 0 20px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-            Hai votato: <strong style={{ color: 'white' }}>{scene?.choices.find((c, i) => (c.id ?? String(i)) === voted)?.text}</strong>
-          </p>
+          {isDelphi && votedChoice ? (
+            <div style={{ marginBottom: 20 }}>
+              {(() => {
+                const idx = scene!.choices.findIndex((c, i) => (c.id ?? String(i)) === voted)
+                const color = LIKERT_COLORS(scene!.choices.length, idx)
+                return (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: `${color}18`, borderRadius: 14, border: `1.5px solid ${color}44` }}>
+                    <span style={{ fontSize: 36, fontWeight: 900, color }}>{votedChoice.tag ?? voted}</span>
+                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{votedChoice.text}</span>
+                  </div>
+                )
+              })()}
+            </div>
+          ) : (
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
+              Hai votato: <strong style={{ color: 'white' }}>{votedChoice?.text}</strong>
+            </p>
+          )}
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', animation: 'pulse 2s infinite' }}>In attesa dei risultati…</div>
         </div>
       )}
 
-      {/* REVEALED */}
-      {phase === 'revealed' && scene && (
+      {/* REVEALED — normale */}
+      {phase === 'revealed' && scene && !isDelphi && (
         <div style={{ animation: 'fadeUp .3s ease' }}>
           <h2 style={{ margin: '0 0 20px', fontSize: 22, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -318,6 +438,13 @@ return () => { ch.unsubscribe() }
           <div style={{ marginTop: 16, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{totalVotes} partecipant{totalVotes === 1 ? 'e' : 'i'} totali</div>
         </div>
       )}
+
+      {/* REVEALED — Delphi */}
+      {phase === 'revealed' && scene && isDelphi && (
+        <DelphiResults voteCounts={voteCounts} totalVotes={totalVotes} voted={voted} n={scene.choices.length} />
+      )}
     </>
   )
 }
+
+// ULTIMA VERSIONE DELPHI RESULTS

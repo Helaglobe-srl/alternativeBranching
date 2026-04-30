@@ -1,0 +1,297 @@
+{
+  "title": "Eventi Google",
+  "subtitle": "Evento Marketing",
+  "scenes": [
+    
+    
+    {
+      "id": "intro",
+      "type": "info",
+      "title": "Introduzione all'evento",
+      "image": "/images/scenes/google_event/copertina.PNG",
+      "imageAlt": "Specialista che riflette",
+      "text": "Evento marketing - bla bla blae ?",
+      "next": "intro",
+       "choices": [
+                {
+                    "text": "Avanti→",
+                    "next": "statement 1"
+                }
+            ]
+    },
+    {
+      "id": "statement 1",
+      "type": "decision",
+      "title": "Statement 1",
+      "image": "/images/scenes/google_event/st1.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 2",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    },
+    {
+      "id": "statement 2",
+      "type": "decision",
+      "title": "Statement 2",
+      "image": "/images/scenes/google_event/st2.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 3",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    },
+    {
+      "id": "statement 3",
+      "type": "decision",
+      "title": "Statement 3",
+      "image": "/images/scenes/google_event/st3.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 4",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    },
+    {
+      "id": "statement 4",
+      "type": "decision",
+      "title": "Statement 4",
+      "image": "/images/scenes/google_event/st4.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 5",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    },
+    {
+      "id": "statement 5",
+      "type": "decision",
+      "title": "Statement 5",
+      "image": "/images/scenes/google_event/st5.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 6",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    },
+    {
+      "id": "statement 6",
+      "type": "decision",
+      "title": "Statement 6",
+      "image": "/images/scenes/google_event/st6.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 7",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    },
+    {
+      "id": "statement 7",
+      "type": "decision",
+      "title": "Statement 7",
+      "image": "/images/scenes/google_event/st7.png",
+      "imageAlt": "Specialista che riflette",
+      "mode": "delphi",
+      "text": "Quanto sei d'accordo con l'affermazione ?",
+      "next": "statement 8",
+      "choices": [
+        {
+
+ 
+          "id": "c1",
+          "text": "Totale disaccordo",
+          "tag": "1"
+        },
+        {
+          "id": "c2",
+          "text": "Disaccordo",
+          "tag": "2"
+        },
+        {
+          "id": "c3",
+          "text": "Neutro",
+          "tag": "3"
+        },
+        {
+          "id": "c4",
+          "text": "Accordo",
+          "tag": "4"
+        },
+        {
+          "id": "c5",
+          "text": "Totale accordo",
+          "tag": "5"
+        }
+      ]
+    }
+    
+  ]
+}

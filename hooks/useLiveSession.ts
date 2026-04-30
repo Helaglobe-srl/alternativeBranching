@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-interface Choice { id?: string; text: string; next: string; tag?: string }
+interface Choice { id?: string; text: string; next?: string; tag?: string }
 
 interface LiveSession {
   id: string
@@ -167,3 +167,5 @@ export function useLiveSession(sessionId: string | null) {
     refreshVotes, setSceneId, openVoting, closeVoting, reveal, resetVotes,
   }
 }
+
+// ULTIMA VERSIONE
