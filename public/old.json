@@ -53,5 +53,14 @@
   "tag": "Neurologia",
   "duration": "10–15 min",
   "scenes": 18
-}
+},
+ {
+    "slug": "general_statement",
+    "title": "SIMEU",
+    "cover": "/images/scenes/general_statement/simeu1.PNG",
+    "sponsor": "SIMEU",
+    "tag": "General",
+    "duration": "10–15 min",
+    "scenes": 1
+  }
 ]

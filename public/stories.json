@@ -1,13 +1,5 @@
 [
-  {
-    "slug": "general_statement",
-    "title": "SIMEU",
-    "cover": "/images/scenes/general_statement/simeu1.PNG",
-    "sponsor": "SIMEU",
-    "tag": "General",
-    "duration": "10–15 min",
-    "scenes": 1
-  },
+ 
     {
     "slug": "google_event",
     "title": "Google Event",
@@ -15,15 +7,7 @@
     "sponsor": "Google",
     "tag": "General",
     "duration": "10–15 min",
-    "scenes": 1
-  },
-  {
-    "slug": "vanoli",
-    "title": "UCB Red Flags — Rinaldi",
-    "cover": "/images/logo_resized_proportional.png",
-    "sponsor": "UCB",
-    "tag": "Neurologia",
-    "duration": "10–15 min",
-    "scenes": 14
+    "scenes": 8
   }
+  
 ]
