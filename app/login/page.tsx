@@ -34,7 +34,7 @@ function LoginForm() {
     setLoading(true)
     setError('')
     const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      redirectTo: `${window.location.origin}/auth/reset-password`,
     })
     setLoading(false)
     if (err) setError("Email non trovata o errore nell'invio.")
