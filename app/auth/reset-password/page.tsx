@@ -18,26 +18,47 @@ export default function ResetPasswordPage() {
   const [tokenError, setTokenError] = useState(false)
 
  useEffect(() => {
-    // Con PKCE flow Supabase gestisce tutto tramite onAuthStateChange
-    // Non bisogna fare nulla manualmente — aspettiamo PASSWORD_RECOVERY
+    console.log('=== RESET PASSWORD PAGE LOADED ===')
+    console.log('URL completo:', window.location.href)
+    console.log('Hash:', window.location.hash)
+    console.log('Search:', window.location.search)
+
+    const hash = window.location.hash.substring(1)
+    const query = window.location.search.substring(1)
+    const combined = [hash, query].filter(Boolean).join('&')
+    const params = new URLSearchParams(combined)
+
+    console.log('Params parsed:', Object.fromEntries(params.entries()))
+    console.log('error:', params.get('error'))
+    console.log('type:', params.get('type'))
+    console.log('access_token:', params.get('access_token') ? 'PRESENTE' : 'ASSENTE')
+    console.log('token:', params.get('token') ? 'PRESENTE' : 'ASSENTE')
+
+    const urlError = params.get('error')
+    if (urlError) {
+      console.log('❌ Errore nell URL, setto tokenError')
+      setTokenError(true)
+      return
+    }
+
+    console.log('Registro onAuthStateChange...')
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔔 Auth event:', event, '| session:', session ? 'PRESENTE' : 'NULL')
       if (event === 'PASSWORD_RECOVERY') {
+        console.log('✅ PASSWORD_RECOVERY ricevuto, setto ready')
         setReady(true)
         subscription.unsubscribe()
       }
-      // Se c'è un errore nell'hash/query
-      const hash = window.location.hash.substring(1)
-      const query = window.location.search.substring(1)
-      const combined = [hash, query].filter(Boolean).join('&')
-      const params = new URLSearchParams(combined)
-      if (params.get('error')) {
-        setTokenError(true)
-        subscription.unsubscribe()
+      if (event === 'SIGNED_IN') {
+        console.log('ℹ️ SIGNED_IN ricevuto')
       }
     })
+
     const t = setTimeout(() => {
+      console.log('⏰ Timeout scattato, nessun evento ricevuto — setto tokenError')
       setTokenError(true)
     }, 6000)
+
     return () => { clearTimeout(t); subscription.unsubscribe() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
