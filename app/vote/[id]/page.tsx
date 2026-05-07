@@ -487,9 +487,20 @@ export default function VotePage() {
     <>
       <style>{`html,body{margin:0;padding:0}*{box-sizing:border-box}@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
       <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#0c1a2a,#0e2a3a)', fontFamily: "'Segoe UI',system-ui,sans-serif", display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-          <Image src="/images/LOGO.webp" alt="Logo" width={80} height={22} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
-          {session && <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{session.name}</div>}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <Image src="/images/LOGO.webp" alt="Logo" width={80} height={22} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
+            {session && <div style={{ marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{session.name}</div>}
+          </div>
+          <button onClick={async () => { await supabase.auth.signOut(); router.replace(`/join/${sid}`) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Esci
+          </button>
         </div>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px' }}>
           <div style={{ width: '100%', maxWidth: 480 }}>{children}</div>

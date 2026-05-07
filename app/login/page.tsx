@@ -15,7 +15,10 @@ function LoginForm() {
   const [showPwd,  setShowPwd]  = useState(false)
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
-  const [checking, setChecking] = useState(true)
+  const [checking,  setChecking]  = useState(true)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
 
   const supabase = createClient()
 
@@ -26,6 +29,17 @@ function LoginForm() {
       else setChecking(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const sendReset = async () => {
+    if (!forgotEmail.trim()) { setError('Inserisci la tua email.'); return }
+    setLoading(true)
+    setError('')
+    const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    })
+    setLoading(false)
+    if (err) setError('Errore nell\'invio. Verifica l\'email e riprova.')
+    else setForgotSent(true)
+  }
 
   const handleSubmit = async () => {
     if (!email.trim() || !password) { setError('Inserisci email e password.'); return }
@@ -62,8 +76,8 @@ function LoginForm() {
       <div style={{ background: 'linear-gradient(135deg,#0e88a5,#0c6d82)', padding: '32px 32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
         <Image src="/images/LOGO.webp" alt="Logo" width={110} height={30} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.95 }} />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Clinical Scenarios</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Accesso riservato agli specialisti autorizzati</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Helaglobe Learning Lab</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Accesso riservato agli amministratori</div>
         </div>
       </div>
 
@@ -117,6 +131,56 @@ function LoginForm() {
             </button>
           </div>
         </div>
+        {/* Password dimenticata */}
+        {!forgotMode && (
+          <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 16 }}>
+            <button onClick={() => { setForgotMode(true); setForgotEmail(email); setError('') }}
+              style={{ background: 'none', border: 'none', color: '#0e88a5', fontSize: 12, cursor: 'pointer', fontWeight: 600, padding: 0 }}>
+              Password dimenticata?
+            </button>
+          </div>
+        )}
+
+        {/* Form recupero password */}
+        {forgotMode && (
+          <div style={{ marginBottom: 16 }}>
+            {forgotSent ? (
+              <div style={{ padding: '12px 14px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, color: '#15803d', lineHeight: 1.5 }}>
+                ✓ Email inviata a <strong>{forgotEmail}</strong>.<br />
+                Controlla la casella e segui il link.
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: '#4C7D93', marginBottom: 10, lineHeight: 1.5 }}>
+                  Inserisci la tua email. Ti mandiamo un link per reimpostare la password.
+                </div>
+                <input type="email" value={forgotEmail}
+                  onChange={e => { setForgotEmail(e.target.value); setError('') }}
+                  placeholder="nome@esempio.it"
+                  onKeyDown={async e => { if (e.key === 'Enter') await sendReset() }}
+                  style={{ width: '100%', padding: '11px 13px', borderRadius: 10, fontSize: 14, border: '1.5px solid #c4e0e9', outline: 'none', color: '#0c2a38', fontFamily: 'inherit', marginBottom: 10 }}
+                  onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#c4e0e9' }}
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setForgotMode(false); setError('') }}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: '#f0f4f6', color: '#4C7D93', border: 'none' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#dde8ed' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#f0f4f6' }}>
+                    Annulla
+                  </button>
+                  <button onClick={sendReset} disabled={loading}
+                    style={{ flex: 2, padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: loading ? 'default' : 'pointer', background: loading ? '#9cb8c4' : '#0e88a5', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#0c6d82' }}
+                    onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#0e88a5' }}>
+                    {loading && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
+                    {loading ? 'Invio…' : 'Invia link →'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -126,19 +190,21 @@ function LoginForm() {
         )}
 
         {/* Submit */}
-        <button onClick={handleSubmit} disabled={loading}
+        {!forgotMode && <button onClick={handleSubmit} disabled={loading}
           style={{ width: '100%', padding: '12px 0', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: loading ? 'default' : 'pointer', background: loading ? '#9cb8c4' : '#0e88a5', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background .15s' }}
           onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#0c6d82' }}
           onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#0e88a5' }}>
           {loading
             ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />Accesso in corso…</>
             : 'Accedi →'}
-        </button>
+        </button>}
 
-        <p style={{ marginTop: 18, fontSize: 12, color: '#9cb8c4', textAlign: 'center', lineHeight: 1.5 }}>
-          Accesso riservato agli specialisti invitati.<br />
-          Per richiedere l&apos;accesso contatta l&apos;amministratore.
-        </p>
+        {!forgotMode && (
+          <p style={{ marginTop: 18, fontSize: 12, color: '#9cb8c4', textAlign: 'center', lineHeight: 1.5 }}>
+            Accesso riservato agli amministratori.<br />
+            Per richiedere l&apos;accesso contatta l&apos;amministratore.
+          </p>
+        )}
       </div>
     </div>
   )

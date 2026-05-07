@@ -162,7 +162,7 @@
     {
       "id": "statement 5",
       "type": "decision",
-      "title": "Integrare la prospettiva del paziente nel processo strategico, anche in forma indiretta, migliora la qualità e la rilevanza dei contenuti, indipendentemente dal target primario della comunicazione.",
+      "title": "Integrare la prospettiva del paziente nel processo strategico, anche in forma indiretta, migliora la qualità e la rilevanza dei contenuti.",
       "image": "/images/scenes/google_event/st5.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -232,7 +232,7 @@
     {
       "id": "statement 7",
       "type": "decision",
-      "title": "Le best practice di marketing digitale non sono prerogativa delle grandi aziende. ",
+      "title": "Il livello di maturità digitale nel marketing healthcare non è necessariamente determinato dalla dimensione aziendale.",
       "image": "/images/scenes/google_event/st7.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
