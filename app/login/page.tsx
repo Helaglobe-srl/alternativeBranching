@@ -10,35 +10,60 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const next         = searchParams.get('next') ?? '/'
 
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [showPwd,  setShowPwd]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [checking,  setChecking]  = useState(true)
+  const [email,      setEmail]      = useState('')
+  const [password,   setPassword]   = useState('')
+  const [showPwd,    setShowPwd]    = useState(false)
+  const [error,      setError]      = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [checking,   setChecking]   = useState(true)
   const [forgotMode, setForgotMode] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotOtp,   setForgotOtp]   = useState('')
+  const [forgotPwd,   setForgotPwd]   = useState('')
+  const [forgotDone,  setForgotDone]  = useState(false)
 
   const supabase = createClient()
 
   useEffect(() => {
-    // ✅ getUser() verifica server-side con Supabase
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user && !next.includes('reset-password')) router.replace(next)
       else setChecking(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const sendReset = async () => {
     if (!forgotEmail.trim()) { setError('Inserisci la tua email.'); return }
     setLoading(true)
     setError('')
-    const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: forgotEmail.trim(),
+      options: { shouldCreateUser: false },
     })
     setLoading(false)
-    if (err) setError('Errore nell\'invio. Verifica l\'email e riprova.')
+    if (err) setError("Email non trovata o errore nell'invio.")
     else setForgotSent(true)
+  }
+
+  const verifyOtpAndReset = async () => {
+    if (!forgotOtp.trim() || !forgotPwd.trim()) return
+    setLoading(true)
+    setError('')
+    const { error: verifyErr } = await supabase.auth.verifyOtp({
+      email: forgotEmail.trim(),
+      token: forgotOtp.trim(),
+      type: 'email',
+    })
+    if (verifyErr) {
+      setError('Codice non valido o scaduto. Riprova.')
+      setLoading(false)
+      return
+    }
+    const { error: updateErr } = await supabase.auth.updateUser({ password: forgotPwd })
+    await supabase.auth.signOut()
+    setLoading(false)
+    if (updateErr) setError('Errore aggiornamento password: ' + updateErr.message)
+    else setForgotDone(true)
   }
 
   const handleSubmit = async () => {
@@ -54,7 +79,6 @@ function LoginForm() {
       setLoading(false)
       return
     }
-    // ✅ Salva email come username per il tracking
     if (data.user?.email) {
       sessionStorage.setItem('mg_username', data.user.email)
     }
@@ -131,6 +155,7 @@ function LoginForm() {
             </button>
           </div>
         </div>
+
         {/* Password dimenticata */}
         {!forgotMode && (
           <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 16 }}>
@@ -144,15 +169,49 @@ function LoginForm() {
         {/* Form recupero password */}
         {forgotMode && (
           <div style={{ marginBottom: 16 }}>
-            {forgotSent ? (
+            {forgotDone ? (
               <div style={{ padding: '12px 14px', borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: 13, color: '#15803d', lineHeight: 1.5 }}>
-                ✓ Email inviata a <strong>{forgotEmail}</strong>.<br />
-                Controlla la casella e segui il link.
+                ✓ Password aggiornata. Ora puoi accedere.
               </div>
+            ) : forgotSent ? (
+              <>
+                <div style={{ fontSize: 13, color: '#4C7D93', marginBottom: 12, lineHeight: 1.5 }}>
+                  Controlla la tua email — ti abbiamo inviato un codice a 6 cifre.
+                </div>
+                <input type="text" value={forgotOtp}
+                  onChange={e => { setForgotOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }}
+                  placeholder="Codice a 6 cifre" maxLength={6}
+                  style={{ width: '100%', padding: '11px 13px', borderRadius: 10, fontSize: 20, letterSpacing: '0.3em', textAlign: 'center', border: '1.5px solid #c4e0e9', outline: 'none', color: '#0c2a38', fontFamily: 'inherit', marginBottom: 10, fontWeight: 700 }}
+                  onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#c4e0e9' }}
+                />
+                <input type="password" value={forgotPwd}
+                  onChange={e => { setForgotPwd(e.target.value); setError('') }}
+                  placeholder="Nuova password (min. 6 caratteri)"
+                  style={{ width: '100%', padding: '11px 13px', borderRadius: 10, fontSize: 14, border: '1.5px solid #c4e0e9', outline: 'none', color: '#0c2a38', fontFamily: 'inherit', marginBottom: 10 }}
+                  onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#c4e0e9' }}
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setForgotMode(false); setForgotSent(false); setForgotOtp(''); setForgotPwd(''); setError('') }}
+                    style={{ flex: 1, padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: '#f0f4f6', color: '#4C7D93', border: 'none' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#dde8ed' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#f0f4f6' }}>
+                    Annulla
+                  </button>
+                  <button onClick={verifyOtpAndReset} disabled={loading || forgotOtp.length < 6 || forgotPwd.length < 6}
+                    style={{ flex: 2, padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: (loading || forgotOtp.length < 6 || forgotPwd.length < 6) ? 'default' : 'pointer', background: (loading || forgotOtp.length < 6 || forgotPwd.length < 6) ? '#9cb8c4' : '#0e88a5', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    onMouseEnter={e => { if (!loading && forgotOtp.length >= 6 && forgotPwd.length >= 6) e.currentTarget.style.background = '#0c6d82' }}
+                    onMouseLeave={e => { if (!loading && forgotOtp.length >= 6 && forgotPwd.length >= 6) e.currentTarget.style.background = '#0e88a5' }}>
+                    {loading && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
+                    {loading ? 'Verifica…' : 'Conferma →'}
+                  </button>
+                </div>
+              </>
             ) : (
               <>
                 <div style={{ fontSize: 13, color: '#4C7D93', marginBottom: 10, lineHeight: 1.5 }}>
-                  Inserisci la tua email. Ti mandiamo un link per reimpostare la password.
+                  Inserisci la tua email. Ti mandiamo un codice per reimpostare la password.
                 </div>
                 <input type="email" value={forgotEmail}
                   onChange={e => { setForgotEmail(e.target.value); setError('') }}
@@ -174,7 +233,7 @@ function LoginForm() {
                     onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#0c6d82' }}
                     onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#0e88a5' }}>
                     {loading && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
-                    {loading ? 'Invio…' : 'Invia link →'}
+                    {loading ? 'Invio…' : 'Invia codice →'}
                   </button>
                 </div>
               </>
@@ -229,3 +288,5 @@ export default function LoginPage() {
     </>
   )
 }
+
+// ULTIMA VERSIONE
