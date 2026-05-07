@@ -17,36 +17,28 @@ export default function ResetPasswordPage() {
   const [ready, setReady]       = useState(false)
   const [tokenError, setTokenError] = useState(false)
 
-  useEffect(() => {
-    // Supabase mette i parametri nell'hash: #access_token=...&type=recovery
-    // oppure come query string: ?access_token=...&type=recovery
-    const hash = window.location.hash.substring(1)
-    const query = window.location.search.substring(1)
-    const combined = [hash, query].filter(Boolean).join('&')
-    const params = new URLSearchParams(combined)
-    const type = params.get('type')
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-
-    if (type === 'recovery' && accessToken) {
-      // Imposta la sessione con il token di recovery
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken ?? '' })
-        .then(({ error }) => {
-          if (error) setTokenError(true)
-          else setReady(true)
-        })
-    } else {
-      // Fallback: aspetta onAuthStateChange
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') {
-          setReady(true)
-          subscription.unsubscribe()
-        }
-      })
-      // Se dopo 4s non arriva nulla, mostra errore
-      const t = setTimeout(() => setTokenError(true), 4000)
-      return () => { clearTimeout(t); subscription.unsubscribe() }
-    }
+ useEffect(() => {
+    // Con PKCE flow Supabase gestisce tutto tramite onAuthStateChange
+    // Non bisogna fare nulla manualmente — aspettiamo PASSWORD_RECOVERY
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setReady(true)
+        subscription.unsubscribe()
+      }
+      // Se c'è un errore nell'hash/query
+      const hash = window.location.hash.substring(1)
+      const query = window.location.search.substring(1)
+      const combined = [hash, query].filter(Boolean).join('&')
+      const params = new URLSearchParams(combined)
+      if (params.get('error')) {
+        setTokenError(true)
+        subscription.unsubscribe()
+      }
+    })
+    const t = setTimeout(() => {
+      setTokenError(true)
+    }, 6000)
+    return () => { clearTimeout(t); subscription.unsubscribe() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
