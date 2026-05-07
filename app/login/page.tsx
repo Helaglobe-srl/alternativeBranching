@@ -23,6 +23,21 @@ function LoginForm() {
   const supabase = createClient()
 
   useEffect(() => {
+    // Intercetta token recovery nell'hash (Supabase fallback)
+    const hash = window.location.hash.substring(1)
+    if (hash) {
+      const params = new URLSearchParams(hash)
+      if (params.get('type') === 'recovery' && params.get('access_token')) {
+        const accessToken  = params.get('access_token')!
+        const refreshToken = params.get('refresh_token') ?? ''
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ error }) => {
+            if (!error) router.replace('/auth/reset-password')
+            else setChecking(false)
+          })
+        return
+      }
+    }
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) router.replace(next)
       else setChecking(false)
