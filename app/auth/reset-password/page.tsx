@@ -22,7 +22,8 @@ export default function ResetPasswordPage() {
     // oppure come query string: ?access_token=...&type=recovery
     const hash = window.location.hash.substring(1)
     const query = window.location.search.substring(1)
-    const params = new URLSearchParams(hash || query)
+    const combined = [hash, query].filter(Boolean).join('&')
+    const params = new URLSearchParams(combined)
     const type = params.get('type')
     const accessToken = params.get('access_token')
     const refreshToken = params.get('refresh_token')

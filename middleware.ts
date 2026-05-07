@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   '/join',
   '/stories',
   '/privacy',
+  '/auth',
 ]
 
 export async function middleware(request: NextRequest) {

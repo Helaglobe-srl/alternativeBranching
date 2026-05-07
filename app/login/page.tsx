@@ -25,7 +25,7 @@ function LoginForm() {
   useEffect(() => {
     // ✅ getUser() verifica server-side con Supabase
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace(next)
+      if (user && !next.includes('reset-password')) router.replace(next)
       else setChecking(false)
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
