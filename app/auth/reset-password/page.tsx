@@ -17,7 +17,7 @@ export default function ResetPasswordPage() {
   const [ready, setReady]       = useState(false)
   const [tokenError, setTokenError] = useState(false)
 
- useEffect(() => {
+  useEffect(() => {
     console.log('=== RESET PASSWORD PAGE LOADED ===')
     console.log('URL completo:', window.location.href)
     console.log('Hash:', window.location.hash)
@@ -31,17 +31,55 @@ export default function ResetPasswordPage() {
     console.log('Params parsed:', Object.fromEntries(params.entries()))
     console.log('error:', params.get('error'))
     console.log('type:', params.get('type'))
+    console.log('code:', params.get('code') ? 'PRESENTE' : 'ASSENTE')
     console.log('access_token:', params.get('access_token') ? 'PRESENTE' : 'ASSENTE')
-    console.log('token:', params.get('token') ? 'PRESENTE' : 'ASSENTE')
 
+    // Errore esplicito nell'URL
     const urlError = params.get('error')
     if (urlError) {
-      console.log('❌ Errore nell URL, setto tokenError')
+      console.log('❌ Errore nell URL:', urlError)
       setTokenError(true)
       return
     }
 
-    console.log('Registro onAuthStateChange...')
+    // PKCE flow — arriva ?code=...
+    const code = params.get('code')
+    if (code) {
+      console.log('🔑 Trovato code PKCE, scambio con sessione...')
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error: exchError }) => {
+        console.log('exchangeCodeForSession — error:', exchError, '| session:', data?.session ? 'PRESENTE' : 'NULL')
+        if (exchError) {
+          console.log('❌ exchangeCodeForSession fallito:', exchError.message)
+          setTokenError(true)
+        } else {
+          console.log('✅ Sessione ottenuta, setto ready')
+          setReady(true)
+        }
+      })
+      return
+    }
+
+    // Implicit flow — arriva #access_token=...&type=recovery
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    const type = params.get('type')
+    if (type === 'recovery' && accessToken) {
+      console.log('🔑 Trovato access_token implicit, setto sessione...')
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken ?? '' })
+        .then(({ error: sessError }) => {
+          if (sessError) {
+            console.log('❌ setSession fallito:', sessError.message)
+            setTokenError(true)
+          } else {
+            console.log('✅ Sessione impostata, setto ready')
+            setReady(true)
+          }
+        })
+      return
+    }
+
+    // Fallback: aspetta onAuthStateChange
+    console.log('Nessun code/token trovato, aspetto onAuthStateChange...')
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔔 Auth event:', event, '| session:', session ? 'PRESENTE' : 'NULL')
       if (event === 'PASSWORD_RECOVERY') {
@@ -49,13 +87,10 @@ export default function ResetPasswordPage() {
         setReady(true)
         subscription.unsubscribe()
       }
-      if (event === 'SIGNED_IN') {
-        console.log('ℹ️ SIGNED_IN ricevuto')
-      }
     })
 
     const t = setTimeout(() => {
-      console.log('⏰ Timeout scattato, nessun evento ricevuto — setto tokenError')
+      console.log('⏰ Timeout 6s scattato — setto tokenError')
       setTokenError(true)
     }, 6000)
 
@@ -68,9 +103,9 @@ export default function ResetPasswordPage() {
     if (password.length < 8) { setError('La password deve essere di almeno 8 caratteri.'); return }
     if (password !== confirm) { setError('Le password non coincidono.'); return }
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
+    const { error: updateError } = await supabase.auth.updateUser({ password })
     setLoading(false)
-    if (error) setError(error.message)
+    if (updateError) setError(updateError.message)
     else { setSuccess(true); setTimeout(() => router.push('/'), 3000) }
   }
 
@@ -99,10 +134,12 @@ export default function ResetPasswordPage() {
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
                 <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: 'white' }}>Link non valido</h2>
-                <p style={{ margin: '0 0 20px', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Il link è scaduto o già usato. Richiedine uno nuovo.</p>
-                <button onClick={() => router.push('/')}
-                  style={{ padding: '10px 24px', borderRadius: 10, background: '#0e88a5', color: 'white', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                  Torna alla home
+                <p style={{ margin: '0 0 20px', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Il link è scaduto o già usato. Richiedine uno nuovo dalla pagina di login.</p>
+                <button onClick={() => router.push('/login')}
+                  style={{ padding: '10px 24px', borderRadius: 10, background: '#0e88a5', color: 'white', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#0c6d82' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#0e88a5' }}>
+                  Torna al login
                 </button>
               </div>
 
@@ -147,3 +184,5 @@ export default function ResetPasswordPage() {
     </>
   )
 }
+
+// ULTIMA VERSIONE
