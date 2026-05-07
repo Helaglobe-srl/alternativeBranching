@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Choice { id?: string; text: string; next?: string; tag?: string }
-interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[]; mode?: string; next?: string }
+interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[]; mode?: string; next?: string; max_chars?: number }
 interface Session {
   id: string; name: string; story_slug: string; scene_id: string | null
   voting_open: boolean; revealed: boolean
@@ -118,6 +118,155 @@ function DelphiResults({ voteCounts, totalVotes, voted, n }: {
   )
 }
 
+// ── Open Answer Form ──────────────────────────────────────────────────────────
+
+function OpenAnswerForm({ scene, onSubmit, reset_at }: {
+  scene: Scene
+  onSubmit: (answer: string) => Promise<void>
+  reset_at: string | null | undefined
+}) {
+  const [text, setText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const maxChars = scene.max_chars ?? 500
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!text.trim() || submitting) return
+    setSubmitting(true)
+    await onSubmit(text)
+    setSubmitting(false)
+  }
+
+  return (
+    <div style={{ animation: 'fadeUp .25s ease' }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Risposta aperta</div>
+        {reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          Votazione ripetuta
+        </div>}
+        <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
+      </div>
+      <form onSubmit={handleSubmit}>
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value.slice(0, maxChars))}
+            placeholder="Scrivi la tua risposta…"
+            rows={5}
+            style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)', color: 'white', fontSize: 14, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit', transition: 'border-color .15s', boxSizing: 'border-box' }}
+            onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
+          />
+          <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: text.length >= maxChars ? '#fca5a5' : 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+            {text.length}/{maxChars}
+          </div>
+        </div>
+        <button type="submit" disabled={submitting || !text.trim()}
+          style={{ width: '100%', padding: '13px', borderRadius: 12, background: (!text.trim() || submitting) ? 'rgba(14,136,165,0.4)' : '#0e88a5', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: (!text.trim() || submitting) ? 'default' : 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          onMouseEnter={e => { if (text.trim() && !submitting) e.currentTarget.style.background = '#0c6d82' }}
+          onMouseLeave={e => { if (text.trim() && !submitting) e.currentTarget.style.background = '#0e88a5' }}>
+          {submitting && <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
+          {submitting ? 'Invio…' : 'Invia risposta'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+// ── Hybrid Form ───────────────────────────────────────────────────────────────
+// Voto standard (scelte custom) + campo testo opzionale
+
+function HybridForm({ scene, onSubmit, reset_at }: {
+  scene: Scene
+  onSubmit: (choiceId: string, choiceText: string, openAnswer?: string) => Promise<void>
+  reset_at: string | null | undefined
+}) {
+  const [selected, setSelected] = useState<{ id: string; text: string } | null>(null)
+  const [openText, setOpenText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const maxChars = scene.max_chars ?? 300
+
+  const handleSubmit = async () => {
+    if (!selected || submitting) return
+    setSubmitting(true)
+    await onSubmit(selected.id, selected.text, openText.trim() || undefined)
+    setSubmitting(false)
+  }
+
+  return (
+    <div style={{ animation: 'fadeUp .25s ease' }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Vota e commenta</div>
+        {reset_at && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            Votazione ripetuta
+          </div>
+        )}
+        <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
+      </div>
+
+      {/* Scelte */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+        {scene.choices.map((c, i) => {
+          const cid = c.id ?? String(i)
+          const isSelected = selected?.id === cid
+          const color = COLORS[i % COLORS.length]
+          return (
+            <button key={i} onClick={() => setSelected({ id: cid, text: c.text })} disabled={submitting}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: isSelected ? `${color}22` : 'rgba(255,255,255,0.07)', border: `1.5px solid ${isSelected ? color : 'rgba(255,255,255,0.12)'}`, cursor: submitting ? 'default' : 'pointer', textAlign: 'left', transition: 'all .15s', color: 'white' }}
+              onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = 'rgba(14,136,165,0.15)'; e.currentTarget.style.borderColor = 'rgba(14,136,165,0.5)' } }}
+              onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' } }}>
+              {/* Radio circle */}
+              <span style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? color : 'rgba(255,255,255,0.3)'}`, background: isSelected ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .15s' }}>
+                {isSelected && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </span>
+              {c.tag && <span style={{ width: 26, height: 26, borderRadius: 7, background: isSelected ? color : 'rgba(255,255,255,0.1)', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}>{c.tag}</span>}
+              <span style={{ flex: 1, fontSize: 14, fontWeight: isSelected ? 600 : 400, lineHeight: 1.3, color: isSelected ? 'white' : 'rgba(255,255,255,0.8)' }}>{c.text}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Campo testo opzionale */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span>Altro</span>
+          <span style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)', padding: '1px 7px', borderRadius: 10 }}>campo libero</span>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <textarea
+            value={openText}
+            onChange={e => setOpenText(e.target.value.slice(0, maxChars))}
+placeholder="Scrivi la tua risposta…"            
+            rows={3}
+            style={{ width: '100%', padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)', color: 'white', fontSize: 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'inherit', transition: 'border-color .15s', boxSizing: 'border-box' }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(14,136,165,0.6)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)' }}
+          />
+          {openText.length > 0 && (
+            <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 10, color: openText.length >= maxChars ? '#fca5a5' : 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
+              {openText.length}/{maxChars}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Submit */}
+      <button onClick={handleSubmit} disabled={!selected || submitting}
+        style={{ width: '100%', padding: '13px', borderRadius: 12, background: (!selected || submitting) ? 'rgba(14,136,165,0.35)' : '#0e88a5', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: (!selected || submitting) ? 'default' : 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        onMouseEnter={e => { if (selected && !submitting) e.currentTarget.style.background = '#0c6d82' }}
+        onMouseLeave={e => { if (selected && !submitting) e.currentTarget.style.background = '#0e88a5' }}>
+        {submitting && <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
+        {submitting ? 'Invio…' : 'Invia'}
+      </button>
+    </div>
+  )
+}
+
 export default function VotePage() {
   const params   = useParams()
   const router   = useRouter()
@@ -130,6 +279,7 @@ export default function VotePage() {
   const [userName,   setUserName]   = useState('')
   const [phase,      setPhase]      = useState<Phase>('waiting')
   const [voted,      setVoted]      = useState<string | null>(null)
+  const [answered,   setAnswered]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [voteCounts, setVoteCounts] = useState<VoteCount[]>([])
   const [totalVotes, setTotalVotes] = useState(0)
@@ -139,6 +289,8 @@ export default function VotePage() {
   const sessionRef = useRef<Session | null>(null)
 
   const isDelphi = scene?.mode === 'delphi'
+  const isOpen   = scene?.mode === 'open'
+  const isHybrid = scene?.mode === 'hybrid'
 
   // ── Auth check ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -177,6 +329,7 @@ export default function VotePage() {
           const prev = sessionRef.current
           if (prev?.reset_at !== s.reset_at) {
             setVoted(null)
+            setAnswered(false)
             setVoteCounts([])
             setTotalVotes(0)
           }
@@ -191,6 +344,7 @@ export default function VotePage() {
   useEffect(() => {
     if (!session?.story_slug || !session?.scene_id) return
     setVoted(null)
+    setAnswered(false)
     setVoteCounts([])
     setTotalVotes(0)
     fetch(`/stories/${session.story_slug}/scenario.json`)
@@ -216,6 +370,12 @@ export default function VotePage() {
           .eq('user_id', userId).eq('round', data.current_round ?? 1)
         if (data.reset_at) q = q.gte('voted_at', data.reset_at)
         q.single().then(({ data: v }) => { if (v) setVoted(v.choice_id) })
+
+        let qa = supabase.from('live_open_answers').select('id')
+          .eq('session_id', sid).eq('scene_id', data.scene_id)
+          .eq('user_id', userId).eq('round', data.current_round ?? 1)
+        if (data.reset_at) qa = qa.gte('submitted_at', data.reset_at)
+        qa.single().then(({ data: a }) => { if (a) setAnswered(true) })
       }
     }, delay)
     return () => clearTimeout(t)
@@ -224,11 +384,13 @@ export default function VotePage() {
   // ── Sync phase ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!session) return
-    if (session.revealed)                   setPhase('revealed')
-    else if (session.voting_open && !voted) setPhase('voting')
-    else if (session.voting_open && voted)  setPhase('voted')
-    else                                    setPhase('waiting')
-  }, [session?.voting_open, session?.revealed, session?.scene_id, session?.reset_at, voted])
+    // Per hybrid: voted basta per passare a 'voted' (il testo è opzionale)
+    const hasResponded = isHybrid ? !!voted : (!!voted || !!answered)
+    if (session.revealed)                                    setPhase('revealed')
+    else if (session.voting_open && !hasResponded)           setPhase('voting')
+    else if (session.voting_open && hasResponded)            setPhase('voted')
+    else                                                     setPhase('waiting')
+  }, [session?.voting_open, session?.revealed, session?.scene_id, session?.reset_at, voted, answered, isHybrid])
 
   // ── Vote counts ────────────────────────────────────────────────────────────
   const loadVoteCounts = useCallback(async () => {
@@ -264,6 +426,53 @@ export default function VotePage() {
     })
     setSubmitting(false)
     if (!error) { setVoted(cid); setPhase('voted') }
+  }, [submitting, voted, userId, userName, sid, session?.scene_id, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Submit risposta aperta ─────────────────────────────────────────────────
+  const submitOpenAnswer = useCallback(async (answer: string) => {
+    if (!userId || !session?.scene_id || answered) return
+    const { error } = await supabase.from('live_open_answers').insert({
+      session_id:       sid,
+      scene_id:         session.scene_id,
+      user_id:          userId,
+      participant_name: userName,
+      answer:           answer.trim(),
+      round:            session.current_round ?? 1,
+    })
+    if (!error) { setAnswered(true); setPhase('voted') }
+  }, [userId, userName, sid, session?.scene_id, session?.current_round, answered]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Submit hybrid (voto + testo opzionale) ────────────────────────────────
+  const submitHybrid = useCallback(async (choiceId: string, choiceText: string, openAnswer?: string) => {
+    if (submitting || voted || !userId || !session?.scene_id) return
+    setSubmitting(true)
+
+    // 1. Salva il voto
+    const { error: voteError } = await supabase.from('live_votes').insert({
+      session_id:       sid,
+      scene_id:         session.scene_id,
+      user_id:          userId,
+      participant_name: userName,
+      choice_id:        choiceId,
+      choice_text:      choiceText,
+      round:            session.current_round ?? 1,
+      reset_key:        session.reset_at ?? 'initial',
+    })
+
+    // 2. Salva il testo (se presente)
+    if (!voteError && openAnswer) {
+      await supabase.from('live_open_answers').insert({
+        session_id:       sid,
+        scene_id:         session.scene_id,
+        user_id:          userId,
+        participant_name: userName,
+        answer:           openAnswer,
+        round:            session.current_round ?? 1,
+      })
+    }
+
+    setSubmitting(false)
+    if (!voteError) { setVoted(choiceId); setAnswered(!!openAnswer); setPhase('voted') }
   }, [submitting, voted, userId, userName, sid, session?.scene_id, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -326,7 +535,7 @@ export default function VotePage() {
       )}
 
       {/* VOTING — normale */}
-      {phase === 'voting' && scene && !isDelphi && (
+      {phase === 'voting' && scene && !isDelphi && !isOpen && !isHybrid && (
         <div style={{ animation: 'fadeUp .25s ease' }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Vota ora</div>
@@ -384,37 +593,52 @@ export default function VotePage() {
         </div>
       )}
 
+      {/* VOTING — Open */}
+      {phase === 'voting' && scene && isOpen && (
+        <OpenAnswerForm scene={scene} onSubmit={submitOpenAnswer} reset_at={session?.reset_at} />
+      )}
+
+      {/* VOTING — Hybrid */}
+      {phase === 'voting' && scene && isHybrid && (
+        <HybridForm scene={scene} onSubmit={submitHybrid} reset_at={session?.reset_at} />
+      )}
+
       {/* VOTED */}
       {phase === 'voted' && (
         <div style={{ textAlign: 'center', color: 'white' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(16,128,61,0.2)', border: '2px solid rgba(16,128,61,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>Voto inviato!</h2>
-          {isDelphi && votedChoice ? (
-            <div style={{ marginBottom: 20 }}>
-              {(() => {
-                const idx = scene!.choices.findIndex((c, i) => (c.id ?? String(i)) === voted)
-                const color = LIKERT_COLORS(scene!.choices.length, idx)
-                return (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: `${color}18`, borderRadius: 14, border: `1.5px solid ${color}44` }}>
-                    <span style={{ fontSize: 36, fontWeight: 900, color }}>{votedChoice.tag ?? voted}</span>
-                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{votedChoice.text}</span>
-                  </div>
-                )
-              })()}
-            </div>
-          ) : (
-            <p style={{ margin: '0 0 20px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
-              Hai votato: <strong style={{ color: 'white' }}>{votedChoice?.text}</strong>
+          <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>
+            {isHybrid && answered ? 'Voto e commento inviati!' : 'Voto inviato!'}
+          </h2>
+          {votedChoice && (
+            <p style={{ margin: '0 0 8px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
+              Hai scelto: <strong style={{ color: 'white' }}>{votedChoice.text}</strong>
             </p>
           )}
+          {isHybrid && answered && (
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>Il tuo commento è stato registrato ✓</p>
+          )}
+          {isHybrid && !answered && (
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>Nessun commento aggiunto</p>
+          )}
+          {!isHybrid && isDelphi && votedChoice && (() => {
+            const idx = scene!.choices.findIndex((c, i) => (c.id ?? String(i)) === voted)
+            const color = LIKERT_COLORS(scene!.choices.length, idx)
+            return (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: `${color}18`, borderRadius: 14, border: `1.5px solid ${color}44`, marginBottom: 16 }}>
+                <span style={{ fontSize: 36, fontWeight: 900, color }}>{votedChoice.tag ?? voted}</span>
+                <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{votedChoice.text}</span>
+              </div>
+            )
+          })()}
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', animation: 'pulse 2s infinite' }}>In attesa dei risultati…</div>
         </div>
       )}
 
       {/* REVEALED — normale */}
-      {phase === 'revealed' && scene && !isDelphi && (
+      {phase === 'revealed' && scene && !isDelphi && !isHybrid && (
         <div style={{ animation: 'fadeUp .3s ease' }}>
           <h2 style={{ margin: '0 0 20px', fontSize: 22, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -443,8 +667,34 @@ export default function VotePage() {
       {phase === 'revealed' && scene && isDelphi && (
         <DelphiResults voteCounts={voteCounts} totalVotes={totalVotes} voted={voted} n={scene.choices.length} />
       )}
+
+      {/* REVEALED — Hybrid: barre risultati voto (come normale) */}
+      {phase === 'revealed' && scene && isHybrid && (
+        <div style={{ animation: 'fadeUp .3s ease' }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
+          <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 20 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {voteCounts.map((c, i) => (
+              <div key={i} style={{ background: voted === c.cid ? 'rgba(14,136,165,0.15)' : 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', border: `1.5px solid ${voted === c.cid ? c.color : 'rgba(255,255,255,0.08)'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
+                    <span style={{ fontSize: 13, color: 'white', fontWeight: voted === c.cid ? 700 : 400 }}>{c.text}</span>
+                    {voted === c.cid && <span style={{ fontSize: 10, color: c.color, fontWeight: 700 }}>← il tuo</span>}
+                  </div>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
+                </div>
+                <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }
 
-// ULTIMA VERSIONE DELPHI RESULTS
+// ULTIMA VERSIONE

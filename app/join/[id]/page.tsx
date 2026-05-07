@@ -26,7 +26,7 @@ function JoinForm() {
   const [error,         setError]         = useState('')
   const [loading,       setLoading]       = useState(false)
   const [checking,      setChecking]      = useState(true)
-
+const [alreadyParticipated, setAlreadyParticipated] = useState(false)
   // Se già loggato, vai direttamente alla vote page
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -62,6 +62,7 @@ function JoinForm() {
             last_name: lastName.trim(),
             marketing_consent: marketingOk,
             marketing_consent_at: marketingOk ? new Date().toISOString() : null,
+            already_participated: alreadyParticipated,
           } }
       })
       if (err) {
@@ -200,6 +201,16 @@ function JoinForm() {
               style={{ marginTop: 2, flexShrink: 0, accentColor: '#0e88a5', width: 16, height: 16 }} />
             <span style={{ fontSize: 12, color: '#4C7D93', lineHeight: 1.5 }}>
               <span style={{ fontWeight: 600, color: '#0c2a38' }}>Facoltativo</span> — Acconsento a ricevere comunicazioni via email da Helaglobe S.r.l. su eventi, prodotti e iniziative formative in ambito medico-scientifico. Il consenso è revocabile in qualsiasi momento.
+            </span>
+          </label>
+        )}
+        {/* Già partecipato — solo in registrazione, facoltativo */}
+        {mode === 'register' && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 10, background: alreadyParticipated ? '#f0f8fb' : '#fafafa', border: `1.5px solid ${alreadyParticipated ? '#c4e0e9' : '#e8e8e8'}`, transition: 'all .15s' }}>
+            <input type="checkbox" checked={alreadyParticipated} onChange={e => setAlreadyParticipated(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0, accentColor: '#0e88a5', width: 16, height: 16 }} />
+            <span style={{ fontSize: 12, color: '#4C7D93', lineHeight: 1.5 }}>
+              <span style={{ fontWeight: 600, color: '#0c2a38' }}>Facoltativo</span> — Ho già partecipato a questa survey in precedenza.
             </span>
           </label>
         )}

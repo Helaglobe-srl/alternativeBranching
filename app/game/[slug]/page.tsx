@@ -16,7 +16,7 @@ interface Video { title: string; src: string }
 interface Table { headers: string[]; rows: string[][]; footer?: string }
 interface Scene {
   id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
-  mode?: string; next?: string
+  mode?: string; next?: string; max_chars?: number
   title: string; image?: string | null; imageAlt?: string; context?: string
   badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
   stats?: Stat[]; videos?: Video[]; table?: Table; text: string; choices: Choice[]
@@ -72,6 +72,7 @@ const STAT_COLORS = {
 }
 
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
+const CHOICE_COLORS = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e', '#7c3aed', '#b45309']
 const BP = 960
 const VOTE_PANEL_W = 200
 
@@ -183,6 +184,122 @@ function BarChart({ votes }: { votes: { color: string; count: number; text: stri
   )
 }
 
+// ── Word Cloud ────────────────────────────────────────────────────────────────
+
+const STOP_WORDS = new Set(['il','lo','la','i','gli','le','un','uno','una','di','a','da','in','con','su','per','tra','fra','e','o','ma','se','che','non','è','sono','ho','ha','mi','ti','si','ci','vi','del','della','dei','degli','delle','al','alla','ai','agli','alle','dal','dalla','dai','dagli','dalle','nel','nella','nei','negli','nelle','sul','sulla','sui','sugli','sulle','col','coi','questo','questa','questi','queste','quello','quella','quelli','quelle','mio','mia','miei','mie','tuo','tua','tuoi','tue','suo','sua','suoi','sue','come','quando','dove','perché','anche','più','molto','poco','tutti','tutto','già','ancora','sempre','mai','qui','lì','io','tu','lui','lei','noi','voi','loro','me','te','lui','lei','noi','voi'])
+
+function buildWordCloud(answers: { answer: string }[], votes?: { text: string; count: number }[]): { word: string; count: number; size: number; color: string }[] {
+  const freq: Record<string, number> = {}
+  votes?.forEach(v => {
+    v.text.toLowerCase()
+      .replace(/[^a-zàèéìòùa-z\s]/gi, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+      .forEach(w => { freq[w] = (freq[w] ?? 0) + v.count })
+  })
+  answers.forEach(a => {
+    a.answer.toLowerCase()
+      .replace(/[^a-zàèéìòùa-z\s]/gi, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+      .forEach(w => { freq[w] = (freq[w] ?? 0) + 1 })
+  })
+  const max = Math.max(...Object.values(freq), 1)
+  const palette = ['#22d3ee', '#4ade80', '#fbbf24', '#f97316', '#c084fc', '#34d399', '#f472b6', '#fb7185', '#a3e635', '#38bdf8', '#facc15', '#e879f9']
+  return Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 40)
+    .map(([word, count], i) => ({
+      word, count,
+      size: Math.round(11 + (count / max) * 26),
+      color: palette[i % palette.length],
+    }))
+}
+
+function WordCloudView({ answers, votes }: { answers: { answer: string }[]; votes?: { text: string; count: number }[] }) {
+  const words = buildWordCloud(answers, votes)
+  if (!words.length) return (
+    <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>
+      Nessuna risposta ricevuta
+    </div>
+  )
+  const shuffled = [...words].sort(() => Math.random() - 0.5)
+  return (
+    <div style={{ position: 'relative', minHeight: 200, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '6px 10px', padding: '12px 8px' }}>
+      {shuffled.map((w, i) => {
+        const rotate = w.count > 3 ? 0 : (i % 3 === 1 ? -12 : i % 3 === 2 ? 10 : 0)
+        const opacity = 0.75 + (w.count / Math.max(...words.map(x => x.count))) * 0.25
+        return (
+          <span key={i}
+            title={`${w.word}: ${w.count} ${w.count === 1 ? 'occorrenza' : 'occorrenze'}`}
+            style={{ fontSize: w.size, fontWeight: w.size > 24 ? 900 : w.size > 18 ? 800 : 700, color: w.color, lineHeight: 1.1, cursor: 'default', display: 'inline-block', transform: `rotate(${rotate}deg)`, opacity, transition: 'all .2s', textShadow: w.size > 22 ? `0 0 20px ${w.color}44` : 'none', letterSpacing: w.size > 22 ? '-0.02em' : '0', padding: '2px 3px' }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = `rotate(${rotate}deg) scale(1.12)`; e.currentTarget.style.textShadow = `0 0 24px ${w.color}88` }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = String(opacity); e.currentTarget.style.transform = `rotate(${rotate}deg) scale(1)`; e.currentTarget.style.textShadow = w.size > 22 ? `0 0 20px ${w.color}44` : 'none' }}>
+            {w.word}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Open Answers Overlay ──────────────────────────────────────────────────────
+
+function OpenAnswersOverlay({ answers, onClose }: {
+  answers: { id: string; participant_name: string | null; answer: string; submitted_at: string }[]
+  onClose: () => void
+}) {
+  const [tab, setTab] = useState<'cloud' | 'list'>('cloud')
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,25,0.75)', backdropFilter: 'blur(6px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0c1a2a', borderRadius: 20, padding: '24px 24px 20px', maxWidth: 560, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.6)', border: '1px solid rgba(14,136,165,0.25)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Risposte aperte</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{answers.length} risposta{answers.length !== 1 ? 'e' : ''}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}>
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexShrink: 0 }}>
+          {(['cloud', 'list'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              style={{ flex: 1, padding: '8px', borderRadius: 8, background: tab === t ? '#0e88a5' : 'rgba(255,255,255,0.06)', color: tab === t ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              {t === 'cloud' ? '☁ Word Cloud' : '☰ Risposte'}
+            </button>
+          ))}
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          {tab === 'cloud' ? (
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '16px', minHeight: 160 }}>
+              <WordCloudView answers={answers} />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {answers.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 12, padding: '20px 0' }}>Nessuna risposta</div>
+              ) : answers.map((a, i) => (
+                <div key={a.id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5' }}>Risposta {i + 1}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{new Date(a.submitted_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>{a.answer}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Delphi Overlay ────────────────────────────────────────────────────────────
+
 function DelphiOverlay({ votes, onClose }: {
   votes: { cid: string; count: number; pct: number; color: string; tag?: string; text: string }[]
   onClose: () => void
@@ -194,7 +311,7 @@ function DelphiOverlay({ votes, onClose }: {
       <div onClick={e => e.stopPropagation()} style={{ background: '#0c1a2a', borderRadius: 20, padding: '28px 28px 24px', maxWidth: 520, width: '100%', boxShadow: '0 32px 80px rgba(0,0,0,0.6)', border: '1px solid rgba(14,136,165,0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Analisi Delphi</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Analisi votazione</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{total} vot{total === 1 ? 'o' : 'i'}</div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
@@ -244,6 +361,115 @@ function DelphiOverlay({ votes, onClose }: {
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', minWidth: 20, textAlign: 'right' }}>{v.count}</span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Hybrid Overlay ────────────────────────────────────────────────────────────
+// Tab "Analisi voti" (barre standard) + "Word Cloud" (commenti liberi)
+
+function HybridOverlay({ votes, openAnswers, onClose }: {
+  votes: { cid: string; count: number; pct: number; color: string; tag?: string; text: string }[]
+  openAnswers: { id: string; participant_name: string | null; answer: string; submitted_at: string }[]
+  onClose: () => void
+}) {
+  const [tab, setTab] = useState<'votes' | 'cloud'>('votes')
+  const totalVotes = votes.reduce((s, v) => s + v.count, 0)
+  const maxPct = Math.max(...votes.map(v => v.pct), 1)
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,25,0.75)', backdropFilter: 'blur(6px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0c1a2a', borderRadius: 20, padding: '24px 24px 20px', maxWidth: 560, width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.6)', border: '1px solid rgba(14,136,165,0.25)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>Analisi votazione</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+              {totalVotes} vot{totalVotes !== 1 ? 'i' : 'o'} · {openAnswers.length} comment{openAnswers.length !== 1 ? 'i' : 'o'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}>
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexShrink: 0 }}>
+          <button onClick={() => setTab('votes')}
+            style={{ flex: 1, padding: '8px', borderRadius: 8, background: tab === 'votes' ? '#0e88a5' : 'rgba(255,255,255,0.06)', color: tab === 'votes' ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            ◎ Analisi voti
+          </button>
+          <button onClick={() => setTab('cloud')}
+            style={{ flex: 1, padding: '8px', borderRadius: 8, background: tab === 'cloud' ? '#0e88a5' : 'rgba(255,255,255,0.06)', color: tab === 'cloud' ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            ☁ Word Cloud
+            {openAnswers.length > 0 && <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{openAnswers.length}</span>}
+          </button>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          {tab === 'votes' ? (
+            <div>
+              {/* Barre voti */}
+              {totalVotes === 0 ? (
+                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>Nessun voto ancora</div>
+              ) : (
+                <>
+                  {/* Stacked bar */}
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 16 }}>
+                      {votes.map((v, i) => (
+                        <div key={i} style={{ flex: v.pct || 1, background: v.color, opacity: v.count ? 0.9 : 0.15, minWidth: v.count ? 2 : 0, transition: 'flex 0.8s' }} title={`${v.text}: ${v.pct}%`} />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Dettaglio righe */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {votes.map((v, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? String(i + 1)}</span>
+                        <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
+                        <div style={{ width: 80, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
+                          <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${maxPct > 0 ? (v.pct / maxPct) * 100 : 0}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: v.color, minWidth: 36, textAlign: 'right' }}>{v.pct}%</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', minWidth: 18, textAlign: 'right' }}>{v.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 14, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{totalVotes} partecipant{totalVotes !== 1 ? 'i' : 'e'} totali</div>
+                </>
+              )}
+            </div>
+          ) : (
+            /* Word Cloud tab */
+            openAnswers.length === 0 ? (
+              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>Nessun commento ricevuto</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '16px', minHeight: 160 }}>
+                  <WordCloudView answers={openAnswers} votes={votes.map(v => ({ text: v.text, count: v.count }))} />
+                </div>
+                {/* Lista commenti sotto la cloud */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {openAnswers.map((a, i) => (
+                    <div key={a.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#0e88a5' }}>Commento {i + 1}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>{new Date(a.submitted_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>{a.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>
@@ -385,27 +611,32 @@ function ConfirmPopup({ onConfirm, onCancel }: { onConfirm: () => void; onCancel
 // ── Vote Panel ────────────────────────────────────────────────────────────────
 
 function VotePanel({
-  sessionId, scene, isAdmin, isDelphi, onClose,
+  sessionId, scene, isAdmin, isDelphi, isOpen, isHybrid, onClose,
 }: {
   sessionId: string
   scene: Scene
   isAdmin: boolean
   isDelphi: boolean
+  isOpen: boolean
+  isHybrid: boolean
   onClose: () => void
 }) {
-  const { session, votes, totalVotes, refreshVotes, openVoting, closeVoting, reveal, resetVotes } = useLiveSession(sessionId)
+  const { session, votes, totalVotes, openAnswers, refreshVotes, refreshOpenAnswers, openVoting, closeVoting, reveal, resetVotes } = useLiveSession(sessionId)
   const [qrUrl, setQrUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [showDelphiOverlay, setShowDelphiOverlay] = useState(false)
+  const [showOpenOverlay, setShowOpenOverlay] = useState(false)
+  const [showHybridOverlay, setShowHybridOverlay] = useState(false)
 
-  // Delphi: remap colori Likert
+  // Per hybrid: colori custom (non Likert)
   const displayVotes = isDelphi
     ? votes.map((v, i) => ({ ...v, color: likertColor(votes.length, i) }))
-    : votes
+    : isHybrid
+      ? votes.map((v, i) => ({ ...v, color: CHOICE_COLORS[i % CHOICE_COLORS.length] }))
+      : votes
 
   const voteUrl = typeof window !== 'undefined' ? `${window.location.origin}/join/${sessionId}` : ''
 
-  // Sync voti quando cambia scena o round
   useEffect(() => {
     refreshVotes(scene.choices, scene.id, session?.current_round)
   }, [scene.id, totalVotes, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -415,6 +646,21 @@ function VotePanel({
     if (isDelphi && session?.revealed) setShowDelphiOverlay(true)
     else if (!session?.revealed) setShowDelphiOverlay(false)
   }, [isDelphi, session?.revealed]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Open: carica risposte quando cambia scena/round/reset
+  useEffect(() => {
+    if ((!isOpen && !isHybrid) || !session) return
+    const t = setTimeout(() => {
+      refreshOpenAnswers(scene.id, session.current_round)
+    }, 100)
+    return () => clearTimeout(t)
+  }, [scene.id, session?.current_round, session?.reset_at, isOpen, isHybrid]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Hybrid: apri overlay al reveal
+  useEffect(() => {
+    if (isHybrid && session?.revealed) setShowHybridOverlay(true)
+    else if (!session?.revealed) setShowHybridOverlay(false)
+  }, [isHybrid, session?.revealed]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!voteUrl) return
@@ -432,12 +678,21 @@ function VotePanel({
       {showDelphiOverlay && isDelphi && (
         <DelphiOverlay votes={displayVotes} onClose={() => setShowDelphiOverlay(false)} />
       )}
+      {showOpenOverlay && isOpen && (
+        <OpenAnswersOverlay answers={openAnswers} onClose={() => setShowOpenOverlay(false)} />
+      )}
+      {showHybridOverlay && isHybrid && (
+        <HybridOverlay votes={displayVotes} openAnswers={openAnswers} onClose={() => setShowHybridOverlay(false)} />
+      )}
+
       <div style={{ width: VOTE_PANEL_W, flexShrink: 0, background: '#0c1a2a', display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(14,136,165,0.2)', overflowY: 'auto' }}>
 
         {/* Panel header */}
         <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Voto live</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {isHybrid ? 'Voto + commenti' : 'Voto live'}
+            </div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -463,14 +718,67 @@ function VotePanel({
           </button>
         </div>
 
-        {/* Bars / contatore */}
+        {/* Contatore / barre */}
         <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {session?.revealed ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+
+          {/* OPEN: solo contatore risposte */}
+          {isOpen && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <div style={{ fontSize: 52, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+                {openAnswers.length}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                {openAnswers.length === 1 ? 'risposta ricevuta' : 'risposte ricevute'}
+              </div>
+              {openAnswers.length > 0 && (
+                <button onClick={() => setShowOpenOverlay(true)}
+                  style={{ marginTop: 8, padding: '8px 20px', borderRadius: 8, background: 'rgba(14,136,165,0.2)', color: '#0e88a5', border: '1px solid rgba(14,136,165,0.4)', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.35)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.2)' }}>
+                  ☁ Vedi risposte
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* HYBRID: doppio contatore voti + commenti */}
+          {isHybrid && !session?.revealed && (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              {/* Voti */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 48, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+                  {totalVotes}
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  vot{totalVotes === 1 ? 'o' : 'i'}
+                </div>
+              </div>
+              {/* Separator */}
+              <div style={{ width: '60%', height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              {/* Commenti */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 32, fontWeight: 900, color: openAnswers.length > 0 ? '#c084fc' : 'rgba(255,255,255,0.2)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+                  {openAnswers.length}
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  comment{openAnswers.length === 1 ? 'o' : 'i'}
+                </div>
+              </div>
+              {session?.reset_at && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
+                  Votazione precedente già raccolta
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* HYBRID rivelato: barre + bottone overlay */}
+          {isHybrid && session?.revealed && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
               {displayVotes.map((v, i) => (
                 <div key={i}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: 5, background: v.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isDelphi ? v.cid : i + 1}</span>
+                    <span style={{ width: 20, height: 20, borderRadius: 5, background: v.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? String(i + 1)}</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: v.color }}>{v.pct}%</span>
                   </div>
                   <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
@@ -478,37 +786,69 @@ function VotePanel({
                   </div>
                 </div>
               ))}
-              {isDelphi && (
-                <button onClick={() => setShowDelphiOverlay(true)}
-                  style={{ marginTop: 4, width: '100%', padding: '8px 0', borderRadius: 8, background: 'rgba(14,136,165,0.2)', color: '#0e88a5', border: '1px solid rgba(14,136,165,0.4)', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.35)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.2)' }}>
-                  ◎ Analisi dettagliata
-                </button>
-              )}
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8 }}>
-              <div style={{ fontSize: 58, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
-                {totalVotes}
-              </div>
-              <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                {totalVotes === 1 ? 'voto ricevuto' : 'voti ricevuti'}
-              </div>
-              {session?.reset_at && (
-                <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5" /><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                  Votazione precedente già raccolta
+              {/* Badge commenti */}
+              {openAnswers.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', borderRadius: 8, background: 'rgba(192,132,252,0.1)', border: '1px solid rgba(192,132,252,0.25)', fontSize: 11, color: '#c084fc' }}>
+                  <span style={{ fontSize: 14 }}>💬</span>
+                  {openAnswers.length} commento{openAnswers.length !== 1 ? 'i' : ''}
                 </div>
               )}
-              {session?.voting_open && totalVotes > 0 && (
-                <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
-                  {[0, 1, 2].map(i => (
-                    <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
-                  ))}
-                </div>
-              )}
+              <button onClick={() => setShowHybridOverlay(true)}
+                style={{ marginTop: 4, width: '100%', padding: '8px 0', borderRadius: 8, background: 'rgba(14,136,165,0.2)', color: '#0e88a5', border: '1px solid rgba(14,136,165,0.4)', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.35)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.2)' }}>
+                ◎ Analisi votazione
+              </button>
             </div>
+          )}
+
+          {/* NORMALE / DELPHI: logica esistente */}
+          {!isOpen && !isHybrid && (
+            session?.revealed ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+                {displayVotes.map((v, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ width: 20, height: 20, borderRadius: 5, background: v.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isDelphi ? v.cid : i + 1}</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: v.color }}>{v.pct}%</span>
+                    </div>
+                    <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${v.pct}%`, transition: 'width 0.8s cubic-bezier(0.22,1,0.36,1)' }} />
+                    </div>
+                  </div>
+                ))}
+                {isDelphi && (
+                  <button onClick={() => setShowDelphiOverlay(true)}
+                    style={{ marginTop: 4, width: '100%', padding: '8px 0', borderRadius: 8, background: 'rgba(14,136,165,0.2)', color: '#0e88a5', border: '1px solid rgba(14,136,165,0.4)', fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.35)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.2)' }}>
+                    ◎ Analisi dettagliata
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8 }}>
+                <div style={{ fontSize: 58, fontWeight: 900, color: session?.voting_open ? '#4ade80' : 'rgba(255,255,255,0.3)', fontFamily: 'Georgia,serif', lineHeight: 1, transition: 'color .3s' }}>
+                  {totalVotes}
+                </div>
+                <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  {totalVotes === 1 ? 'voto ricevuto' : 'voti ricevuti'}
+                </div>
+                {session?.reset_at && (
+                  <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px', fontSize: 10, color: '#fbbf24' }}>
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5" /><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                    Votazione precedente già raccolta
+                  </div>
+                )}
+                {session?.voting_open && totalVotes > 0 && (
+                  <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
+                    {[0, 1, 2].map(i => (
+                      <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', animation: `pulse 1.2s ${i * 0.2}s infinite` }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
 
@@ -530,10 +870,23 @@ function VotePanel({
                 ★ Rivela risultati
               </button>
             )}
-            {totalVotes > 0 && (
+            {(totalVotes > 0 || isOpen || isHybrid) && (
               <button onClick={resetVotes} style={{ padding: '7px', borderRadius: 8, background: 'rgba(220,38,38,0.12)', color: '#fca5a5', border: '1px solid rgba(220,38,38,0.25)', fontSize: 11, cursor: 'pointer' }}>
                 Reset voti
               </button>
+            )}
+            {/* Bottone riapertura overlay hybrid post-reveal */}
+            {isHybrid && session?.revealed && (
+              <button onClick={() => setShowHybridOverlay(true)}
+                style={{ padding: '7px', borderRadius: 8, background: 'rgba(14,136,165,0.15)', color: '#0e88a5', border: '1px solid rgba(14,136,165,0.3)', fontSize: 11, cursor: 'pointer' }}>
+                ◎ Analisi votazione
+              </button>
+            )}
+            {/* Pulsante navigazione */}
+            {(isDelphi || isOpen || isHybrid) && (
+              <div style={{ padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 2, fontSize: 10, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+                Usa "Avanti →" per procedere
+              </div>
             )}
           </div>
         )}
@@ -567,7 +920,6 @@ function GamePageInner() {
 
   const supabase = createClient()
 
-  // setLiveSceneId — usa prevSceneIdRef per non resettare al refresh
   const prevSceneIdRef = useRef<string | null>(null)
   const setLiveSceneId = useCallback(async (sceneId: string) => {
     if (!sessionId) return
@@ -679,14 +1031,12 @@ function GamePageInner() {
   useEffect(() => {
     if (!scene) return
     if (scene.type === 'endpoint') endSession(true)
-    // Chiama setLiveSceneId solo quando la scena CAMBIA davvero (non al refresh)
     if (sessionId && scene.type === 'decision' && prevSceneIdRef.current !== null && prevSceneIdRef.current !== scene.id) {
       setLiveSceneId(scene.id)
     }
     prevSceneIdRef.current = scene.id
   }, [scene?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-apri pannello voto su scene decision con sessione attiva
   useEffect(() => {
     if (sessionId && scene?.type === 'decision') {
       setShowVotePanel(true)
@@ -736,6 +1086,8 @@ function GamePageInner() {
   const isDecision = scene.type === 'decision'
   const isEndpoint = scene.type === 'endpoint'
   const isDelphi = scene.mode === 'delphi'
+  const isOpen = scene.mode === 'open'
+  const isHybrid = scene.mode === 'hybrid'
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
   const accentLine = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
@@ -779,8 +1131,9 @@ function GamePageInner() {
     </>
   )
 
-  // Bottoni scelta — branch normale e branch Delphi
+  // ── Bottoni scelta ────────────────────────────────────────────────────────
   const choicesBtns = isDelphi ? (
+    // Delphi: visualizzazione scale Likert (non cliccabile dal moderatore)
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9cb8c4', marginBottom: 8 }}>
         <span>← {scene.choices[0]?.text}</span>
@@ -808,7 +1161,48 @@ function GamePageInner() {
         </div>
       )}
     </div>
+  ) : isOpen ? (
+    // Open: solo pulsante Avanti
+    <div>
+      {scene.next && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+          <button onClick={() => go(scene.next!, false)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 9, background: cfg.accent, color: 'white', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#0c6d82' }}
+            onMouseLeave={e => { e.currentTarget.style.background = cfg.accent }}>
+            Avanti <span style={{ fontSize: 16 }}>→</span>
+          </button>
+        </div>
+      )}
+    </div>
+  ) : isHybrid ? (
+    // Hybrid: scelte preview (non cliccabili) + campo testo indicato + bottone Avanti
+    <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10, pointerEvents: 'none' }}>
+        {scene.choices.map((c, i) => {
+          const color = CHOICE_COLORS[i % CHOICE_COLORS.length]
+          return (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${color}66`, background: `${color}14` }}>
+              <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${color}99`, flexShrink: 0 }} />
+              {c.tag && <span style={{ width: 22, height: 22, borderRadius: 6, background: color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.tag}</span>}
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#1e4a5c' }}>{c.text}</span>
+            </div>
+          )
+        })}
+      </div>
+      {scene.next && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={() => go(scene.next!, false)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 9, background: cfg.accent, color: 'white', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#0c6d82' }}
+            onMouseLeave={e => { e.currentTarget.style.background = cfg.accent }}>
+            Avanti <span style={{ fontSize: 16 }}>→</span>
+          </button>
+        </div>
+      )}
+    </div>
   ) : (
+    // Normale: scelte cliccabili
     <div style={{ display: 'flex', flexDirection: isDecision ? 'column' : 'row', flexWrap: isDecision ? 'nowrap' : 'wrap', gap: 7 }}>
       {scene.choices.map((choice, i) => {
         if (isDecision) return (
@@ -838,7 +1232,7 @@ function GamePageInner() {
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
         <div style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 5, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: compact ? 7 : 9, opacity: isInfo ? 0 : 1, pointerEvents: 'none' }}>{cfg.label}</div>
-        <h2 style={{ margin: 0, fontSize: compact ? 17 : 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
+        <h2 style={{ margin: 0, fontSize: compact ? 20 : 24, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
         {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
       </div>
       <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
@@ -849,7 +1243,8 @@ function GamePageInner() {
         {scene.videos && scene.videos.length > 0 && <VideoBox videos={scene.videos} onOpen={setActiveVideo} />}
       </div>
       <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
-        {isDecision && !isDelphi && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
+        {isDecision && !isDelphi && !isOpen && !isHybrid && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
+        {isHybrid && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Voto + commento libero</div>}
         {choicesBtns}
       </div>
       {!compact && history.length > 0 && (
@@ -880,7 +1275,6 @@ function GamePageInner() {
         {/* Navbar */}
         <nav style={{ flexShrink: 0, height: 42, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Home icon */}
             <button onClick={() => router.push('/')} title="Home"
               style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e8f4f8', border: '1px solid #c4e0e9', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.background = '#c4e0e9' }}
@@ -952,6 +1346,8 @@ function GamePageInner() {
               scene={scene}
               isAdmin={isAdmin}
               isDelphi={isDelphi}
+              isOpen={isOpen}
+              isHybrid={isHybrid}
               onClose={() => setShowVotePanel(false)}
             />
           )}

@@ -25,15 +25,23 @@ interface VoteCount {
   color: string
 }
 
+interface OpenAnswer {
+  id: string
+  participant_name: string | null
+  answer: string
+  submitted_at: string
+}
+
 const COLORS = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e', '#7c3aed', '#b45309']
 
 export function useLiveSession(sessionId: string | null) {
   const supabase = createClient()
 
-  const [session,    setSession]    = useState<LiveSession | null>(null)
-  const [isAdmin,    setIsAdmin]    = useState(false)
-  const [votes,      setVotes]      = useState<VoteCount[]>([])
-  const [totalVotes, setTotalVotes] = useState(0)
+  const [session,      setSession]      = useState<LiveSession | null>(null)
+  const [isAdmin,      setIsAdmin]      = useState(false)
+  const [votes,        setVotes]        = useState<VoteCount[]>([])
+  const [totalVotes,   setTotalVotes]   = useState(0)
+  const [openAnswers,  setOpenAnswers]  = useState<OpenAnswer[]>([])
   const subRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   // ── Check admin ────────────────────────────────────────────────────────────
@@ -65,7 +73,7 @@ export function useLiveSession(sessionId: string | null) {
       })
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Realtime (niente polling) ──────────────────────────────────────────────
+  // ── Realtime ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId) return
 
@@ -75,6 +83,13 @@ export function useLiveSession(sessionId: string | null) {
         filter: `session_id=eq.${sessionId}`
       }, () => setTotalVotes(v => v + 1))
       .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'live_open_answers',
+        filter: `session_id=eq.${sessionId}`
+      }, payload => {
+        const a = payload.new as OpenAnswer & { session_id: string; scene_id: string; round: number }
+        setOpenAnswers(prev => [...prev, { id: a.id, participant_name: a.participant_name, answer: a.answer, submitted_at: a.submitted_at }])
+      })
+      .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'live_sessions',
         filter: `id=eq.${sessionId}`
       }, payload => {
@@ -83,6 +98,7 @@ export function useLiveSession(sessionId: string | null) {
           if (prev?.reset_at !== newSession.reset_at) {
             setVotes([])
             setTotalVotes(0)
+            setOpenAnswers([])
           }
           return newSession
         })
@@ -121,19 +137,33 @@ export function useLiveSession(sessionId: string | null) {
     }))
   }, [sessionId, session?.current_round, session?.reset_at]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Carica risposte aperte ─────────────────────────────────────────────────
+  const refreshOpenAnswers = useCallback(async (sceneId: string, round?: number, resetAt?: string | null) => {
+    if (!sessionId || !sceneId) return
+    const currentRound = round ?? session?.current_round ?? 1
+    const effectiveResetAt = resetAt !== undefined ? resetAt : session?.reset_at ?? null
+    let query = supabase.from('live_open_answers')
+      .select('id, participant_name, answer, submitted_at')
+      .eq('session_id', sessionId)
+      .eq('scene_id', sceneId)
+      .eq('round', currentRound)
+      .order('submitted_at', { ascending: true })
+    if (effectiveResetAt) query = (query as any).gte('submitted_at', effectiveResetAt)
+    const { data } = await query
+    if (data) setOpenAnswers(data)
+  }, [sessionId, session?.current_round, session?.reset_at]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Admin actions ──────────────────────────────────────────────────────────
 
   const setSceneId = useCallback(async (sceneId: string) => {
     if (!sessionId) return
     await supabase.from('live_sessions').update({
-      scene_id: sceneId,
-      voting_open: false,
-      revealed: false,
-      current_round: 1,
-      reset_at: null,
+      scene_id: sceneId, voting_open: false, revealed: false,
+      current_round: 1, reset_at: null,
     }).eq('id', sessionId)
     setVotes([])
     setTotalVotes(0)
+    setOpenAnswers([])
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openVoting = useCallback(async () => {
@@ -154,17 +184,18 @@ export function useLiveSession(sessionId: string | null) {
   const resetVotes = useCallback(async () => {
     if (!sessionId) return
     await supabase.from('live_sessions').update({
-      voting_open: false,
-      revealed: false,
+      voting_open: false, revealed: false,
       reset_at: new Date().toISOString(),
     }).eq('id', sessionId)
     setVotes([])
     setTotalVotes(0)
+    setOpenAnswers([])
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    session, isAdmin, votes, totalVotes,
-    refreshVotes, setSceneId, openVoting, closeVoting, reveal, resetVotes,
+    session, isAdmin, votes, totalVotes, openAnswers,
+    refreshVotes, refreshOpenAnswers, setSceneId,
+    openVoting, closeVoting, reveal, resetVotes,
   }
 }
 

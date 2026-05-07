@@ -4,25 +4,25 @@
   "scenes": [
     
     
+   {
+  "id": "intro",
+  "type": "info",
+  "title": "Accordo sui Findings — DMMI Italia 2026",
+  "image": "/images/scenes/google_event/copertina.png",
+  "imageAlt": "Evento Google Italia Milano",
+  "text": "Benvenuti alla sessione di restituzione del Digital Marketing Maturity Index Italia 2026.\n\nAbbiamo elaborato 7 statement dai dati della ricerca: tu voti quanto sei d'accordo con ciascuna affermazione.\n\n📱 Come funziona:\n• Tieni il telefono in mano — le domande arrivano in tempo reale\n• Per ogni statement: scegli il tuo livello di accordo (scala 1–5)\n• Una domanda aperta iniziale per raccogliere la tua voce\n• I risultati vengono mostrati subito dopo ogni voto\n\nIl consenso si raggiunge quando ≥ 75% vota nella stessa fascia.",
+  "next": "intro",
+  "choices": [
     {
-      "id": "intro",
-      "type": "info",
-      "title": "Introduzione all'evento",
-      "image": "/images/scenes/google_event/copertina.PNG",
-      "imageAlt": "Specialista che riflette",
-      "text": "Evento marketing - bla bla blae ?",
-      "next": "intro",
-       "choices": [
-                {
-                    "text": "Avanti→",
-                    "next": "statement 1"
-                }
-            ]
-    },
+      "text": "Avanti →",
+      "next": "statement 1"
+    }
+  ]
+},
     {
       "id": "statement 1",
       "type": "decision",
-      "title": "Statement 1",
+      "title": "La struttura organizzativa ha un impatto diretto sull'efficacia operativa delle attività di marketing digitale. ",
       "image": "/images/scenes/google_event/st1.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -41,27 +41,23 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
     },
     {
       "id": "statement 2",
       "type": "decision",
-      "title": "Statement 2",
+      "title": "L'adozione di tecnologie digitali senza un sistema parallelo di misurazione ne riduce significativamente l'efficacia.",
       "image": "/images/scenes/google_event/st2.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -80,27 +76,23 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
     },
     {
       "id": "statement 3",
       "type": "decision",
-      "title": "Statement 3",
+      "title": "La misurazione sistematica delle iniziative digitali è una condizione abilitante per l'innovazione.",
       "image": "/images/scenes/google_event/st3.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -119,27 +111,23 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
     },
     {
       "id": "statement 4",
       "type": "decision",
-      "title": "Statement 4",
+      "title": "Il livello di budget allocato al digitale non è un indicatore affidabile di maturità digitale.",
       "image": "/images/scenes/google_event/st4.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -158,27 +146,23 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
     },
     {
       "id": "statement 5",
       "type": "decision",
-      "title": "Statement 5",
+      "title": "Integrare la prospettiva del paziente nel processo strategico, anche in forma indiretta, migliora la qualità e la rilevanza dei contenuti, indipendentemente dal target primario della comunicazione.",
       "image": "/images/scenes/google_event/st5.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -197,27 +181,23 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
     },
     {
       "id": "statement 6",
       "type": "decision",
-      "title": "Statement 6",
+      "title": "L'innovazione digitale è sostenibile solo se costruita in modo progressivo su fondamenta già consolidate (tecnologia, misurazione, team).",
       "image": "/images/scenes/google_event/st6.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -236,27 +216,23 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
     },
     {
       "id": "statement 7",
       "type": "decision",
-      "title": "Statement 7",
+      "title": "Le best practice di marketing digitale non sono prerogativa delle grandi aziende. ",
       "image": "/images/scenes/google_event/st7.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
@@ -275,23 +251,69 @@
           "text": "Disaccordo",
           "tag": "2"
         },
+       
         {
           "id": "c3",
-          "text": "Neutro",
-          "tag": "3"
+          "text": "Accordo",
+                   "tag": "3"
         },
         {
           "id": "c4",
-          "text": "Accordo",
-          "tag": "4"
-        },
-        {
-          "id": "c5",
           "text": "Totale accordo",
-          "tag": "5"
+          "tag": "4"
         }
       ]
+    },
+    {
+  "id": "statement 8",
+  "type": "decision",
+  "mode": "hybrid",
+  "title": "Sfide principali nel marketing healthcare",
+  "image": "/images/scenes/google_event/copertina.png",
+  "imageAlt": "Sfide nel marketing healthcare",
+  "text": "Quali sono le sfide principali che affronti nel marketing healthcare?",
+  "next": "statement 9",
+  "max_chars": 300,
+  "choices": [
+    { "id": "c1", "text": "Coordinamento tra funzioni interne" },
+    { "id": "c2", "text": "Misurare il ROI delle attività digitali" },
+    { "id": "c3", "text": "Integrare tecnologia e strategia" },
+    { "id": "c3", "text": "Vincoli regolatori e compliance" },
+    { "id": "c5", "text": "Scalare l'innovazione con risorse limitate" }
+  ]
+},
+{
+  "id": "statement 9",
+  "type": "decision",
+  "mode": "hybrid",
+  "title": "Argomenti per il prossimo incontro",
+  "image": "/images/scenes/google_event/copertina.png",
+  "imageAlt": "Argomenti prossimo incontro",
+  "text": "Quali argomenti vorresti approfondire in un prossimo incontro?",
+  "next": "end",
+  "max_chars": 300,
+  "choices": [
+    { "id": "c1", "text": "Modelli di formazione HCP" },
+    { "id": "c2", "text": "Analisi e mapping insight del patient journey" },
+    { "id": "c3", "text": "Awareness e sensibilizzazione" },
+    { "id": "c3", "text": "Modelli di ingaggio del target di riferimento" }
+  ]
+},
+{
+  "id": "end",
+  "type": "info",
+  "title": "Accordo sui Findings — DMMI Italia 2026",
+  "image": "/images/scenes/google_event/copertina.png",
+  "imageAlt": "Evento Google Italia Milano",
+  "text": "Grazie a tutti per la partecipazione e i preziosi contributi.\n\n",
+  "next": "intro",
+  "choices": [
+    {
+      "text": "Ricomincia →",
+      "next": "intro"
     }
+  ]
+}
     
   ]
 }
