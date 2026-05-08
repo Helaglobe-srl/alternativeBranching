@@ -274,7 +274,7 @@ export default function Home() {
       <div style={{ minHeight: '100vh', background: '#f5f0eb', fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
         <nav style={{ height: 56, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)', position: 'sticky', top: 0, zIndex: 50 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Image src="/images/LOGO.webp" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', height: 28, width: 'auto' }} />
+            <Image src="/images/logo2.png" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', height: 28, width: 'auto' }} />
             <span style={{ fontSize: 14, fontWeight: 600, color: '#0e88a5' }}>Clinical Scenarios</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', background: '#e8f4f8', padding: '2px 10px', borderRadius: 20, border: '1px solid #c4e0e9' }}>Admin</span>
           </div>

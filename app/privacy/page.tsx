@@ -10,7 +10,7 @@ export default function PrivacyPage() {
         {/* Navbar */}
         <nav style={{ height: 56, background: 'rgba(255,255,255,0.97)', borderBottom: '1px solid rgba(14,136,165,0.14)', display: 'flex', alignItems: 'center', padding: '0 32px', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <Image src="/images/LOGO.webp" alt="Logo" width={90} height={26} style={{ objectFit: 'contain', height: 26, width: 'auto' }} />
+            <Image src="/images/logo2.png" alt="Logo" width={90} height={26} style={{ objectFit: 'contain', height: 26, width: 'auto' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#0e88a5' }}>Clinical Scenarios</span>
           </Link>
         </nav>

@@ -274,12 +274,22 @@
   "text": "Quali sono le sfide principali che affronti nel marketing healthcare?",
   "next": "statement 9",
   "max_chars": 300,
+  "cloud_words": {
+    "c1": ["coordinamento", "funzioni", "interne"],
+    "c2": ["ROI", "misurare", "digitali"],
+    "c3": ["tecnologia", "strategia", "integrare"],
+    "c4": ["regolatori", "compliance", "vincoli"],
+    "c5": ["innovazione", "risorse", "scalare"],
+    "altro": null
+  },
   "choices": [
     { "id": "c1", "text": "Coordinamento tra funzioni interne" },
     { "id": "c2", "text": "Misurare il ROI delle attività digitali" },
     { "id": "c3", "text": "Integrare tecnologia e strategia" },
-    { "id": "c3", "text": "Vincoli regolatori e compliance" },
-    { "id": "c5", "text": "Scalare l'innovazione con risorse limitate" }
+    { "id": "c4", "text": "Vincoli regolatori e compliance" },
+    { "id": "c5", "text": "Scalare l'innovazione con risorse limitate" },
+        { "id": "altro", "text": "✎ Altro" }
+
   ]
 },
 {
@@ -296,8 +306,17 @@
     { "id": "c1", "text": "Modelli di formazione HCP" },
     { "id": "c2", "text": "Analisi e mapping insight del patient journey" },
     { "id": "c3", "text": "Awareness e sensibilizzazione" },
-    { "id": "c3", "text": "Modelli di ingaggio del target di riferimento" }
-  ]
+    { "id": "c4", "text": "Modelli di ingaggio del target di riferimento" },
+    { "id": "altro", "text": "✎ Altro" }
+  ],
+  "cloud_words": {
+    "c1": ["formazione", "funzioni", "interne"],
+    "c2": ["ROI", "misurare", "digitali"],
+    "c3": ["tecnologia", "strategia", "integrare"],
+    "c4": ["regolatori", "compliance", "vincoli"],
+    "c5": ["innovazione", "risorse", "scalare"],
+    "altro": null
+  }
 },
 {
   "id": "end",

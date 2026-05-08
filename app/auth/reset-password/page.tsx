@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
         <div style={{ width: '100%', maxWidth: 420, animation: 'fadeUp .3s ease' }}>
 
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
-            <Image src="/images/LOGO.webp" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.8 }} />
+            <Image src="/images/logo2.png" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.8 }} />
           </div>
 
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '32px 28px', border: '1px solid rgba(255,255,255,0.08)' }}>

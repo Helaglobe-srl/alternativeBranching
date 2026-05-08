@@ -88,7 +88,7 @@ function LoginForm() {
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#0e88a5,#0c6d82)', padding: '32px 32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-        <Image src="/images/LOGO.webp" alt="Logo" width={110} height={30} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.95 }} />
+        <Image src="/images/logo2.png" alt="Logo" width={110} height={30} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.95 }} />
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.65)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Helaglobe Learning Lab</div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Accesso riservato agli amministratori</div>

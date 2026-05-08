@@ -111,7 +111,7 @@ const sendReset = async () => {
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#0c1a2a,#0e2a3a)', padding: '28px 28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <Image src="/images/LOGO.webp" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+        <Image src="/images/logo2.png" alt="Logo" width={100} height={28} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>Sessione live</div>
           <div style={{ fontSize: 15, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{session?.name}</div>

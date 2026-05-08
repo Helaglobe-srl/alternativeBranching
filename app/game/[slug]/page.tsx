@@ -20,6 +20,7 @@ interface Scene {
   title: string; image?: string | null; imageAlt?: string; context?: string
   badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
   stats?: Stat[]; videos?: Video[]; table?: Table; text: string; choices: Choice[]
+  cloud_words?: Record<string, string[] | null>
 }
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
@@ -188,15 +189,19 @@ function BarChart({ votes }: { votes: { color: string; count: number; text: stri
 
 const STOP_WORDS = new Set(['il','lo','la','i','gli','le','un','uno','una','di','a','da','in','con','su','per','tra','fra','e','o','ma','se','che','non','è','sono','ho','ha','mi','ti','si','ci','vi','del','della','dei','degli','delle','al','alla','ai','agli','alle','dal','dalla','dai','dagli','dalle','nel','nella','nei','negli','nelle','sul','sulla','sui','sugli','sulle','col','coi','questo','questa','questi','queste','quello','quella','quelli','quelle','mio','mia','miei','mie','tuo','tua','tuoi','tue','suo','sua','suoi','sue','come','quando','dove','perché','anche','più','molto','poco','tutti','tutto','già','ancora','sempre','mai','qui','lì','io','tu','lui','lei','noi','voi','loro','me','te','lui','lei','noi','voi'])
 
-function buildWordCloud(answers: { answer: string }[], votes?: { text: string; count: number }[]): { word: string; count: number; size: number; color: string }[] {
+function buildWordCloud(
+  answers: { answer: string }[],
+  votedWords?: { words: string[]; count: number }[]
+): { word: string; count: number; size: number; color: string }[] {
   const freq: Record<string, number> = {}
-  votes?.forEach(v => {
-    v.text.toLowerCase()
-      .replace(/[^a-zàèéìòùa-z\s]/gi, ' ')
-      .split(/\s+/)
-      .filter(w => w.length > 2 && !STOP_WORDS.has(w))
-      .forEach(w => { freq[w] = (freq[w] ?? 0) + v.count })
+  // Parole dalle scelte votate (dal JSON cloud_words, pesate per voti)
+  votedWords?.forEach(v => {
+    v.words.forEach(w => {
+      const key = w.toLowerCase().trim()
+      if (key.length > 1) freq[key] = (freq[key] ?? 0) + v.count
+    })
   })
+  // Parole dalle risposte libere "Altro"
   answers.forEach(a => {
     a.answer.toLowerCase()
       .replace(/[^a-zàèéìòùa-z\s]/gi, ' ')
@@ -216,8 +221,8 @@ function buildWordCloud(answers: { answer: string }[], votes?: { text: string; c
     }))
 }
 
-function WordCloudView({ answers, votes }: { answers: { answer: string }[]; votes?: { text: string; count: number }[] }) {
-  const words = buildWordCloud(answers, votes)
+function WordCloudView({ answers, votedWords }: { answers: { answer: string }[]; votedWords?: { words: string[]; count: number }[] }) {
+  const words = buildWordCloud(answers, votedWords)
   if (!words.length) return (
     <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>
       Nessuna risposta ricevuta
@@ -370,12 +375,16 @@ function DelphiOverlay({ votes, onClose }: {
 // ── Hybrid Overlay ────────────────────────────────────────────────────────────
 // Tab "Analisi voti" (barre standard) + "Word Cloud" (commenti liberi)
 
-function HybridOverlay({ votes, openAnswers, onClose }: {
+function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
   votes: { cid: string; count: number; pct: number; color: string; tag?: string; text: string }[]
   openAnswers: { id: string; participant_name: string | null; answer: string; submitted_at: string }[]
+  cloudWords?: Record<string, string[] | null>
   onClose: () => void
 }) {
   const [tab, setTab] = useState<'votes' | 'cloud'>('votes')
+  const votedWords = votes
+    .filter(v => v.count > 0 && v.cid !== 'altro' && cloudWords?.[v.cid])
+    .map(v => ({ words: cloudWords![v.cid]!, count: v.count }))
   const totalVotes = votes.reduce((s, v) => s + v.count, 0)
   const maxPct = Math.max(...votes.map(v => v.pct), 1)
 
@@ -453,7 +462,7 @@ function HybridOverlay({ votes, openAnswers, onClose }: {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '16px', minHeight: 160 }}>
-                  <WordCloudView answers={openAnswers} votes={votes.map(v => ({ text: v.text, count: v.count }))} />
+                  <WordCloudView answers={openAnswers} votedWords={votedWords} />
                 </div>
                 {/* Lista commenti sotto la cloud */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -682,7 +691,7 @@ function VotePanel({
         <OpenAnswersOverlay answers={openAnswers} onClose={() => setShowOpenOverlay(false)} />
       )}
       {showHybridOverlay && isHybrid && (
-        <HybridOverlay votes={displayVotes} openAnswers={openAnswers} onClose={() => setShowHybridOverlay(false)} />
+        <HybridOverlay votes={displayVotes} openAnswers={openAnswers} cloudWords={scene.cloud_words} onClose={() => setShowHybridOverlay(false)} />
       )}
 
       <div style={{ width: VOTE_PANEL_W, flexShrink: 0, background: '#0c1a2a', display: 'flex', flexDirection: 'column', borderLeft: '1px solid rgba(14,136,165,0.2)', overflowY: 'auto' }}>
@@ -1178,17 +1187,20 @@ function GamePageInner() {
   ) : isHybrid ? (
     // Hybrid: scelte preview (non cliccabili) + campo testo indicato + bottone Avanti
     <div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10, pointerEvents: 'none' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10, opacity: 0.7, pointerEvents: 'none' }}>
         {scene.choices.map((c, i) => {
           const color = CHOICE_COLORS[i % CHOICE_COLORS.length]
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${color}66`, background: `${color}14` }}>
-              <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${color}99`, flexShrink: 0 }} />
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${color}33`, background: `${color}08` }}>
+              <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${color}55`, flexShrink: 0 }} />
               {c.tag && <span style={{ width: 22, height: 22, borderRadius: 6, background: color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.tag}</span>}
-              <span style={{ fontSize: 12, fontWeight: 500, color: '#1e4a5c' }}>{c.text}</span>
+              <span style={{ fontSize: 12, color: '#1e4a5c' }}>{c.text}</span>
             </div>
           )
         })}
+        <div style={{ marginTop: 4, padding: '8px 12px', borderRadius: 8, border: '1.5px dashed rgba(14,136,165,0.3)', background: 'rgba(14,136,165,0.04)', fontSize: 11, color: '#6b9aaa', fontStyle: 'italic' }}>
+          + Commento libero (opzionale)
+        </div>
       </div>
       {scene.next && (
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1232,7 +1244,7 @@ function GamePageInner() {
     <>
       <div style={{ marginBottom: compact ? 10 : 14, flexShrink: 0 }}>
         <div style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 5, background: cfg.light, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: cfg.accent, marginBottom: compact ? 7 : 9, opacity: isInfo ? 0 : 1, pointerEvents: 'none' }}>{cfg.label}</div>
-        <h2 style={{ margin: 0, fontSize: compact ? 20 : 24, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
+        <h2 style={{ margin: 0, fontSize: compact ? 17 : 19, fontWeight: 800, color: '#0c2a38', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{scene.title}</h2>
         {scene.context && <p style={{ margin: '4px 0 0', fontSize: compact ? 11 : 11.5, fontStyle: 'italic', color: '#6b9aaa' }}>{scene.context}</p>}
       </div>
       <div style={{ height: 1, background: `linear-gradient(to right,${cfg.accent}25,transparent)`, marginBottom: compact ? 12 : 14, flexShrink: 0 }} />
@@ -1292,7 +1304,7 @@ function GamePageInner() {
             </button>
             <button onClick={handleLogoClick} title="Ricomincia" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'opacity .15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.7' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-              <Image src="/images/LOGO.webp" alt="Logo" width={84} height={24} style={{ objectFit: 'contain', height: 24, width: 'auto' }} />
+              <Image src="/images/logo2.png" alt="Logo" width={84} height={24} style={{ objectFit: 'contain', height: 24, width: 'auto' }} />
               {isDesktop && <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0e88a5' }}>{data.title}</span>}
             </button>
           </div>

@@ -132,7 +132,7 @@ export function useLiveSession(sessionId: string | null) {
       return {
         cid, text: c.text, tag: c.tag, count,
         pct: total > 0 ? Math.round((count / total) * 100) : 0,
-        color: COLORS[i % COLORS.length],
+        color: c.id === 'altro' ? '#c084fc' : COLORS[i % COLORS.length],
       }
     }))
   }, [sessionId, session?.current_round, session?.reset_at]) // eslint-disable-line react-hooks/exhaustive-deps
