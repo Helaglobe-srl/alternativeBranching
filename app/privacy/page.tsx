@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           {[
             {
               title: '1. Titolare del trattamento',
-              body: `Helaglobe S.r.l., con sede in Italia, è il titolare del trattamento dei dati personali raccolti tramite questa applicazione ("Learning labs — Clinical Scenarios").\n\nPer qualsiasi richiesta relativa alla privacy scrivere a: privacy@helaglobe.com`
+              body: `Helaglobe S.r.l., con sede in Italia, è il titolare del trattamento dei dati personali raccolti tramite questa applicazione ("Learning labs — Clinical Scenarios").\n\nPer qualsiasi richiesta relativa alla privacy scrivere a: info@helaglobe.com`
             },
             {
               title: '2. Dati raccolti',
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
 
           <div style={{ marginTop: 48, padding: '20px 24px', borderRadius: 12, background: 'white', border: '1px solid #e0eaee', fontSize: 13, color: '#6b9aaa', lineHeight: 1.6 }}>
             Per qualsiasi domanda o richiesta relativa al trattamento dei dati personali contattare:<br />
-            <strong style={{ color: '#0c2a38' }}>Helaglobe S.r.l.</strong> — <a href="mailto:privacy@helaglobe.com" style={{ color: '#0e88a5' }}>privacy@helaglobe.com</a>
+            <strong style={{ color: '#0c2a38' }}>Helaglobe S.r.l.</strong> — <a href="mailto:info@helaglobe.com" style={{ color: '#0e88a5' }}>info@helaglobe.com</a>
           </div>
         </div>
       </div>
