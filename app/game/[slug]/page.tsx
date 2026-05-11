@@ -15,7 +15,7 @@ interface Stat { label: string; value: string; color: 'warning' | 'danger' | 'su
 interface Video { title: string; src: string }
 interface Table { headers: string[]; rows: string[][]; footer?: string }
 interface Scene {
-  id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint'
+  id: string; type: 'intro' | 'info' | 'decision' | 'outcome' | 'endpoint' | 'summary'
   mode?: string; next?: string; max_chars?: number
   title: string; image?: string | null; imageAlt?: string; context?: string
   badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
@@ -52,11 +52,12 @@ function parseText(text: string) {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const CFG = {
-  decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Decisione' },
+  decision: { accent: '#0e88a5', light: '#e8f4f8', label: 'Affermazione' },
   endpoint: { accent: '#0e88a5', light: '#f0fdf4', label: 'Conclusione' },
   outcome: { accent: '#0e88a5', light: '#fffbeb', label: 'Esito scenario' },
   intro: { accent: '#0e88a5', light: '#e8f4f8', label: 'Caso clinico' },
-  info: { accent: '#0e88a5', light: '#e8f4f8', label: ' ' },
+  info:    { accent: '#0e88a5', light: '#e8f4f8', label: ' ' },
+  summary: { accent: '#0e88a5', light: '#e8f4f8', label: 'Riepilogo' },
 } as const
 
 const BADGE_COLORS = {
@@ -922,6 +923,134 @@ function VotePanel({
   )
 }
 
+// ── Summary View ──────────────────────────────────────────────────────────────
+// Mostra stato consenso per tutte le scene Delphi della sessione
+
+interface DelphiSummaryItem {
+  sceneId: string
+  title: string
+  consensusOk: boolean
+  consensusLabel: string
+  consensusPct: number
+  totalVotes: number
+  color: string
+}
+
+function SummaryView({ scenes, sessionId }: {
+  scenes: Scene[]
+  sessionId: string | null
+}) {
+  const supabase = createClient()
+  const [items, setItems] = useState<DelphiSummaryItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!sessionId) { setLoading(false); return }
+    const delphiScenes = scenes.filter(s => s.mode === 'delphi')
+    if (!delphiScenes.length) { setLoading(false); return }
+
+    Promise.all(delphiScenes.map(async s => {
+      const { data } = await supabase
+        .from('live_votes')
+        .select('choice_id')
+        .eq('session_id', sessionId)
+        .eq('scene_id', s.id)
+      if (!data || !data.length) return null
+      const total = data.length
+      const n = s.choices.length
+      const lo = Math.ceil(n / 3)
+      const hi = n - Math.floor(n / 3)
+      // build count per choice
+      const counts: Record<string, number> = {}
+      data.forEach(v => { counts[v.choice_id] = (counts[v.choice_id] ?? 0) + 1 })
+      const loPct = s.choices.filter(c => {
+        const tag = Number(c.tag ?? s.choices.indexOf(c) + 1)
+        return tag <= lo
+      }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
+      const miPct = s.choices.filter(c => {
+        const tag = Number(c.tag ?? s.choices.indexOf(c) + 1)
+        return tag > lo && tag < hi
+      }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
+      const hiPct = s.choices.filter(c => {
+        const tag = Number(c.tag ?? s.choices.indexOf(c) + 1)
+        return tag >= hi
+      }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
+
+      let consensusOk = false, consensusLabel = 'Nessun consenso', consensusPct = 0, color = '#f97316'
+      if (loPct >= 0.75)      { consensusOk = true; consensusLabel = 'Consenso: Disaccordo'; consensusPct = Math.round(loPct * 100); color = '#ef4444' }
+      else if (miPct >= 0.75) { consensusOk = true; consensusLabel = 'Consenso: Neutro';     consensusPct = Math.round(miPct * 100); color = '#eab308' }
+      else if (hiPct >= 0.75) { consensusOk = true; consensusLabel = 'Consenso: Accordo';    consensusPct = Math.round(hiPct * 100); color = '#22c55e' }
+
+      return { sceneId: s.id, title: s.title, consensusOk, consensusLabel, consensusPct, totalVotes: total, color } as DelphiSummaryItem
+    })).then(results => {
+      setItems(results.filter(Boolean) as DelphiSummaryItem[])
+      setLoading(false)
+    })
+  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+      <div style={{ width: 24, height: 24, border: '3px solid rgba(14,136,165,0.2)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+    </div>
+  )
+
+  if (!items.length) return (
+    <div style={{ textAlign: 'center', color: '#9cb8c4', fontSize: 14, padding: 40 }}>
+      Nessun dato di voto disponibile per questa sessione.
+    </div>
+  )
+
+  const reached = items.filter(i => i.consensusOk).length
+  const total   = items.length
+
+  return (
+    <div style={{ animation: 'fadeUp .3s ease' }}>
+      {/* Header stats */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <div style={{ flex: 1, background: 'rgba(34,197,94,0.1)', border: '1.5px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 900, color: '#22c55e', fontFamily: 'Georgia,serif' }}>{reached}</div>
+          <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Consenso raggiunto</div>
+        </div>
+        <div style={{ flex: 1, background: 'rgba(249,115,22,0.08)', border: '1.5px solid rgba(249,115,22,0.25)', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, fontWeight: 900, color: '#f97316', fontFamily: 'Georgia,serif' }}>{total - reached}</div>
+          <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Da approfondire</div>
+        </div>
+      </div>
+
+      {/* Statement list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((item, i) => (
+          <div key={item.sceneId} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 14px', borderRadius: 12,
+            background: item.consensusOk ? 'rgba(34,197,94,0.06)' : 'rgba(249,115,22,0.06)',
+            border: `1.5px solid ${item.consensusOk ? 'rgba(34,197,94,0.25)' : 'rgba(249,115,22,0.2)'}`,
+          }}>
+            {/* Numero statement */}
+            <span style={{ width: 28, height: 28, borderRadius: 8, background: item.consensusOk ? 'rgba(34,197,94,0.2)' : 'rgba(249,115,22,0.15)', color: item.consensusOk ? '#16a34a' : '#ea580c', fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+            {/* Titolo */}
+            <span style={{ flex: 1, fontSize: 12.5, color: '#1e4a5c', lineHeight: 1.4, fontWeight: 500 }}>{item.title}</span>
+            {/* Badge consenso */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+                background: item.consensusOk ? 'rgba(34,197,94,0.15)' : 'rgba(249,115,22,0.12)',
+                color: item.consensusOk ? '#16a34a' : '#ea580c',
+                border: `1px solid ${item.consensusOk ? 'rgba(34,197,94,0.3)' : 'rgba(249,115,22,0.25)'}`,
+              }}>
+                {item.consensusOk ? '✓' : '○'} {item.consensusOk ? `${item.consensusPct}%` : 'No consenso'}
+              </span>
+              <span style={{ fontSize: 10, color: 'rgba(0,0,0,0.35)' }}>{item.totalVotes} vot{item.totalVotes === 1 ? 'o' : 'i'}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 type Phase = 'visible' | 'fading-out' | 'hidden' | 'fading-in'
@@ -1067,7 +1196,7 @@ function GamePageInner() {
   useEffect(() => {
     if (sessionId && scene?.type === 'decision') {
       setShowVotePanel(true)
-    } else if (scene?.type !== 'decision') {
+    } else {
       setShowVotePanel(false)
     }
   }, [scene?.id, sessionId])
@@ -1112,9 +1241,10 @@ function GamePageInner() {
   const isInfo = scene.type === 'info'
   const isDecision = scene.type === 'decision'
   const isEndpoint = scene.type === 'endpoint'
-  const isDelphi = scene.mode === 'delphi'
-  const isOpen = scene.mode === 'open'
-  const isHybrid = scene.mode === 'hybrid'
+  const isDelphi  = scene.mode === 'delphi'
+  const isOpen    = scene.mode === 'open'
+  const isHybrid  = scene.mode === 'hybrid'
+  const isSummary = scene.type === 'summary'
   const badgeColors = scene.badgeColor ? BADGE_COLORS[scene.badgeColor] : BADGE_COLORS.info
   const accentLine = isDecision ? cfg.accent : isEndpoint ? '#16803d' : scene.type === 'outcome' ? '#b45309' : '#c4e0e9'
 
@@ -1275,7 +1405,11 @@ function GamePageInner() {
       <div style={{ marginTop: compact ? 0 : 16, flexShrink: 0 }}>
         {isDecision && !isDelphi && !isOpen && !isHybrid && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Seleziona la tua scelta</div>}
         {isHybrid && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b9aaa', marginBottom: 8 }}>Voto + commento libero</div>}
-        {choicesBtns}
+        {isSummary && data && (
+          <SummaryView scenes={data.scenes} sessionId={sessionId} />
+        )}
+        {!isSummary && choicesBtns}
+        {isSummary && choicesBtns}
       </div>
       {!compact && history.length > 0 && (
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(14,136,165,0.06)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, flexShrink: 0 }}>

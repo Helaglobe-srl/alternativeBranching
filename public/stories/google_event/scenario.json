@@ -10,7 +10,7 @@
   "title": "Accordo sui Findings — DMMI Italia 2026",
   "image": "/images/scenes/google_event/copertina.png",
   "imageAlt": "Evento Google Italia Milano",
-  "text": "Benvenuti alla sessione di restituzione del Digital Marketing Maturity Index Italia 2026.\n\nAbbiamo elaborato 7 statement dai dati della ricerca: tu voti quanto sei d'accordo con ciascuna affermazione.\n\n📱 Come funziona:\n• Tieni il telefono in mano — le domande arrivano in tempo reale\n• Per ogni statement: scegli il tuo livello di accordo (scala 1–5)\n• Una domanda aperta iniziale per raccogliere la tua voce\n• I risultati vengono mostrati subito dopo ogni voto\n\nIl consenso si raggiunge quando ≥ 75% vota nella stessa fascia.",
+"text": "Benvenuti alla sessione di restituzione del Digital Marketing Maturity Index Italia 2026.\n\nAbbiamo elaborato 7 statement dai dati della ricerca: tu voti quanto sei d'accordo con ciascuna affermazione.\n\n📱 Come funziona:\n• Tieni il telefono in mano — le domande arrivano in tempo reale\n• Per ogni statement: scegli il tuo livello di accordo su scala 1–4\n• Due domande finali a scelta multipla per raccogliere la tua voce\n• I risultati vengono mostrati subito dopo ogni voto\n\n🎯 Come funziona il consenso:\n• La scala va da 1 (Totale disaccordo) a 4 (Totale accordo)\n• Non serve che tutti votino lo stesso numero — conta la direzione\n• Il consenso si raggiunge quando ≥ 75% dei voti cade nella stessa fascia: bassa (1–2) o alta (3–4)\n• Esempio: se 80% vota 3 o 4, c'è consenso sull'accordo — anche se chi ha votato 3 e chi ha votato 4 non sono d'accordo sul grado\n• Le affermazioni senza consenso saranno discusse dopo pranzo",
   "next": "intro",
   "choices": [
     {
@@ -302,7 +302,7 @@
   "image": "/images/scenes/google_event/futuro.png",
   "imageAlt": "Argomenti prossimo incontro",
   "text": "Quali argomenti vorresti approfondire in un prossimo incontro?",
-  "next": "end",
+  "next": "summary",
   "max_chars": 300,
   "multi": true,
   "choices": [
@@ -320,6 +320,18 @@
     "c5": ["innovazione", "risorse", "scalare"],
     "altro": null
   }
+},
+{
+  "id": "summary",
+  "type": "summary",
+  "title": "Riepilogo consenso",
+  "image": "/images/scenes/google_event/copertina.png",
+  "imageAlt": "Riepilogo",
+  "text": "Stato di accordo su tutti gli statement della sessione.",
+  "next": "end",
+  "choices": [
+    { "text": "Fine →", "next": "end" }
+  ]
 },
 {
   "id": "end",

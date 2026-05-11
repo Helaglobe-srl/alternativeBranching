@@ -407,7 +407,29 @@ export default function VotePage() {
       .subscribe()
     return () => { ch.unsubscribe() }
   }, [sid]) // eslint-disable-line react-hooks/exhaustive-deps
-
+// Polling fallback ogni 60s in fase waiting
+  useEffect(() => {
+    if (phase !== 'waiting' || !sid) return
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('live_sessions')
+        .select('*')
+        .eq('id', sid)
+        .single()
+      if (!data) return
+      const prev = sessionRef.current
+      if (
+        prev?.voting_open !== data.voting_open ||
+        prev?.revealed !== data.revealed ||
+        prev?.scene_id !== data.scene_id ||
+        prev?.reset_at !== data.reset_at
+      ) {
+        sessionRef.current = data
+        setSession(data)
+      }
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [phase, sid]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!session?.story_slug || !session?.scene_id) return
     setVoted(null); setVotedIds([]); setAnswered(false); setVoteCounts([]); setTotalVotes(0)
