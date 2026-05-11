@@ -274,6 +274,8 @@
   "text": "Quali sono le sfide principali che affronti nel marketing healthcare?",
   "next": "statement 9",
   "max_chars": 300,
+  "multi": true,
+
   "cloud_words": {
     "c1": ["coordinamento", "funzioni", "interne"],
     "c2": ["ROI", "misurare", "digitali"],
