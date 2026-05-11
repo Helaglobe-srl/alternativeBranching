@@ -38,7 +38,7 @@ export default function PrivacyPage() {
             },
             {
               title: '5. Cookie e tecnologie di tracciamento',
-              body: `L'applicazione utilizza esclusivamente cookie tecnici necessari al funzionamento del servizio (gestione della sessione di autenticazione). Non utilizziamo cookie di profilazione, cookie di terze parti a scopo pubblicitario, né strumenti di analisi comportamentale (es. Google Analytics).\n\nNon è necessario il consenso per i cookie tecnici ai sensi dell'art. 122 del Codice Privacy e delle Linee Guida del Garante.`
+              body: `L'applicazione utilizza esclusivamente cookie tecnici necessari al funzionamento del servizio (gestione della sessione di autenticazione). Non utilizziamo cookie di profilazione, cookie di terze parti a scopo pubblicitario, né strumenti di analisi comportamentale (es. Google Analytics).\n\n`
             },
             {
               title: '6. Conservazione dei dati',
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             },
             {
               title: '7. Diritti degli interessati',
-              body: `In qualità di interessato hai il diritto di:\n\n• **Accesso**: ottenere conferma del trattamento e copia dei dati.\n• **Rettifica**: correggere dati inesatti o incompleti.\n• **Cancellazione**: richiedere la cancellazione dei dati (salvo obblighi di legge).\n• **Limitazione**: limitare il trattamento in determinati casi.\n• **Portabilità**: ricevere i dati in formato strutturato e leggibile da macchina.\n• **Opposizione**: opporsi al trattamento basato sul legittimo interesse.\n• **Revoca del consenso**: in qualsiasi momento, senza pregiudicare la liceità del trattamento precedente.\n\nPer esercitare i tuoi diritti scrivi a privacy@helaglobe.com. Hai inoltre il diritto di proporre reclamo al Garante per la Protezione dei Dati Personali (gpdp.it).`
+              body: `In qualità di interessato hai il diritto di:\n\n• **Accesso**: ottenere conferma del trattamento e copia dei dati.\n• **Rettifica**: correggere dati inesatti o incompleti.\n• **Cancellazione**: richiedere la cancellazione dei dati (salvo obblighi di legge).\n• **Limitazione**: limitare il trattamento in determinati casi.\n• **Portabilità**: ricevere i dati in formato strutturato e leggibile da macchina.\n• **Opposizione**: opporsi al trattamento basato sul legittimo interesse.\n• **Revoca del consenso**: in qualsiasi momento, senza pregiudicare la liceità del trattamento precedente.\n\nPer esercitare i tuoi diritti scrivi a info@helaglobe.com.`
             },
             {
               title: '8. Sicurezza',
