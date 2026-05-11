@@ -21,6 +21,7 @@ interface Scene {
   badge?: string; badgeColor?: 'success' | 'warning' | 'danger' | 'info'
   stats?: Stat[]; videos?: Video[]; table?: Table; text: string; choices: Choice[]
   cloud_words?: Record<string, string[] | null>
+  multi?: boolean
 }
 interface ScenarioData { title: string; subtitle: string; scenes: Scene[] }
 
@@ -387,6 +388,9 @@ function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
     .map(v => ({ words: cloudWords![v.cid]!, count: v.count }))
   const totalVotes = votes.reduce((s, v) => s + v.count, 0)
   const maxPct = Math.max(...votes.map(v => v.pct), 1)
+  // Statistiche descrittive (come Delphi ma per hybrid)
+  const topChoice = votes.reduce((best, v) => v.count > best.count ? v : best, votes[0] ?? { count: 0, text: '', pct: 0, color: '#0e88a5', cid: '', tag: undefined })
+  const secondChoice = [...votes].sort((a, b) => b.count - a.count)[1]
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,25,0.75)', backdropFilter: 'blur(6px)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -416,7 +420,7 @@ function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
           <button onClick={() => setTab('cloud')}
             style={{ flex: 1, padding: '8px', borderRadius: 8, background: tab === 'cloud' ? '#0e88a5' : 'rgba(255,255,255,0.06)', color: tab === 'cloud' ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
             ☁ Word Cloud
-            {openAnswers.length > 0 && <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{openAnswers.length}</span>}
+            {(openAnswers.length > 0 || votedWords.length > 0) && <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{openAnswers.length + votedWords.length}</span>}
           </button>
         </div>
 
@@ -424,26 +428,40 @@ function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
           {tab === 'votes' ? (
             <div>
-              {/* Barre voti */}
               {totalVotes === 0 ? (
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>Nessun voto ancora</div>
               ) : (
                 <>
+                  {/* Top choice badge */}
+                  {topChoice && topChoice.count > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 20, background: `${topChoice.color}22`, border: `1.5px solid ${topChoice.color}66`, fontSize: 13, fontWeight: 700, color: topChoice.color }}>
+                        <span style={{ fontSize: 15 }}>★</span>
+                        <span style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topChoice.text}</span>
+                        <span style={{ fontSize: 11, opacity: 0.8 }}>({topChoice.pct}%)</span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Pie + Bar charts */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14, background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '12px 8px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <PieChart votes={votes} />
+                    <BarChart votes={votes} />
+                  </div>
                   {/* Stacked bar */}
-                  <div style={{ marginBottom: 18 }}>
-                    <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 16 }}>
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 14 }}>
                       {votes.map((v, i) => (
                         <div key={i} style={{ flex: v.pct || 1, background: v.color, opacity: v.count ? 0.9 : 0.15, minWidth: v.count ? 2 : 0, transition: 'flex 0.8s' }} title={`${v.text}: ${v.pct}%`} />
                       ))}
                     </div>
                   </div>
                   {/* Dettaglio righe */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                     {votes.map((v, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? String(i + 1)}</span>
                         <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
-                        <div style={{ width: 80, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
+                        <div style={{ width: 70, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
                           <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${maxPct > 0 ? (v.pct / maxPct) * 100 : 0}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
                         </div>
                         <span style={{ fontSize: 14, fontWeight: 900, color: v.color, minWidth: 36, textAlign: 'right' }}>{v.pct}%</span>
@@ -451,14 +469,14 @@ function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
                       </div>
                     ))}
                   </div>
-                  <div style={{ marginTop: 14, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{totalVotes} partecipant{totalVotes !== 1 ? 'i' : 'e'} totali</div>
+                  <div style={{ marginTop: 12, textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{totalVotes} vot{totalVotes !== 1 ? 'i' : 'o'} totali</div>
                 </>
               )}
             </div>
           ) : (
             /* Word Cloud tab */
-            openAnswers.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>Nessun commento ricevuto</div>
+            (openAnswers.length === 0 && votedWords.length === 0) ? (
+              <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '40px 0' }}>Nessun dato disponibile</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '16px', minHeight: 160 }}>
@@ -1304,7 +1322,7 @@ function GamePageInner() {
             </button>
             <button onClick={handleLogoClick} title="Ricomincia" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'opacity .15s' }}
               onMouseEnter={e => { e.currentTarget.style.opacity = '0.7' }} onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-              <Image src="/images/logo2.png" alt="Logo" width={84} height={24} style={{ objectFit: 'contain', height: 24, width: 'auto' }} />
+              <Image src="/images/LOGO.webp" alt="Logo" width={84} height={24} style={{ objectFit: 'contain', height: 24, width: 'auto' }} />
               {isDesktop && <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0e88a5' }}>{data.title}</span>}
             </button>
           </div>

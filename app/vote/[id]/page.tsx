@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface Choice { id?: string; text: string; next?: string; tag?: string }
-interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[]; mode?: string; next?: string; max_chars?: number }
+interface Scene  { id: string; type: string; title: string; text: string; choices: Choice[]; mode?: string; next?: string; max_chars?: number; multi?: boolean }
 interface Session {
   id: string; name: string; story_slug: string; scene_id: string | null
   voting_open: boolean; revealed: boolean
@@ -177,37 +177,67 @@ function OpenAnswerForm({ scene, onSubmit, reset_at }: {
 }
 
 // ── Hybrid Form ───────────────────────────────────────────────────────────────
+// Supporta scelta singola (default) o multipla (scene.multi === true)
 
-function HybridForm({ scene, onSubmit, reset_at }: {
+function HybridForm({ scene, onSubmitSingle, onSubmitMulti, reset_at }: {
   scene: Scene
-  onSubmit: (choiceId: string, choiceText: string, openAnswer?: string) => Promise<void>
+  onSubmitSingle: (choiceId: string, choiceText: string, openAnswer?: string) => Promise<void>
+  onSubmitMulti: (choices: { id: string; text: string }[], openAnswer?: string) => Promise<void>
   reset_at: string | null | undefined
 }) {
+  const isMulti = scene.multi === true
+  // Singola selezione
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Selezione multipla
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [openText, setOpenText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const maxChars = scene.max_chars ?? 300
 
-  const selectedChoice = scene.choices.find((c, i) => (c.id ?? String(i)) === selectedId) ?? null
-  const isAltro = selectedChoice?.id === 'altro'
-  const canSubmit = selectedId !== null && (!isAltro || openText.trim().length > 0)
+  const altroSelectedSingle = !isMulti && selectedId !== null && scene.choices.find((c, i) => (c.id ?? String(i)) === selectedId)?.id === 'altro'
+  const altroSelectedMulti  = isMulti && selectedIds.has('altro')
+  const isAltroSelected = altroSelectedSingle || altroSelectedMulti
+
+  const canSubmit = isMulti
+    ? selectedIds.size > 0 && (!altroSelectedMulti || openText.trim().length > 0)
+    : selectedId !== null && (!altroSelectedSingle || openText.trim().length > 0)
 
   const handleSelect = (cid: string) => {
-    setSelectedId(prev => prev === cid ? null : cid)
-    if (cid !== selectedId) setOpenText('')
+    if (submitting) return
+    if (isMulti) {
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        if (next.has(cid)) next.delete(cid)
+        else next.add(cid)
+        return next
+      })
+    } else {
+      setSelectedId(prev => prev === cid ? null : cid)
+      if (cid !== selectedId) setOpenText('')
+    }
   }
 
   const handleSubmit = async () => {
-    if (!selectedId || !selectedChoice || submitting) return
+    if (!canSubmit || submitting) return
     setSubmitting(true)
-    await onSubmit(selectedId, selectedChoice.text, openText.trim() || undefined)
+    if (isMulti) {
+      const choices = scene.choices
+        .filter((c, i) => selectedIds.has(c.id ?? String(i)))
+        .map(c => ({ id: c.id ?? '', text: c.text }))
+      await onSubmitMulti(choices, openText.trim() || undefined)
+    } else {
+      const choice = scene.choices.find((c, i) => (c.id ?? String(i)) === selectedId)
+      if (choice) await onSubmitSingle(selectedId!, choice.text, openText.trim() || undefined)
+    }
     setSubmitting(false)
   }
 
   return (
     <div style={{ animation: 'fadeUp .25s ease' }}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Vota</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+          {isMulti ? 'Vota (più scelte possibili)' : 'Vota'}
+        </div>
         {reset_at && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -222,29 +252,37 @@ function HybridForm({ scene, onSubmit, reset_at }: {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
         {scene.choices.map((c, i) => {
           const cid = c.id ?? String(i)
-          const isSelected = selectedId === cid
+          const isSelected = isMulti ? selectedIds.has(cid) : selectedId === cid
           const isAltroChoice = c.id === 'altro'
           const color = isAltroChoice ? ALTRO_COLOR : COLORS[i % COLORS.length]
 
           return (
-            <div key={cid} style={{ borderRadius: 12, overflow: 'hidden', border: `1.5px solid ${isSelected ? color : 'rgba(255,255,255,0.12)'}`, transition: 'border-color .15s' }}>
-              {/* Riga scelta — div per permettere textarea annidata */}
+            <div key={cid} style={{ borderRadius: 12, border: `1.5px solid ${isSelected ? color : 'rgba(255,255,255,0.12)'}`, transition: 'border-color .15s' }}>
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => !submitting && handleSelect(cid)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); !submitting && handleSelect(cid) } }}
+                onClick={() => handleSelect(cid)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(cid) } }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '14px 16px',
                   background: isSelected ? `${color}22` : 'rgba(255,255,255,0.07)',
                   cursor: submitting ? 'default' : 'pointer',
+                  borderRadius: isSelected && isAltroChoice ? '10px 10px 0 0' : 10,
                   userSelect: 'none', transition: 'background .15s', color: 'white',
                 }}
                 onMouseEnter={e => { if (!isSelected && !submitting) e.currentTarget.style.background = `${color}18` }}
                 onMouseLeave={e => { e.currentTarget.style.background = isSelected ? `${color}22` : 'rgba(255,255,255,0.07)' }}
               >
-                <span style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${isSelected ? color : 'rgba(255,255,255,0.3)'}`, background: isSelected ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .15s' }}>
+                {/* Checkbox quadrato per multi, radio circle per singola */}
+                <span style={{
+                  width: 20, height: 20,
+                  borderRadius: isMulti ? 5 : '50%',
+                  border: `2px solid ${isSelected ? color : 'rgba(255,255,255,0.3)'}`,
+                  background: isSelected ? color : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, transition: 'all .15s'
+                }}>
                   {isSelected && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                 </span>
                 {c.tag && <span style={{ width: 26, height: 26, borderRadius: 7, background: isSelected ? color : 'rgba(255,255,255,0.1)', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}>{c.tag}</span>}
@@ -254,11 +292,7 @@ function HybridForm({ scene, onSubmit, reset_at }: {
 
               {/* Textarea inline per Altro */}
               {isAltroChoice && isSelected && (
-                <div style={{
-                  background: `${ALTRO_COLOR}0d`,
-                  borderTop: `1px solid ${ALTRO_COLOR}44`,
-                  padding: '12px 16px',
-                }}>
+                <div style={{ background: `${ALTRO_COLOR}0d`, borderTop: `1px solid ${ALTRO_COLOR}44`, padding: '12px 16px', borderRadius: '0 0 10px 10px' }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: ALTRO_COLOR, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
                     Specifica <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.7 }}>(obbligatorio)</span>
                   </div>
@@ -266,7 +300,6 @@ function HybridForm({ scene, onSubmit, reset_at }: {
                     <textarea
                       value={openText}
                       onChange={e => setOpenText(e.target.value.slice(0, maxChars))}
-                      onClick={e => e.stopPropagation()}
                       placeholder="Scrivi la tua risposta…"
                       rows={3}
                       autoFocus
@@ -286,6 +319,13 @@ function HybridForm({ scene, onSubmit, reset_at }: {
           )
         })}
       </div>
+
+      {/* Counter scelte selezionate (solo multi) */}
+      {isMulti && selectedIds.size > 0 && (
+        <div style={{ marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+          {selectedIds.size} scelta{selectedIds.size !== 1 ? 'e' : ''} selezionata{selectedIds.size !== 1 ? 'e' : ''}
+        </div>
+      )}
 
       {/* Submit */}
       <button onClick={handleSubmit} disabled={!canSubmit || submitting}
@@ -311,6 +351,7 @@ export default function VotePage() {
   const [userName,   setUserName]   = useState('')
   const [phase,      setPhase]      = useState<Phase>('waiting')
   const [voted,      setVoted]      = useState<string | null>(null)
+  const [votedIds,   setVotedIds]   = useState<string[]>([])  // per multi
   const [answered,   setAnswered]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [voteCounts, setVoteCounts] = useState<VoteCount[]>([])
@@ -323,6 +364,7 @@ export default function VotePage() {
   const isDelphi = scene?.mode === 'delphi'
   const isOpen   = scene?.mode === 'open'
   const isHybrid = scene?.mode === 'hybrid'
+  const isMulti  = isHybrid && scene?.multi === true
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -357,7 +399,7 @@ export default function VotePage() {
           const s = payload.new as Session
           const prev = sessionRef.current
           if (prev?.reset_at !== s.reset_at) {
-            setVoted(null); setAnswered(false); setVoteCounts([]); setTotalVotes(0)
+            setVoted(null); setVotedIds([]); setAnswered(false); setVoteCounts([]); setTotalVotes(0)
           }
           sessionRef.current = s
           setSession(s)
@@ -368,7 +410,7 @@ export default function VotePage() {
 
   useEffect(() => {
     if (!session?.story_slug || !session?.scene_id) return
-    setVoted(null); setAnswered(false); setVoteCounts([]); setTotalVotes(0)
+    setVoted(null); setVotedIds([]); setAnswered(false); setVoteCounts([]); setTotalVotes(0)
     fetch(`/stories/${session.story_slug}/scenario.json`)
       .then(r => r.json())
       .then(d => {
@@ -390,7 +432,11 @@ export default function VotePage() {
           .eq('session_id', sid).eq('scene_id', data.scene_id)
           .eq('user_id', userId).eq('round', data.current_round ?? 1)
         if (data.reset_at) q = q.gte('voted_at', data.reset_at)
-        q.single().then(({ data: v }) => { if (v) setVoted(v.choice_id) })
+        const { data: votes } = await q
+        if (votes && votes.length > 0) {
+          setVoted(votes[0].choice_id)
+          setVotedIds(votes.map((v: { choice_id: string }) => v.choice_id))
+        }
 
         let qa = supabase.from('live_open_answers').select('id')
           .eq('session_id', sid).eq('scene_id', data.scene_id)
@@ -404,12 +450,12 @@ export default function VotePage() {
 
   useEffect(() => {
     if (!session) return
-    const hasResponded = isHybrid ? !!voted : (!!voted || !!answered)
+    const hasResponded = isHybrid ? (isMulti ? votedIds.length > 0 : !!voted) : (!!voted || !!answered)
     if (session.revealed)                          setPhase('revealed')
     else if (session.voting_open && !hasResponded) setPhase('voting')
     else if (session.voting_open && hasResponded)  setPhase('voted')
     else                                           setPhase('waiting')
-  }, [session?.voting_open, session?.revealed, session?.scene_id, session?.reset_at, voted, answered, isHybrid])
+  }, [session?.voting_open, session?.revealed, session?.scene_id, session?.reset_at, voted, votedIds, answered, isHybrid, isMulti])
 
   const loadVoteCounts = useCallback(async () => {
     if (!sid || !scene || !session?.scene_id) return
@@ -456,6 +502,7 @@ export default function VotePage() {
     if (!error) { setAnswered(true); setPhase('voted') }
   }, [userId, userName, sid, session?.scene_id, session?.current_round, answered]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Submit hybrid singola scelta ──────────────────────────────────────────
   const submitHybrid = useCallback(async (choiceId: string, choiceText: string, openAnswer?: string) => {
     if (submitting || voted || !userId || !session?.scene_id) return
     setSubmitting(true)
@@ -474,6 +521,41 @@ export default function VotePage() {
     setSubmitting(false)
     if (!voteError) { setVoted(choiceId); setAnswered(!!openAnswer); setPhase('voted') }
   }, [submitting, voted, userId, userName, sid, session?.scene_id, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Submit hybrid scelta multipla ────────────────────────────────────────
+  const submitHybridMulti = useCallback(async (choices: { id: string; text: string }[], openAnswer?: string) => {
+    if (submitting || votedIds.length > 0 || !userId || !session?.scene_id) return
+    setSubmitting(true)
+
+    // Inserisci una riga per ogni scelta
+    const rows = choices.map(c => ({
+      session_id:       sid,
+      scene_id:         session.scene_id!,
+      user_id:          userId,
+      participant_name: userName,
+      choice_id:        c.id,
+      choice_text:      c.id === 'altro' && openAnswer ? openAnswer : c.text,
+      round:            session.current_round ?? 1,
+      reset_key:        session.reset_at ?? 'initial',
+    }))
+
+    const { error: voteError } = await supabase.from('live_votes').insert(rows)
+
+    if (!voteError && openAnswer) {
+      await supabase.from('live_open_answers').insert({
+        session_id: sid, scene_id: session.scene_id, user_id: userId,
+        participant_name: userName, answer: openAnswer, round: session.current_round ?? 1,
+      })
+    }
+
+    setSubmitting(false)
+    if (!voteError) {
+      setVotedIds(choices.map(c => c.id))
+      setVoted(choices[0]?.id ?? null)
+      setAnswered(!!openAnswer)
+      setPhase('voted')
+    }
+  }, [submitting, votedIds, userId, userName, sid, session?.scene_id, session?.current_round]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (checking) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0c1a2a' }}>
@@ -522,6 +604,7 @@ export default function VotePage() {
   )
 
   const votedChoice = scene?.choices.find((c, i) => (c.id ?? String(i)) === voted)
+  const votedChoices = isMulti ? scene?.choices.filter((c, i) => votedIds.includes(c.id ?? String(i))) : []
 
   return baseLayout(
     <>
@@ -610,7 +693,12 @@ export default function VotePage() {
 
       {/* VOTING — Hybrid */}
       {phase === 'voting' && scene && isHybrid && (
-        <HybridForm scene={scene} onSubmit={submitHybrid} reset_at={session?.reset_at} />
+        <HybridForm
+          scene={scene}
+          onSubmitSingle={submitHybrid}
+          onSubmitMulti={submitHybridMulti}
+          reset_at={session?.reset_at}
+        />
       )}
 
       {/* VOTED */}
@@ -620,7 +708,15 @@ export default function VotePage() {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>Voto inviato!</h2>
-          {votedChoice && (
+          {isMulti && votedChoices && votedChoices.length > 0 ? (
+            <div style={{ marginBottom: 12 }}>
+              {votedChoices.map((c, i) => (
+                <p key={i} style={{ margin: '0 0 4px', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+                  ✓ <strong style={{ color: 'white' }}>{c.text}</strong>
+                </p>
+              ))}
+            </div>
+          ) : votedChoice && (
             <p style={{ margin: '0 0 8px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
               Hai scelto: <strong style={{ color: 'white' }}>{votedChoice.text}</strong>
             </p>
@@ -679,22 +775,25 @@ export default function VotePage() {
           <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 20 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {voteCounts.map((c, i) => (
-              <div key={i} style={{ background: voted === c.cid ? `${c.color}15` : 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', border: `1.5px solid ${voted === c.cid ? c.color : 'rgba(255,255,255,0.08)'}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
-                    <span style={{ fontSize: 13, color: 'white', fontWeight: voted === c.cid ? 700 : 400 }}>{c.text}</span>
-                    {voted === c.cid && <span style={{ fontSize: 10, color: c.color, fontWeight: 700 }}>← il tuo</span>}
+            {voteCounts.map((c, i) => {
+              const isMyVote = isMulti ? votedIds.includes(c.cid) : voted === c.cid
+              return (
+                <div key={i} style={{ background: isMyVote ? `${c.color}15` : 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', border: `1.5px solid ${isMyVote ? c.color : 'rgba(255,255,255,0.08)'}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
+                      <span style={{ fontSize: 13, color: 'white', fontWeight: isMyVote ? 700 : 400 }}>{c.text}</span>
+                      {isMyVote && <span style={{ fontSize: 10, color: c.color, fontWeight: 700 }}>← il tuo</span>}
+                    </div>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
+                  <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
                 </div>
-                <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
-                </div>
-                <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

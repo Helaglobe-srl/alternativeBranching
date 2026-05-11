@@ -302,6 +302,7 @@
   "text": "Quali argomenti vorresti approfondire in un prossimo incontro?",
   "next": "end",
   "max_chars": 300,
+  "multi": true,
   "choices": [
     { "id": "c1", "text": "Modelli di formazione HCP" },
     { "id": "c2", "text": "Analisi e mapping insight del patient journey" },
