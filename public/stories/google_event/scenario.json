@@ -1,5 +1,5 @@
 {
-  "title": "Eventi Google",
+  "title": "Evento Marketing e digitale",
   "subtitle": "Evento Marketing",
   "scenes": [
     
@@ -7,10 +7,10 @@
    {
   "id": "intro",
   "type": "info",
-  "title": "Accordo sui Findings — DMMI Italia 2026",
+  "title": "Accordo sui Findings della ricerca",
   "image": "/images/scenes/google_event/copertina.png",
   "imageAlt": "Evento Google Italia Milano",
-"text": "Benvenuti alla sessione di restituzione del Digital Marketing Maturity Index Italia 2026.\n\nAbbiamo elaborato 7 statement dai dati della ricerca: tu voti quanto sei d'accordo con ciascuna affermazione.\n\n📱 Come funziona:\n• Tieni il telefono in mano — le domande arrivano in tempo reale\n• Per ogni statement: scegli il tuo livello di accordo su scala 1–4\n• Due domande finali a scelta multipla per raccogliere la tua voce\n• I risultati vengono mostrati subito dopo ogni voto\n\n🎯 Come funziona il consenso:\n• La scala va da 1 (Totale disaccordo) a 4 (Totale accordo)\n• Non serve che tutti votino lo stesso numero — conta la direzione\n• Il consenso si raggiunge quando ≥ 75% dei voti cade nella stessa fascia: bassa (1–2) o alta (3–4)\n• Esempio: se 80% vota 3 o 4, c'è consenso sull'accordo — anche se chi ha votato 3 e chi ha votato 4 non sono d'accordo sul grado\n• Le affermazioni senza consenso saranno discusse dopo pranzo",
+"text": "Abbiamo elaborato 7 affermazioni dai dati della ricerca: tu voti quanto sei d'accordo con ciascuna.\n\n📱 Come funziona:\n• Tieni il telefono in mano — le domande arrivano in tempo reale\n• Per ogni statement: scegli il tuo livello di accordo su scala 1–4\n• Due domande finali a scelta multipla per raccogliere la tua voce\n• I risultati vengono mostrati subito dopo ogni voto\n\n🎯 Come funziona il consenso:\n• La scala va da 1 (Totale disaccordo) a 4 (Totale accordo)\n• Non serve che tutti votino lo stesso numero — conta la direzione\n• Il consenso si raggiunge quando ≥ 75% dei voti cade nella stessa fascia: bassa (1–2) o alta (3–4)\n",
   "next": "intro",
   "choices": [
     {
@@ -23,7 +23,7 @@
       "id": "statement 1",
       "type": "decision",
       "title": "La struttura organizzativa ha un impatto diretto sull'efficacia operativa delle attività di marketing digitale. ",
-      "image": "/images/scenes/google_event/st1.png",
+      "image": "/images/scenes/google_event/st1p.png",
       "imageAlt": "Specialista che riflette",
       "mode": "delphi",
       "text": "Quanto sei d'accordo con l'affermazione ?",
@@ -336,7 +336,7 @@
 {
   "id": "end",
   "type": "info",
-  "title": "Accordo sui Findings — DMMI Italia 2026",
+  "title": "Accordo sui Findings della ricerca",
   "image": "/images/scenes/google_event/copertina.png",
   "imageAlt": "Evento Google Italia Milano",
   "text": "Grazie a tutti per la partecipazione e i preziosi contributi.\n\n",

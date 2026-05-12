@@ -77,7 +77,7 @@ const STAT_COLORS = {
 const TAG_BG = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e']
 const CHOICE_COLORS = ['#0e88a5', '#2d6a7f', '#c2410c', '#0f766e', '#7c3aed', '#b45309']
 const BP = 960
-const VOTE_PANEL_W = 200
+const VOTE_PANEL_W = 160
 
 const T_OUT = 120
 const T_PRE = 20
@@ -462,7 +462,7 @@ function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? String(i + 1)}</span>
                         <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
-                        <div style={{ width: 70, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
+                        <div style={{ width: 60, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
                           <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${maxPct > 0 ? (v.pct / maxPct) * 100 : 0}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
                         </div>
                         <span style={{ fontSize: 14, fontWeight: 900, color: v.color, minWidth: 36, textAlign: 'right' }}>{v.pct}%</span>
@@ -1481,7 +1481,7 @@ function GamePageInner() {
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isDesktop ? '16px 28px' : '12px 16px', transition: 'padding .3s ease' }}>
             {isDesktop ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
-                <div style={{ width: '65%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
+                <div style={{ width: '75%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
                   {imgLayer}
                   {imgOverlays}
