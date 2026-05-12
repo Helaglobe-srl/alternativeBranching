@@ -83,6 +83,7 @@ const T_OUT = 120
 const T_PRE = 20
 const T_IN  = 260
 const T_IMG_FALLBACK = 1000
+const IMG_WIDTH = '70%'
 
 // ── Delphi helpers ────────────────────────────────────────────────────────────
 
@@ -462,7 +463,7 @@ function HybridOverlay({ votes, openAnswers, cloudWords, onClose }: {
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? String(i + 1)}</span>
                         <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.text}</span>
-                        <div style={{ width: 60, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
+                        <div style={{ width: 70, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', flexShrink: 0 }}>
                           <div style={{ height: '100%', borderRadius: 4, background: v.color, width: `${maxPct > 0 ? (v.pct / maxPct) * 100 : 0}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
                         </div>
                         <span style={{ fontSize: 14, fontWeight: 900, color: v.color, minWidth: 36, textAlign: 'right' }}>{v.pct}%</span>
@@ -948,104 +949,99 @@ function SummaryView({ scenes, sessionId }: {
     if (!sessionId) { setLoading(false); return }
     const delphiScenes = scenes.filter(s => s.mode === 'delphi')
     if (!delphiScenes.length) { setLoading(false); return }
-
     Promise.all(delphiScenes.map(async s => {
-      const { data } = await supabase
-        .from('live_votes')
-        .select('choice_id')
-        .eq('session_id', sessionId)
-        .eq('scene_id', s.id)
+      const { data } = await supabase.from('live_votes').select('choice_id').eq('session_id', sessionId).eq('scene_id', s.id)
       if (!data || !data.length) return null
       const total = data.length
       const n = s.choices.length
-      const lo = Math.ceil(n / 3)
-      const hi = n - Math.floor(n / 3)
-      // build count per choice
+      const lo = Math.ceil(n / 3), hi = n - Math.floor(n / 3)
       const counts: Record<string, number> = {}
       data.forEach(v => { counts[v.choice_id] = (counts[v.choice_id] ?? 0) + 1 })
-      const loPct = s.choices.filter(c => {
-        const tag = Number(c.tag ?? s.choices.indexOf(c) + 1)
-        return tag <= lo
-      }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
-      const miPct = s.choices.filter(c => {
-        const tag = Number(c.tag ?? s.choices.indexOf(c) + 1)
-        return tag > lo && tag < hi
-      }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
-      const hiPct = s.choices.filter(c => {
-        const tag = Number(c.tag ?? s.choices.indexOf(c) + 1)
-        return tag >= hi
-      }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
-
+      const loPct = s.choices.filter(c => Number(c.tag ?? s.choices.indexOf(c) + 1) <= lo).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
+      const miPct = s.choices.filter(c => { const t = Number(c.tag ?? s.choices.indexOf(c) + 1); return t > lo && t < hi }).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
+      const hiPct = s.choices.filter(c => Number(c.tag ?? s.choices.indexOf(c) + 1) >= hi).reduce((sum, c) => sum + (counts[c.id ?? ''] ?? 0), 0) / total
       let consensusOk = false, consensusLabel = 'Nessun consenso', consensusPct = 0, color = '#f97316'
       if (loPct >= 0.75)      { consensusOk = true; consensusLabel = 'Consenso: Disaccordo'; consensusPct = Math.round(loPct * 100); color = '#ef4444' }
       else if (miPct >= 0.75) { consensusOk = true; consensusLabel = 'Consenso: Neutro';     consensusPct = Math.round(miPct * 100); color = '#eab308' }
       else if (hiPct >= 0.75) { consensusOk = true; consensusLabel = 'Consenso: Accordo';    consensusPct = Math.round(hiPct * 100); color = '#22c55e' }
-
       return { sceneId: s.id, title: s.title, consensusOk, consensusLabel, consensusPct, totalVotes: total, color } as DelphiSummaryItem
-    })).then(results => {
-      setItems(results.filter(Boolean) as DelphiSummaryItem[])
-      setLoading(false)
-    })
+    })).then(results => { setItems(results.filter(Boolean) as DelphiSummaryItem[]); setLoading(false) })
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-      <div style={{ width: 24, height: 24, border: '3px solid rgba(14,136,165,0.2)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
-    </div>
-  )
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><div style={{ width: 24, height: 24, border: '3px solid rgba(14,136,165,0.2)', borderTopColor: '#0e88a5', borderRadius: '50%', animation: 'spin .8s linear infinite' }} /></div>
+  if (!items.length) return <div style={{ textAlign: 'center', color: '#9cb8c4', fontSize: 14, padding: 40 }}>Nessun dato disponibile.</div>
 
-  if (!items.length) return (
-    <div style={{ textAlign: 'center', color: '#9cb8c4', fontSize: 14, padding: 40 }}>
-      Nessun dato di voto disponibile per questa sessione.
-    </div>
-  )
+  const reached    = items.filter(i => i.consensusOk).length
+  const total      = items.length
+  const accordo    = items.filter(i => i.consensusLabel === 'Consenso: Accordo').length
+  const disaccordo = items.filter(i => i.consensusLabel === 'Consenso: Disaccordo').length
+  const neutro     = items.filter(i => i.consensusLabel === 'Consenso: Neutro').length
+  const noConsensus = total - reached
 
-  const reached = items.filter(i => i.consensusOk).length
-  const total   = items.length
+  const getLabelInfo = (item: DelphiSummaryItem) => {
+    if (!item.consensusOk) return { text: 'No consenso', color: '#f97316', bg: 'rgba(249,115,22,0.10)', border: 'rgba(249,115,22,0.28)', icon: '○' }
+    if (item.consensusLabel === 'Consenso: Accordo')    return { text: 'Accordo',    color: '#0e88a5', bg: 'rgba(14,136,165,0.10)',  border: 'rgba(14,136,165,0.28)',  icon: '↑' }
+    if (item.consensusLabel === 'Consenso: Disaccordo') return { text: 'Disaccordo', color: '#ef4444', bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.28)',   icon: '↓' }
+    if (item.consensusLabel === 'Consenso: Neutro')     return { text: 'Neutro',     color: '#eab308', bg: 'rgba(234,179,8,0.10)',   border: 'rgba(234,179,8,0.28)',   icon: '~' }
+    return { text: item.consensusLabel, color: item.color, bg: `${item.color}18`, border: `${item.color}38`, icon: '✓' }
+  }
 
   return (
-    <div style={{ animation: 'fadeUp .3s ease' }}>
-      {/* Header stats */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-        <div style={{ flex: 1, background: 'rgba(34,197,94,0.1)', border: '1.5px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, fontWeight: 900, color: '#22c55e', fontFamily: 'Georgia,serif' }}>{reached}</div>
-          <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Consenso raggiunto</div>
-        </div>
-        <div style={{ flex: 1, background: 'rgba(249,115,22,0.08)', border: '1.5px solid rgba(249,115,22,0.25)', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, fontWeight: 900, color: '#f97316', fontFamily: 'Georgia,serif' }}>{total - reached}</div>
-          <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.5)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>Da approfondire</div>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
 
-      {/* Statement list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {items.map((item, i) => (
-          <div key={item.sceneId} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '12px 14px', borderRadius: 12,
-            background: item.consensusOk ? 'rgba(34,197,94,0.06)' : 'rgba(249,115,22,0.06)',
-            border: `1.5px solid ${item.consensusOk ? 'rgba(34,197,94,0.25)' : 'rgba(249,115,22,0.2)'}`,
-          }}>
-            {/* Numero statement */}
-            <span style={{ width: 28, height: 28, borderRadius: 8, background: item.consensusOk ? 'rgba(34,197,94,0.2)' : 'rgba(249,115,22,0.15)', color: item.consensusOk ? '#16a34a' : '#ea580c', fontSize: 13, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-            {/* Titolo */}
-            <span style={{ flex: 1, fontSize: 12.5, color: '#1e4a5c', lineHeight: 1.4, fontWeight: 500 }}>{item.title}</span>
-            {/* Badge consenso */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-                padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-                background: item.consensusOk ? 'rgba(34,197,94,0.15)' : 'rgba(249,115,22,0.12)',
-                color: item.consensusOk ? '#16a34a' : '#ea580c',
-                border: `1px solid ${item.consensusOk ? 'rgba(34,197,94,0.3)' : 'rgba(249,115,22,0.25)'}`,
-              }}>
-                {item.consensusOk ? '✓' : '○'} {item.consensusOk ? `${item.consensusPct}%` : 'No consenso'}
-              </span>
-              <span style={{ fontSize: 10, color: 'rgba(0,0,0,0.35)' }}>{item.totalVotes} vot{item.totalVotes === 1 ? 'o' : 'i'}</span>
-            </div>
+      {/* Stat row */}
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        {[
+          { value: reached,     label: 'Consenso',    color: '#22c55e', bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.22)',  icon: '✓' },
+          { value: noConsensus, label: 'No consenso', color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.22)', icon: '○' },
+          { value: accordo,     label: 'Accordo',     color: '#0e88a5', bg: 'rgba(14,136,165,0.08)', border: 'rgba(14,136,165,0.22)', icon: '↑' },
+          { value: disaccordo,  label: 'Disaccordo',  color: '#ef4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.22)',  icon: '↓' },
+          { value: neutro,      label: 'Neutro',      color: '#eab308', bg: 'rgba(234,179,8,0.08)',  border: 'rgba(234,179,8,0.22)',  icon: '~' },
+        ].map((s, i) => (
+          <div key={i} style={{ flex: 1, background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 12, padding: '10px 4px 8px', textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: s.color, fontWeight: 800, opacity: 0.6, marginBottom: 1 }}>{s.icon}</div>
+            <div style={{ fontSize: 44, fontWeight: 900, color: s.color, fontFamily: 'Georgia,serif', lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: s.color, opacity: 0.65, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{s.label}</div>
           </div>
         ))}
       </div>
+
+      {/* Progress bar */}
+      <div style={{ flexShrink: 0 }}>
+        <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', height: 8 }}>
+          <div style={{ flex: accordo,     background: '#0e88a5', opacity: 0.85 }} />
+          <div style={{ flex: neutro,      background: '#eab308', opacity: 0.85 }} />
+          <div style={{ flex: disaccordo,  background: '#ef4444', opacity: 0.85 }} />
+          <div style={{ flex: noConsensus, background: '#f97316', opacity: 0.45 }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, fontWeight: 600 }}>
+          <span style={{ color: '#0e88a5' }}>↑ Accordo ({accordo})</span>
+          {neutro > 0 && <span style={{ color: '#eab308' }}>~ Neutro ({neutro})</span>}
+          <span style={{ color: '#ef4444' }}>↓ Disaccordo ({disaccordo})</span>
+        </div>
+      </div>
+
+      {/* Grid 2 colonne */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1, minHeight: 0 }}>
+        {items.map((item, i) => {
+          const lbl = getLabelInfo(item)
+          return (
+            <div key={item.sceneId} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 12, background: `${lbl.color}07`, border: `1.5px solid ${lbl.border}`, minHeight: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                <span style={{ width: 28, height: 28, borderRadius: 8, background: `${lbl.color}18`, color: lbl.color, fontSize: 14, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+                <span style={{ fontSize: 14, color: '#1e4a5c', lineHeight: 1.4, fontWeight: 500 }}>{item.title}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: lbl.bg, color: lbl.color, border: `1px solid ${lbl.border}` }}>
+                  {lbl.icon} {lbl.text}{item.consensusOk ? ` · ${item.consensusPct}%` : ''}
+                </span>
+                <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.3)', fontWeight: 500 }}>{item.totalVotes} voti</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
     </div>
   )
 }
@@ -1342,11 +1338,11 @@ function GamePageInner() {
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${color}33`, background: `${color}08` }}>
               <span style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${color}55`, flexShrink: 0 }} />
               {c.tag && <span style={{ width: 22, height: 22, borderRadius: 6, background: color, color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.tag}</span>}
-              <span style={{ fontSize: 12, color: '#1e4a5c' }}>{c.text}</span>
+            <span style={{ fontSize: 13, color: '#0c2a38', fontWeight: 600 }}>{c.text}</span>
             </div>
           )
         })}
-        <div style={{ marginTop: 4, padding: '8px 12px', borderRadius: 8, border: '1.5px dashed rgba(14,136,165,0.3)', background: 'rgba(14,136,165,0.04)', fontSize: 11, color: '#6b9aaa', fontStyle: 'italic' }}>
+        <div style={{ marginTop: 4, padding: '8px 12px', borderRadius: 8, border: '1.5px dashed rgba(14,136,165,0.3)', background: 'rgba(14,136,165,0.04)', fontSize: 12, color: '#4a7a8a', fontStyle: 'italic', fontWeight: 600 }}>
           + Commento libero (opzionale)
         </div>
       </div>
@@ -1363,7 +1359,7 @@ function GamePageInner() {
     </div>
   ) : (
     // Normale: scelte cliccabili
-    <div style={{ display: 'flex', flexDirection: isDecision ? 'column' : 'row', flexWrap: isDecision ? 'nowrap' : 'wrap', gap: 7 }}>
+    <div style={{ display: 'flex', flexDirection: isDecision ? 'column' : 'row', flexWrap: isDecision ? 'nowrap' : 'wrap', gap: 7, justifyContent: isSummary ? 'flex-end' : 'flex-start' }}>
       {scene.choices.map((choice, i) => {
         if (isDecision) return (
           <button key={i} onClick={() => go(choice.next!, false, choice.text)}
@@ -1481,11 +1477,13 @@ function GamePageInner() {
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isDesktop ? '16px 28px' : '12px 16px', transition: 'padding .3s ease' }}>
             {isDesktop ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
-                <div style={{ width: '75%', flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
-                  {imgLayer}
-                  {imgOverlays}
-                </div>
+                {!isSummary && (
+                  <div style={{ width: IMG_WIDTH, flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+                    {imgLayer}
+                    {imgOverlays}
+                  </div>
+                )}
                 <div ref={scrollRef} style={{ flex: 1, background: 'white', borderLeft: `3px solid ${accentLine}`, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <div style={textStyle}>{textContent()}</div>
                 </div>

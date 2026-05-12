@@ -66,32 +66,32 @@ function DelphiResults({ voteCounts, totalVotes, voted, n }: {
   const maxPct    = Math.max(...voteCounts.map(v => v.pct), 1)
   return (
     <div style={{ animation: 'fadeUp .3s ease' }}>
-      <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
-      <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+      <h2 style={{ margin: '0 0 6px', fontSize: 8 + 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
+      <div style={{ textAlign: 'center', fontSize: 8 + 12, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 20, background: `${consensus.color}22`, border: `1.5px solid ${consensus.color}66`, fontSize: 13, fontWeight: 700, color: consensus.color }}>
-          <span style={{ fontSize: 16 }}>{consensus.reached ? '✓' : '○'}</span>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 20, background: `${consensus.color}22`, border: `1.5px solid ${consensus.color}66`, fontSize: 8 + 13, fontWeight: 700, color: consensus.color }}>
+          <span style={{ fontSize: 8 + 16 }}>{consensus.reached ? '✓' : '○'}</span>
           {consensus.label}
-          {consensus.reached && <span style={{ fontSize: 11, opacity: 0.8 }}>({consensus.pct}%)</span>}
+          {consensus.reached && <span style={{ fontSize: 8 + 11, opacity: 0.8 }}>({consensus.pct}%)</span>}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         {[{ label: 'Media', value: mean.toFixed(2) }, { label: 'Mediana', value: median % 1 === 0 ? String(median) : median.toFixed(1) }].map(s => (
           <div key={s.label} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: '#0e88a5', fontFamily: 'Georgia,serif' }}>{s.value}</div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>su {n}</div>
+            <div style={{ fontSize: 8 + 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
+            <div style={{ fontSize: 8 + 28, fontWeight: 900, color: '#0e88a5', fontFamily: 'Georgia,serif' }}>{s.value}</div>
+            <div style={{ fontSize: 8 + 9, color: 'rgba(255,255,255,0.25)', marginTop: 2 }}>su {n}</div>
           </div>
         ))}
       </div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Distribuzione</div>
+        <div style={{ fontSize: 8 + 9, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Distribuzione</div>
         <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 20 }}>
           {voteCounts.map(v => (
             <div key={v.cid} style={{ flex: v.pct || 1, background: v.color, opacity: v.count ? 0.9 : 0.15, transition: 'flex 0.8s cubic-bezier(0.22,1,0.36,1)', minWidth: v.count ? 2 : 0 }} title={`${v.text}: ${v.pct}%`} />
           ))}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 8 + 9, color: 'rgba(255,255,255,0.3)' }}>
           <span>{voteCounts[0]?.text}</span><span>{voteCounts[voteCounts.length - 1]?.text}</span>
         </div>
       </div>
@@ -102,15 +102,15 @@ function DelphiResults({ voteCounts, totalVotes, voted, n }: {
           return (
             <div key={v.cid} style={{ background: isMyVote ? `${v.color}18` : 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '9px 12px', border: `1.5px solid ${isMyVote ? v.color : 'rgba(255,255,255,0.07)'}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? v.cid}</span>
-                <span style={{ flex: 1, fontSize: 12, color: isMyVote ? 'white' : 'rgba(255,255,255,0.55)', fontWeight: isMyVote ? 700 : 400 }}>{v.text}</span>
-                {isMyVote && <span style={{ fontSize: 9, color: v.color, fontWeight: 700 }}>← il tuo</span>}
-                <span style={{ fontSize: 15, fontWeight: 900, color: v.color }}>{v.pct}%</span>
+                <span style={{ width: 24, height: 24, borderRadius: 6, background: v.color, color: 'white', fontSize: 8 + 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{v.tag ?? v.cid}</span>
+                <span style={{ flex: 1, fontSize: 8 + 12, color: isMyVote ? 'white' : 'rgba(255,255,255,0.55)', fontWeight: isMyVote ? 700 : 400 }}>{v.text}</span>
+                {isMyVote && <span style={{ fontSize: 8 + 9, color: v.color, fontWeight: 700 }}>← il tuo</span>}
+                <span style={{ fontSize: 8 + 15, fontWeight: 900, color: v.color }}>{v.pct}%</span>
               </div>
               <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
                 <div style={{ height: '100%', borderRadius: 3, background: v.color, width: `${barW}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
               </div>
-              <div style={{ marginTop: 3, fontSize: 10, color: 'rgba(255,255,255,0.3)', textAlign: 'right' }}>{v.count} vot{v.count === 1 ? 'o' : 'i'}</div>
+              <div style={{ marginTop: 3, fontSize: 8 + 10, color: 'rgba(255,255,255,0.3)', textAlign: 'right' }}>{v.count} vot{v.count === 1 ? 'o' : 'i'}</div>
             </div>
           )
         })}
@@ -141,13 +141,13 @@ function OpenAnswerForm({ scene, onSubmit, reset_at }: {
   return (
     <div style={{ animation: 'fadeUp .25s ease' }}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Risposta aperta</div>
-        {reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+        <div style={{ fontSize: 8 + 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Risposta aperta</div>
+        {reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 8 + 12, color: '#fbbf24' }}>
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
           Votazione ripetuta
         </div>}
-        <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
+        <h2 style={{ margin: '0 0 10px', fontSize: 8 + 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
+        <div style={{ fontSize: 8 + 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
       </div>
       <form onSubmit={handleSubmit}>
         <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -156,16 +156,16 @@ function OpenAnswerForm({ scene, onSubmit, reset_at }: {
             onChange={e => setText(e.target.value.slice(0, maxChars))}
             placeholder="Scrivi la tua risposta…"
             rows={5}
-            style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)', color: 'white', fontSize: 14, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit', transition: 'border-color .15s', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)', color: 'white', fontSize: 8 + 14, lineHeight: 1.6, resize: 'vertical', outline: 'none', fontFamily: 'inherit', transition: 'border-color .15s', boxSizing: 'border-box' }}
             onFocus={e => { e.currentTarget.style.borderColor = '#0e88a5' }}
             onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
           />
-          <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: text.length >= maxChars ? '#fca5a5' : 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+          <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 8 + 11, color: text.length >= maxChars ? '#fca5a5' : 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
             {text.length}/{maxChars}
           </div>
         </div>
         <button type="submit" disabled={submitting || !text.trim()}
-          style={{ width: '100%', padding: '13px', borderRadius: 12, background: (!text.trim() || submitting) ? 'rgba(14,136,165,0.4)' : '#0e88a5', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: (!text.trim() || submitting) ? 'default' : 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          style={{ width: '100%', padding: '13px', borderRadius: 12, background: (!text.trim() || submitting) ? 'rgba(14,136,165,0.4)' : '#0e88a5', color: 'white', border: 'none', fontSize: 8 + 15, fontWeight: 700, cursor: (!text.trim() || submitting) ? 'default' : 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           onMouseEnter={e => { if (text.trim() && !submitting) e.currentTarget.style.background = '#0c6d82' }}
           onMouseLeave={e => { if (text.trim() && !submitting) e.currentTarget.style.background = '#0e88a5' }}>
           {submitting && <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
@@ -235,17 +235,17 @@ function HybridForm({ scene, onSubmitSingle, onSubmitMulti, reset_at }: {
   return (
     <div style={{ animation: 'fadeUp .25s ease' }}>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+        <div style={{ fontSize: 8 + 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
           {isMulti ? 'Vota (più scelte possibili)' : 'Vota'}
         </div>
         {reset_at && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 8 + 12, color: '#fbbf24' }}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
             Votazione ripetuta
           </div>
         )}
-        <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
+        <h2 style={{ margin: '0 0 10px', fontSize: 8 + 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
+        <div style={{ fontSize: 8 + 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
       </div>
 
       {/* Scelte */}
@@ -285,16 +285,16 @@ function HybridForm({ scene, onSubmitSingle, onSubmitMulti, reset_at }: {
                 }}>
                   {isSelected && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                 </span>
-                {c.tag && <span style={{ width: 26, height: 26, borderRadius: 7, background: isSelected ? color : 'rgba(255,255,255,0.1)', color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}>{c.tag}</span>}
-                <span style={{ flex: 1, fontSize: 14, fontWeight: isSelected ? 600 : 400, lineHeight: 1.3, color: isSelected ? 'white' : 'rgba(255,255,255,0.8)' }}>{c.text}</span>
-                {isAltroChoice && !isSelected && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>✎</span>}
+                {c.tag && <span style={{ width: 26, height: 26, borderRadius: 7, background: isSelected ? color : 'rgba(255,255,255,0.1)', color: 'white', fontSize: 8 + 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}>{c.tag}</span>}
+                <span style={{ flex: 1, fontSize: 8 + 14, fontWeight: isSelected ? 600 : 400, lineHeight: 1.3, color: isSelected ? 'white' : 'rgba(255,255,255,0.8)' }}>{c.text}</span>
+                {isAltroChoice && !isSelected && <span style={{ fontSize: 8 + 11, color: 'rgba(255,255,255,0.3)' }}>✎</span>}
               </div>
 
               {/* Textarea inline per Altro */}
               {isAltroChoice && isSelected && (
                 <div style={{ background: `${ALTRO_COLOR}0d`, borderTop: `1px solid ${ALTRO_COLOR}44`, padding: '12px 16px', borderRadius: '0 0 10px 10px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: ALTRO_COLOR, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                    Specifica <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.7 }}>(obbligatorio)</span>
+                  <div style={{ fontSize: 8 + 10, fontWeight: 700, color: ALTRO_COLOR, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                    Specifica <span style={{ fontSize: 8 + 9, fontWeight: 500, opacity: 0.7 }}>(obbligatorio)</span>
                   </div>
                   <div style={{ position: 'relative' }}>
                     <textarea
@@ -303,12 +303,12 @@ function HybridForm({ scene, onSubmitSingle, onSubmitMulti, reset_at }: {
                       placeholder="Scrivi la tua risposta…"
                       rows={3}
                       autoFocus
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: `1px solid ${ALTRO_COLOR}44`, color: 'white', fontSize: 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'inherit', transition: 'border-color .15s', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: `1px solid ${ALTRO_COLOR}44`, color: 'white', fontSize: 8 + 13, lineHeight: 1.6, resize: 'none', outline: 'none', fontFamily: 'inherit', transition: 'border-color .15s', boxSizing: 'border-box' }}
                       onFocus={e => { e.currentTarget.style.borderColor = ALTRO_COLOR }}
                       onBlur={e => { e.currentTarget.style.borderColor = `${ALTRO_COLOR}44` }}
                     />
                     {openText.length > 0 && (
-                      <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 10, color: openText.length >= maxChars ? '#fca5a5' : 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
+                      <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 8 + 10, color: openText.length >= maxChars ? '#fca5a5' : 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
                         {openText.length}/{maxChars}
                       </div>
                     )}
@@ -322,14 +322,14 @@ function HybridForm({ scene, onSubmitSingle, onSubmitMulti, reset_at }: {
 
       {/* Counter scelte selezionate (solo multi) */}
       {isMulti && selectedIds.size > 0 && (
-        <div style={{ marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+        <div style={{ marginBottom: 12, fontSize: 8 + 12, color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
           {selectedIds.size} scelta{selectedIds.size !== 1 ? 'e' : ''} selezionata{selectedIds.size !== 1 ? 'e' : ''}
         </div>
       )}
 
       {/* Submit */}
       <button onClick={handleSubmit} disabled={!canSubmit || submitting}
-        style={{ width: '100%', padding: '13px', borderRadius: 12, background: (!canSubmit || submitting) ? 'rgba(14,136,165,0.35)' : '#0e88a5', color: 'white', border: 'none', fontSize: 15, fontWeight: 700, cursor: (!canSubmit || submitting) ? 'default' : 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        style={{ width: '100%', padding: '13px', borderRadius: 12, background: (!canSubmit || submitting) ? 'rgba(14,136,165,0.35)' : '#0e88a5', color: 'white', border: 'none', fontSize: 8 + 15, fontWeight: 700, cursor: (!canSubmit || submitting) ? 'default' : 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         onMouseEnter={e => { if (canSubmit && !submitting) e.currentTarget.style.background = '#0c6d82' }}
         onMouseLeave={e => { if (canSubmit && !submitting) e.currentTarget.style.background = '#0e88a5' }}>
         {submitting && <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin .6s linear infinite' }} />}
@@ -593,10 +593,10 @@ export default function VotePage() {
         <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <Image src="/images/logo2.png" alt="Logo" width={80} height={22} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
-            {session && <div style={{ marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{session.name}</div>}
+            {session && <div style={{ marginTop: 4, fontSize: 8 + 12, color: 'rgba(255,255,255,0.45)' }}>{session.name}</div>}
           </div>
           <button onClick={async () => { await supabase.auth.signOut(); router.replace(`/join/${sid}`) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', fontSize: 8 + 11, fontWeight: 600, cursor: 'pointer', transition: 'all .15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -612,16 +612,16 @@ export default function VotePage() {
     </>
   )
 
-  if (notFound) return baseLayout(<div style={{ textAlign: 'center', color: '#9cb8c4' }}><div style={{ fontSize: 48, marginBottom: 12 }}>404</div><div>Sessione non trovata</div></div>)
+  if (notFound) return baseLayout(<div style={{ textAlign: 'center', color: '#9cb8c4' }}><div style={{ fontSize: 8 + 48, marginBottom: 12 }}>404</div><div>Sessione non trovata</div></div>)
 
   if (!session || !session.scene_id) return baseLayout(
     <div style={{ textAlign: 'center', color: 'white' }}>
       <div style={{ width: 52, height: 52, borderRadius: '50%', border: '2px solid rgba(14,136,165,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', animation: 'pulse 2s infinite' }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#0e88a5" strokeWidth="2"/><path d="M12 7v5l3 3" stroke="#0e88a5" strokeWidth="2" strokeLinecap="round"/></svg>
       </div>
-      <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>In attesa della sessione</div>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Il moderatore sta preparando…</div>
-      {userName && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong></div>}
+      <div style={{ fontSize: 8 + 17, fontWeight: 800, marginBottom: 8 }}>In attesa della sessione</div>
+      <div style={{ fontSize: 8 + 13, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Il moderatore sta preparando…</div>
+      {userName && <div style={{ fontSize: 8 + 12, color: 'rgba(255,255,255,0.3)' }}>Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong></div>}
     </div>
   )
 
@@ -630,7 +630,7 @@ export default function VotePage() {
 
   return baseLayout(
     <>
-      {userName && <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong></div>}
+      {userName && <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 8 + 12, color: 'rgba(255,255,255,0.3)' }}>Connesso come <strong style={{ color: 'rgba(255,255,255,0.55)' }}>{userName}</strong></div>}
 
       {/* WAITING */}
       {phase === 'waiting' && (
@@ -638,10 +638,10 @@ export default function VotePage() {
           <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(14,136,165,0.2)', border: '2px solid rgba(14,136,165,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', animation: 'pulse 2s infinite' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#0e88a5" strokeWidth="2"/><path d="M12 7v5l3 3" stroke="#0e88a5" strokeWidth="2" strokeLinecap="round"/></svg>
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>In attesa del voto</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>Il moderatore aprirà il voto a breve…</p>
+          <h2 style={{ margin: '0 0 8px', fontSize: 8 + 22, fontWeight: 800 }}>In attesa del voto</h2>
+          <p style={{ margin: '0 0 12px', fontSize: 8 + 14, color: 'rgba(255,255,255,0.5)' }}>Il moderatore aprirà il voto a breve…</p>
           {session?.reset_at && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, color: '#fbbf24' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', fontSize: 8 + 12, color: '#fbbf24' }}>
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Questa domanda ha già avuto una votazione precedente
             </div>
@@ -653,13 +653,13 @@ export default function VotePage() {
       {phase === 'voting' && scene && !isDelphi && !isOpen && !isHybrid && (
         <div style={{ animation: 'fadeUp .25s ease' }}>
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Vota ora</div>
-            {session?.reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+            <div style={{ fontSize: 8 + 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Vota ora</div>
+            {session?.reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 8 + 12, color: '#fbbf24' }}>
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Votazione ripetuta
             </div>}
-            <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
+            <h2 style={{ margin: '0 0 10px', fontSize: 8 + 20, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{scene.title}</h2>
+            <div style={{ fontSize: 8 + 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{scene.text}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {scene.choices.map((c, i) => (
@@ -667,8 +667,8 @@ export default function VotePage() {
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.12)', cursor: submitting ? 'default' : 'pointer', textAlign: 'left', transition: 'all .15s', color: 'white' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(14,136,165,0.2)'; e.currentTarget.style.borderColor = '#0e88a5' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}>
-                {c.tag && <span style={{ width: 28, height: 28, borderRadius: 8, background: COLORS[i % COLORS.length], color: 'white', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.tag}</span>}
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 500, lineHeight: 1.3 }}>{c.text}</span>
+                {c.tag && <span style={{ width: 28, height: 28, borderRadius: 8, background: COLORS[i % COLORS.length], color: 'white', fontSize: 8 + 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.tag}</span>}
+                <span style={{ flex: 1, fontSize: 8 + 14, fontWeight: 500, lineHeight: 1.3 }}>{c.text}</span>
               </button>
             ))}
           </div>
@@ -679,15 +679,15 @@ export default function VotePage() {
       {phase === 'voting' && scene && isDelphi && (
         <div style={{ animation: 'fadeUp .25s ease' }}>
           <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Esprimi il tuo accordo</div>
-            {session?.reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 12, color: '#fbbf24' }}>
+            <div style={{ fontSize: 8 + 11, fontWeight: 700, color: '#0e88a5', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Esprimi il tuo accordo</div>
+            {session?.reset_at && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '4px 12px', marginBottom: 10, fontSize: 8 + 12, color: '#fbbf24' }}>
               <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 2.5 8a5.5 5.5 0 0 1 11 0z" stroke="#fbbf24" strokeWidth="1.5"/><path d="M8 5v3l2 2" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round"/></svg>
               Votazione ripetuta
             </div>}
-            <h2 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>{scene.title}</h2>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, padding: '12px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, borderLeft: '3px solid rgba(14,136,165,0.5)' }}>{scene.text}</div>
+            <h2 style={{ margin: '0 0 12px', fontSize: 8 + 18, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>{scene.title}</h2>
+            <div style={{ fontSize: 8 + 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.65, padding: '12px 14px', background: 'rgba(255,255,255,0.04)', borderRadius: 10, borderLeft: '3px solid rgba(14,136,165,0.5)' }}>{scene.text}</div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 8, padding: '0 2px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8 + 10, color: 'rgba(255,255,255,0.3)', marginBottom: 8, padding: '0 2px' }}>
             <span>← {scene.choices[0]?.text}</span>
             <span>{scene.choices[scene.choices.length - 1]?.text} →</span>
           </div>
@@ -699,8 +699,8 @@ export default function VotePage() {
                   style={{ flex: 1, padding: '18px 4px 14px', borderRadius: 12, border: `2px solid ${color}44`, background: `${color}11`, cursor: submitting ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all .2s' }}
                   onMouseEnter={e => { e.currentTarget.style.background = `${color}33`; e.currentTarget.style.borderColor = color; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = `${color}11`; e.currentTarget.style.borderColor = `${color}44`; e.currentTarget.style.transform = 'translateY(0)' }}>
-                  <span style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1 }}>{c.tag ?? String(i + 1)}</span>
-                  <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.2 }}>{c.text}</span>
+                  <span style={{ fontSize: 8 + 24, fontWeight: 900, color, lineHeight: 1 }}>{c.tag ?? String(i + 1)}</span>
+                  <span style={{ fontSize: 8 + 8, color: 'rgba(255,255,255,0.4)', textAlign: 'center', lineHeight: 1.2 }}>{c.text}</span>
                 </button>
               )
             })}
@@ -729,60 +729,60 @@ export default function VotePage() {
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(16,128,61,0.2)', border: '2px solid rgba(16,128,61,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800 }}>Voto inviato!</h2>
+          <h2 style={{ margin: '0 0 8px', fontSize: 8 + 22, fontWeight: 800 }}>Voto inviato!</h2>
           {isMulti && votedChoices && votedChoices.length > 0 ? (
             <div style={{ marginBottom: 12 }}>
               {votedChoices.map((c, i) => (
-                <p key={i} style={{ margin: '0 0 4px', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+                <p key={i} style={{ margin: '0 0 4px', fontSize: 8 + 13, color: 'rgba(255,255,255,0.5)' }}>
                   ✓ <strong style={{ color: 'white' }}>{c.text}</strong>
                 </p>
               ))}
             </div>
           ) : votedChoice && (
-            <p style={{ margin: '0 0 8px', fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
+            <p style={{ margin: '0 0 8px', fontSize: 8 + 14, color: 'rgba(255,255,255,0.5)' }}>
               Hai scelto: <strong style={{ color: 'white' }}>{votedChoice.text}</strong>
             </p>
           )}
           {isHybrid && answered && (
-            <p style={{ margin: '0 0 16px', fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>Risposta "Altro" registrata ✓</p>
+            <p style={{ margin: '0 0 16px', fontSize: 8 + 12, color: 'rgba(255,255,255,0.35)' }}>Risposta "Altro" registrata ✓</p>
           )}
           {!isHybrid && isDelphi && votedChoice && (() => {
             const idx = scene!.choices.findIndex((c, i) => (c.id ?? String(i)) === voted)
             const color = LIKERT_COLORS(scene!.choices.length, idx)
             return (
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: `${color}18`, borderRadius: 14, border: `1.5px solid ${color}44`, marginBottom: 16 }}>
-                <span style={{ fontSize: 36, fontWeight: 900, color }}>{votedChoice.tag ?? voted}</span>
-                <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{votedChoice.text}</span>
+                <span style={{ fontSize: 8 + 36, fontWeight: 900, color }}>{votedChoice.tag ?? voted}</span>
+                <span style={{ fontSize: 8 + 14, color: 'rgba(255,255,255,0.7)' }}>{votedChoice.text}</span>
               </div>
             )
           })()}
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', animation: 'pulse 2s infinite' }}>In attesa dei risultati…</div>
+          <div style={{ fontSize: 8 + 13, color: 'rgba(255,255,255,0.35)', animation: 'pulse 2s infinite' }}>In attesa dei risultati…</div>
         </div>
       )}
 
       {/* REVEALED — normale */}
       {phase === 'revealed' && scene && !isDelphi && !isHybrid && (
         <div style={{ animation: 'fadeUp .3s ease' }}>
-          <h2 style={{ margin: '0 0 20px', fontSize: 22, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
+          <h2 style={{ margin: '0 0 20px', fontSize: 8 + 22, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {voteCounts.map((c, i) => (
               <div key={i} style={{ background: voted === c.cid ? 'rgba(14,136,165,0.15)' : 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', border: `1.5px solid ${voted === c.cid ? '#0e88a5' : 'rgba(255,255,255,0.08)'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
-                    <span style={{ fontSize: 13, color: 'white', fontWeight: voted === c.cid ? 700 : 400 }}>{c.text}</span>
-                    {voted === c.cid && <span style={{ fontSize: 10, color: '#0e88a5', fontWeight: 700 }}>← il tuo voto</span>}
+                    {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 8 + 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
+                    <span style={{ fontSize: 8 + 13, color: 'white', fontWeight: voted === c.cid ? 700 : 400 }}>{c.text}</span>
+                    {voted === c.cid && <span style={{ fontSize: 8 + 10, color: '#0e88a5', fontWeight: 700 }}>← il tuo voto</span>}
                   </div>
-                  <span style={{ fontSize: 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
+                  <span style={{ fontSize: 8 + 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
                 </div>
                 <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
                 </div>
-                <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
+                <div style={{ marginTop: 4, fontSize: 8 + 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 16, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{totalVotes} partecipant{totalVotes === 1 ? 'e' : 'i'} totali</div>
+          <div style={{ marginTop: 16, textAlign: 'center', fontSize: 8 + 12, color: 'rgba(255,255,255,0.3)' }}>{totalVotes} partecipant{totalVotes === 1 ? 'e' : 'i'} totali</div>
         </div>
       )}
 
@@ -794,8 +794,8 @@ export default function VotePage() {
       {/* REVEALED — Hybrid */}
       {phase === 'revealed' && scene && isHybrid && (
         <div style={{ animation: 'fadeUp .3s ease' }}>
-          <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
-          <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 20 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
+          <h2 style={{ margin: '0 0 6px', fontSize: 8 + 20, fontWeight: 800, color: 'white', textAlign: 'center' }}>Risultati</h2>
+          <div style={{ textAlign: 'center', fontSize: 8 + 12, color: 'rgba(255,255,255,0.35)', marginBottom: 20 }}>{totalVotes} vot{totalVotes === 1 ? 'o' : 'i'}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {voteCounts.map((c, i) => {
               const isMyVote = isMulti ? votedIds.includes(c.cid) : voted === c.cid
@@ -803,16 +803,16 @@ export default function VotePage() {
                 <div key={i} style={{ background: isMyVote ? `${c.color}15` : 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '14px 16px', border: `1.5px solid ${isMyVote ? c.color : 'rgba(255,255,255,0.08)'}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
-                      <span style={{ fontSize: 13, color: 'white', fontWeight: isMyVote ? 700 : 400 }}>{c.text}</span>
-                      {isMyVote && <span style={{ fontSize: 10, color: c.color, fontWeight: 700 }}>← il tuo</span>}
+                      {c.tag && <span style={{ width: 24, height: 24, borderRadius: 6, background: c.color, color: 'white', fontSize: 8 + 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.tag}</span>}
+                      <span style={{ fontSize: 8 + 13, color: 'white', fontWeight: isMyVote ? 700 : 400 }}>{c.text}</span>
+                      {isMyVote && <span style={{ fontSize: 8 + 10, color: c.color, fontWeight: 700 }}>← il tuo</span>}
                     </div>
-                    <span style={{ fontSize: 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
+                    <span style={{ fontSize: 8 + 18, fontWeight: 900, color: c.color }}>{c.pct}%</span>
                   </div>
                   <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', borderRadius: 4, background: c.color, width: `${c.pct}%`, transition: 'width 1s cubic-bezier(0.22,1,0.36,1)' }} />
                   </div>
-                  <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
+                  <div style={{ marginTop: 4, fontSize: 8 + 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right' }}>{c.count} vot{c.count === 1 ? 'o' : 'i'}</div>
                 </div>
               )
             })}
