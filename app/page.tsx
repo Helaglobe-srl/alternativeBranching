@@ -294,7 +294,7 @@ export default function Home() {
 
         <div style={{ padding: '48px 32px 32px', maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 40 }}>
-            <h1 style={{ margin: '0 0 10px', fontSize: 32, fontWeight: 900, color: '#0c2a38', letterSpacing: '-0.03em', lineHeight: 1.1 }}>Scenari clinici interattivi</h1>
+            <h1 style={{ margin: '0 0 10px', fontSize: 32, fontWeight: 900, color: '#0c2a38', letterSpacing: '-0.03em', lineHeight: 1.1 }}>Scenari interattivi</h1>
             <p style={{ margin: 0, fontSize: 16, color: '#6b9aaa', lineHeight: 1.6, maxWidth: 760 }}>
               Esplora casi clinici reali, prendi decisioni terapeutiche e ricevi feedback immediato basato sulle linee guida.
             </p>
