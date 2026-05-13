@@ -1261,7 +1261,7 @@ function GamePageInner() {
     <div style={imgStyle}>
       {scene.image && !imgError ? (
         <Image key={scene.image} src={scene.image} alt={scene.imageAlt ?? scene.title} fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
-          style={{ objectFit: 'contain', objectPosition: 'center' }}
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
           onLoad={() => handleImgLoad(scene.image!)}
           onError={() => { setImgError(true); if (pendingImageRef.current === scene.image) startFadeIn() }} />
       ) : (

@@ -13,7 +13,7 @@ const N_USERS      = 120
 const TEST_PWD     = 'StressTest2025!'
 const USERS_FILE   = './stress-users.json'
 const TOKENS_FILE  = './stress-tokens.json'
-const CHOICES      = ['0', '1']
+const CHOICES      = ['c1', 'c2', 'c3', 'c4']
 const fs           = require('fs')
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
