@@ -26,8 +26,8 @@ function JoinForm() {
   const [error,         setError]         = useState('')
   const [loading,       setLoading]       = useState(false)
   const [checking,      setChecking]      = useState(true)
-const [alreadyParticipated, setAlreadyParticipated] = useState(false)
-  const [forgotMode,  setForgotMode]  = useState(false)
+const [alreadyParticipated, setAlreadyParticipated] = useState<boolean | null>(null) 
+ const [forgotMode,  setForgotMode]  = useState(false)
   const [forgotSent,  setForgotSent]  = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   // Se già loggato, vai direttamente alla vote page
@@ -65,6 +65,7 @@ const sendReset = async () => {
       if (!firstName.trim()) { setError('Inserisci il tuo nome.'); return }
       if (!lastName.trim())  { setError('Inserisci il tuo cognome.'); return }
       if (!privacyOk)        { setError('Devi accettare la Privacy Policy per continuare.'); return }
+      if (alreadyParticipated === null) { setError('Indica se hai già partecipato in precedenza.'); return }
       setLoading(true)
       const fullName = `${firstName.trim()} ${lastName.trim()}`
       const { error: err } = await supabase.auth.signUp({
@@ -218,15 +219,27 @@ const sendReset = async () => {
           </label>
         )}
         {/* Già partecipato — solo in registrazione, facoltativo */}
-        {mode === 'register' && (
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 10, background: alreadyParticipated ? '#f0f8fb' : '#fafafa', border: `1.5px solid ${alreadyParticipated ? '#c4e0e9' : '#e8e8e8'}`, transition: 'all .15s' }}>
-            <input type="checkbox" checked={alreadyParticipated} onChange={e => setAlreadyParticipated(e.target.checked)}
-              style={{ marginTop: 2, flexShrink: 0, accentColor: '#0e88a5', width: 16, height: 16 }} />
-            <span style={{ fontSize: 12, color: '#4C7D93', lineHeight: 1.5 }}>
-              <span style={{ fontWeight: 600, color: '#0c2a38' }}>Facoltativo</span> — Ho già partecipato a questa survey in precedenza.
-            </span>
-          </label>
-        )}
+       {mode === 'register' && (
+  <div style={{ padding: '12px 14px', borderRadius: 10, background: '#fafafa', border: '1.5px solid #e8e8e8' }}>
+    <div style={{ fontSize: 12, fontWeight: 700, color: '#0c2a38', marginBottom: 8 }}>
+      Hai già partecipato a questa survey in precedenza? <span style={{ color: '#dc2626' }}>*</span>
+    </div>
+    <div style={{ display: 'flex', gap: 8 }}>
+      {[{ label: 'Sì', value: true }, { label: 'No', value: false }].map(opt => (
+        <button key={String(opt.value)}
+          onClick={() => setAlreadyParticipated(opt.value)}
+          style={{
+            flex: 1, padding: '9px 0', borderRadius: 9, fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', border: 'none', transition: 'all .15s',
+            background: alreadyParticipated === opt.value ? '#0e88a5' : '#f0f4f6',
+            color: alreadyParticipated === opt.value ? 'white' : '#4C7D93',
+          }}>
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 {/* Password dimenticata — solo in login */}
         {mode === 'login' && !forgotMode && (
           <div style={{ textAlign: 'right', marginTop: -4 }}>
