@@ -427,7 +427,7 @@ export default function VotePage() {
         sessionRef.current = data
         setSession(data)
       }
-    }, 60000)
+    }, 30000)
     return () => clearInterval(interval)
   }, [phase, sid]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
