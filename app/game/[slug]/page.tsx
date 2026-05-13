@@ -656,7 +656,7 @@ function VotePanel({
   const [showDelphiOverlay, setShowDelphiOverlay] = useState(false)
   const [showOpenOverlay, setShowOpenOverlay] = useState(false)
   const [showHybridOverlay, setShowHybridOverlay] = useState(false)
-
+const [showQrPopup, setShowQrPopup] = useState(false)
   // Per hybrid: colori custom (non Likert)
   const displayVotes = isDelphi
     ? votes.map((v, i) => ({ ...v, color: likertColor(votes.length, i) }))
@@ -736,16 +736,33 @@ function VotePanel({
         </div>
 
         {/* QR code */}
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-          {qrUrl && (
-            <div style={{ background: 'white', borderRadius: 10, padding: 8, marginBottom: 8 }}>
-              <img src={qrUrl} alt="QR" style={{ width: '100%', display: 'block', borderRadius: 6 }} />
-            </div>
-          )}
-          <button onClick={copyLink} style={{ width: '100%', padding: '7px 0', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'rgba(14,136,165,0.2)', color: copied ? '#4ade80' : '#0e88a5', border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(14,136,165,0.3)'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-            {copied ? '✓ Link copiato' : 'Copia link'}
-          </button>
+        {/* QR code */}
+<div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+  {qrUrl && (
+    <>
+      {/* Popup QR grande */}
+      {showQrPopup && (
+        <div onClick={() => setShowQrPopup(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(5,15,25,0.85)', backdropFilter: 'blur(8px)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 24, padding: 32, boxShadow: '0 40px 100px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0c2a38', letterSpacing: '0.05em' }}>Scansiona per votare</div>
+            <img src={qrUrl} alt="QR" style={{ width: 280, height: 280, display: 'block', borderRadius: 8 }} />
+            <div style={{ fontSize: 11, color: '#9cb8c4', textAlign: 'center', maxWidth: 240, wordBreak: 'break-all' }}>{voteUrl}</div>
+            <button onClick={() => setShowQrPopup(false)} style={{ padding: '8px 24px', borderRadius: 10, background: '#0e88a5', color: 'white', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Chiudi</button>
+          </div>
         </div>
+      )}
+      <div style={{ background: 'white', borderRadius: 10, padding: 8, marginBottom: 6, cursor: 'pointer' }} onClick={() => setShowQrPopup(true)}>
+        <img src={qrUrl} alt="QR" style={{ width: '100%', display: 'block', borderRadius: 6 }} />
+      </div>
+      <button onClick={() => setShowQrPopup(true)} style={{ width: '100%', padding: '5px 0', borderRadius: 7, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 10, fontWeight: 600, cursor: 'pointer', marginBottom: 6 }}>
+        ⊞ Ingrandisci QR
+      </button>
+    </>
+  )}
+  <button onClick={copyLink} style={{ width: '100%', padding: '7px 0', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'rgba(14,136,165,0.2)', color: copied ? '#4ade80' : '#0e88a5', border: `1px solid ${copied ? 'rgba(74,222,128,0.3)' : 'rgba(14,136,165,0.3)'}`, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+    {copied ? '✓ Link copiato' : 'Copia link'}
+  </button>
+</div>
 
         {/* Contatore / barre */}
         <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1407,13 +1424,13 @@ function GamePageInner() {
         {!isSummary && choicesBtns}
         {isSummary && choicesBtns}
       </div>
-      {!compact && history.length > 0 && (
+      {/* {!compact && history.length > 0 && (
         <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(14,136,165,0.06)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, flexShrink: 0 }}>
           <span style={{ fontSize: 8, color: '#ccc', fontFamily: 'monospace' }}>percorso:</span>
           {history.slice(-4).map((id, idx) => <span key={idx} style={{ fontSize: 8, color: '#ccc', fontFamily: 'monospace' }}>{id} <span style={{ color: '#e0e0e0' }}>›</span> </span>)}
           <span style={{ fontSize: 8, color: cfg.accent, fontFamily: 'monospace', fontWeight: 600 }}>{currentId}</span>
         </div>
-      )}
+      )} */}
     </>
   )
 
@@ -1478,7 +1495,7 @@ function GamePageInner() {
             {isDesktop ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
                 {!isSummary && (
-                  <div style={{ width: IMG_WIDTH, flexShrink: 0, position: 'relative', background: '#f0ece6', overflow: 'hidden' }}>
+                  <div style={{ width: IMG_WIDTH, flexShrink: 0, position: 'relative', background: '#f0ece6', overflow: 'hidden', borderRadius: '16px 0 0 16px' }}>
                     {imgLayer}
                     {imgOverlays}
                   </div>
