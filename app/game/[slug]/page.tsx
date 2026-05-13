@@ -1261,7 +1261,7 @@ function GamePageInner() {
     <div style={imgStyle}>
       {scene.image && !imgError ? (
         <Image key={scene.image} src={scene.image} alt={scene.imageAlt ?? scene.title} fill sizes={isDesktop ? '65vw' : '100vw'} quality={95} priority
-          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          style={{ objectFit: 'contain', objectPosition: 'center', padding: '8px', borderRadius: '12px' }}
           onLoad={() => handleImgLoad(scene.image!)}
           onError={() => { setImgError(true); if (pendingImageRef.current === scene.image) startFadeIn() }} />
       ) : (
@@ -1478,8 +1478,7 @@ function GamePageInner() {
             {isDesktop ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,0,0,0.16)' }}>
                 {!isSummary && (
-                  <div style={{ width: IMG_WIDTH, flexShrink: 0, position: 'relative', background: 'linear-gradient(160deg,#1e2e2e 0%,#243535 60%,#1a2828 100%)', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.3) 100%)', pointerEvents: 'none', zIndex: 1 }} />
+                  <div style={{ width: IMG_WIDTH, flexShrink: 0, position: 'relative', background: '#f0ece6', overflow: 'hidden' }}>
                     {imgLayer}
                     {imgOverlays}
                   </div>
