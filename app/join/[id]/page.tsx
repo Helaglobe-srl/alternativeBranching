@@ -222,7 +222,7 @@ const sendReset = async () => {
        {mode === 'register' && (
   <div style={{ padding: '12px 14px', borderRadius: 10, background: '#fafafa', border: '1.5px solid #e8e8e8' }}>
     <div style={{ fontSize: 12, fontWeight: 700, color: '#0c2a38', marginBottom: 8 }}>
-      Hai già partecipato a questa survey in precedenza? <span style={{ color: '#dc2626' }}>*</span>
+      Hai già partecipato in precedenza? <span style={{ color: '#dc2626' }}>*</span>
     </div>
     <div style={{ display: 'flex', gap: 8 }}>
       {[{ label: 'Sì', value: true }, { label: 'No', value: false }].map(opt => (

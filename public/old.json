@@ -62,5 +62,18 @@
     "tag": "General",
     "duration": "10–15 min",
     "scenes": 1
+  },
+  [
+ 
+    {
+    "slug": "google_event",
+    "title": "Evento Marketing e digitale",
+    "cover": "/images/scenes/google_event/copertina2.png",
+    "sponsor": "Google",
+    "tag": "General",
+    "duration": "10–15 min",
+    "scenes": 8
   }
+  
+]
 ]
